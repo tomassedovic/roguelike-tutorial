@@ -1,0 +1,10 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    asciidoctor (1.5.2)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  asciidoctor (= 1.5.2)

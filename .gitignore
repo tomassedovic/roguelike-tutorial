@@ -1,2 +1,4 @@
 target
 /savegame
+/.bundle/
+/doc/*.html
