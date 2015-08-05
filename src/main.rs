@@ -15,6 +15,7 @@ use tcod::input::{self, Event, MouseState};
 use tcod::input::Key::{Special, Printable};
 use tcod::map::Map as FovMap;
 use tcod::map::FovAlgorithm;
+use rand::Rng;
 use rustc_serialize::{json, Encodable, Encoder};
 
 
@@ -374,7 +375,9 @@ impl MonsterAI {
             Confused{num_turns} => {
                 if num_turns > 0 {  // still confused...
                     // move in a random direction, and decrease the number of turns confused
-                    move_by(self.monster_id, random_i32_in_range(-1, 1), random_i32_in_range(-1, 1),
+                    move_by(self.monster_id,
+                            rand::thread_rng().gen_range(-1, 1),
+                            rand::thread_rng().gen_range(-1, 1),
                             game);
                     self.ai_type = Confused{num_turns: num_turns - 1};
                     None
@@ -456,13 +459,6 @@ fn create_v_tunnel(y1: i32, y2: i32, x: i32, map: &mut Map) {
     }
 }
 
-fn random_i32_in_range(min: i32, max: i32) -> i32 {
-    // Use the random generator from the `rand` crate instead of the one
-    // provided by libtcod. It fits better with Rust's types.
-    let mut rng = rand::thread_rng();
-    rand::sample(&mut rng, min..max, 1).pop().unwrap()
-}
-
 fn make_map(player_id: &mut usize, stairs_id: &mut usize,
             objects: &mut Vec<Object>, inventory: &mut Vec<usize>) -> Map {
     // fill map with "blocked" tiles
@@ -503,11 +499,11 @@ fn make_map(player_id: &mut usize, stairs_id: &mut usize,
 
     for _ in 0..MAX_ROOMS {
         // random width and height
-        let w = random_i32_in_range(ROOM_MIN_SIZE, ROOM_MAX_SIZE);
-        let h = random_i32_in_range(ROOM_MIN_SIZE, ROOM_MAX_SIZE);
+        let w = rand::thread_rng().gen_range(ROOM_MIN_SIZE, ROOM_MAX_SIZE);
+        let h = rand::thread_rng().gen_range(ROOM_MIN_SIZE, ROOM_MAX_SIZE);
         // random position without going out of the boundaries of the map
-        let x = random_i32_in_range(0, MAP_WIDTH - w - 1);
-        let y = random_i32_in_range(0, MAP_HEIGHT - h - 1);
+        let x = rand::thread_rng().gen_range(0, MAP_WIDTH - w - 1);
+        let y = rand::thread_rng().gen_range(0, MAP_HEIGHT - h - 1);
 
         // "Rect" struct makes rectangles easier to work with
         let new_room = Rect::new(x, y, w, h);
@@ -574,12 +570,12 @@ fn make_map(player_id: &mut usize, stairs_id: &mut usize,
 
 fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>) {
     // choose random number of monsters
-    let num_monsters = random_i32_in_range(0, MAX_ROOM_MONSTERS);
+    let num_monsters = rand::thread_rng().gen_range(0, MAX_ROOM_MONSTERS);
 
     for _ in 0..num_monsters {
         // choose random spot for this monster
-        let x = random_i32_in_range(room.x1 + 1, room.x2 - 1);
-        let y = random_i32_in_range(room.y1 + 1, room.y2 - 1);
+        let x = rand::thread_rng().gen_range(room.x1 + 1, room.x2 - 1);
+        let y = rand::thread_rng().gen_range(room.y1 + 1, room.y2 - 1);
 
         // only place it if the tile is not blocked
         if !is_blocked(x, y, map, objects) {
@@ -615,11 +611,11 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>) {
     }
 
     // choose random number of items
-    let num_items = random_i32_in_range(0, MAX_ROOM_ITEMS);
+    let num_items = rand::thread_rng().gen_range(0, MAX_ROOM_ITEMS);
     for _ in 0..num_items {
         // choose random spot for this item
-        let x = random_i32_in_range(room.x1 + 1, room.x2 - 1);
-        let y = random_i32_in_range(room.y1 + 1, room.y2 - 1);
+        let x = rand::thread_rng().gen_range(room.x1 + 1, room.x2 - 1);
+        let y = rand::thread_rng().gen_range(room.y1 + 1, room.y2 - 1);
 
         // only place it if the tile is not blocked
         if !is_blocked(x, y, map, objects) {
