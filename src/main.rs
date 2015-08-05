@@ -574,6 +574,14 @@ enum MonsterType {
     Troll,
 }
 
+#[derive(Clone, Copy)]
+enum ItemType {
+    Heal,
+    Lighting,
+    Fireball,
+    Confuse,
+}
+
 fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>) {
     use rand::distributions::{Weighted, WeightedChoice, IndependentSample};
     let rng = &mut rand::thread_rng();
@@ -584,7 +592,13 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>) {
     // chance of each monster
     let mut monster_chances = [Weighted {weight: 80, item: MonsterType::Orc},
                                Weighted {weight: 20, item: MonsterType::Troll}];
-    let choice = WeightedChoice::new(&mut monster_chances);
+    let monster_choice = WeightedChoice::new(&mut monster_chances);
+
+    let mut item_chances = [Weighted {weight: 70, item: ItemType::Heal},
+                            Weighted {weight: 10, item: ItemType::Lighting},
+                            Weighted {weight: 10, item: ItemType::Fireball},
+                            Weighted {weight: 10, item: ItemType::Confuse}];
+    let item_choice = WeightedChoice::new(&mut item_chances);
 
     for _ in 0..num_monsters {
         // choose random spot for this monster
@@ -594,7 +608,7 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>) {
         // only place it if the tile is not blocked
         if !is_blocked(x, y, map, objects) {
             let monster_id = objects.len();  // This is going to be the index of the next object
-            let monster = match choice.ind_sample(rng) {
+            let monster = match monster_choice.ind_sample(rng) {
                 MonsterType::Orc => {
                     // create an orc
                     let mut orc = Object::new(x, y, 'o', "orc", colors::DESATURATED_GREEN, true);
@@ -636,35 +650,39 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>) {
 
         // only place it if the tile is not blocked
         if !is_blocked(x, y, map, objects) {
-            let dice = rand::random::<f32>();
             // create a healing potion
-            let item = if dice < 0.7 {
-                // create a healing potion (70% chance)
-                let item_component = Item::Heal;
-                let mut object = Object::new(x, y, '!', "healing potion", colors::VIOLET, false);
-                object.item = Some(item_component);
-                object
-            } else if dice < 0.7 + 0.1 {
-                // create a lightning bolt scroll (15% chance)
-                let item_component = Item::Lightning;
-                let mut object = Object::new(x, y, '#', "scroll of lightning bolt",
-                                       colors::LIGHT_YELLOW, false);
-                object.item = Some(item_component);
-                object
-            } else if dice < 0.7 + 0.1 + 0.1 {
-                // reate a fireball scroll (10% chance)
-                let item_component = Item::Fireball;
-                let mut object = Object::new(x, y, '#', "scroll of fireball",
-                                       colors::LIGHT_YELLOW, false);
-                object.item = Some(item_component);
-                object
-            } else {
-                // create a confuse scroll (15% chance)
-                let item_component = Item::Confuse;
-                let mut object = Object::new(x, y, '#', "scroll of confusion",
-                                       colors::LIGHT_YELLOW, false);
-                object.item = Some(item_component);
-                object
+            let item = match item_choice.ind_sample(rng) {
+                ItemType::Heal => {
+                    // create a healing potion
+                    let item_component = Item::Heal;
+                    let mut object = Object::new(x, y, '!', "healing potion", colors::VIOLET, false);
+                    object.item = Some(item_component);
+                    object
+                }
+                ItemType::Lighting => {
+                    // create a lightning bolt scroll
+                    let item_component = Item::Lightning;
+                    let mut object = Object::new(x, y, '#', "scroll of lightning bolt",
+                                                 colors::LIGHT_YELLOW, false);
+                    object.item = Some(item_component);
+                    object
+                }
+                ItemType::Fireball => {
+                    // create a fireball scroll
+                    let item_component = Item::Fireball;
+                    let mut object = Object::new(x, y, '#', "scroll of fireball",
+                                                 colors::LIGHT_YELLOW, false);
+                    object.item = Some(item_component);
+                    object
+                }
+                ItemType::Confuse => {
+                    // create a confuse scroll
+                    let item_component = Item::Confuse;
+                    let mut object = Object::new(x, y, '#', "scroll of confusion",
+                                                 colors::LIGHT_YELLOW, false);
+                    object.item = Some(item_component);
+                    object
+                }
             };
             objects.push(item);
         }
