@@ -568,11 +568,23 @@ fn make_map(player_id: &mut usize, stairs_id: &mut usize,
     map
 }
 
+#[derive(Clone, Copy)]
+enum MonsterType {
+    Orc,
+    Troll,
+}
+
 fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>) {
+    use rand::distributions::{Weighted, WeightedChoice, IndependentSample};
     let rng = &mut rand::thread_rng();
 
     // choose random number of monsters
     let num_monsters = rng.gen_range(0, MAX_ROOM_MONSTERS);
+
+    // chance of each monster
+    let mut monster_chances = [Weighted {weight: 80, item: MonsterType::Orc},
+                               Weighted {weight: 20, item: MonsterType::Troll}];
+    let choice = WeightedChoice::new(&mut monster_chances);
 
     for _ in 0..num_monsters {
         // choose random spot for this monster
@@ -582,30 +594,33 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>) {
         // only place it if the tile is not blocked
         if !is_blocked(x, y, map, objects) {
             let monster_id = objects.len();  // This is going to be the index of the next object
-            let monster = if rand::random::<f32>() < 0.8 {  // 80% chance of getting an orc
-                // create an orc
-                let mut orc = Object::new(x, y, 'o', "orc", colors::DESATURATED_GREEN, true);
-                orc.fighter = Some(
-                    Fighter{hp: 10, max_hp: 10, defense: 0, power: 3, xp: 35,
-                            death: Some(DeathCallback::Monster)});
-                orc.ai = Some(MonsterAI{
+            let monster = match choice.ind_sample(rng) {
+                MonsterType::Orc => {
+                    // create an orc
+                    let mut orc = Object::new(x, y, 'o', "orc", colors::DESATURATED_GREEN, true);
+                    orc.fighter = Some(
+                        Fighter{hp: 10, max_hp: 10, defense: 0, power: 3, xp: 35,
+                                death: Some(DeathCallback::Monster)});
+                    orc.ai = Some(MonsterAI{
                         monster_id: monster_id,
                         old_ai: None,
                         ai_type: MonsterAIType::Basic,
                     });
-                orc
-            } else {
-                // create a troll
-                let mut troll = Object::new(x, y, 'T', "troll", colors::DARKER_GREEN, true);
-                troll.fighter = Some(
-                    Fighter{hp: 16, max_hp: 16, defense: 1, power: 4, xp: 100,
-                            death: Some(DeathCallback::Monster)});
-                troll.ai = Some(MonsterAI{
+                    orc
+                },
+                MonsterType::Troll => {
+                    // create a troll
+                    let mut troll = Object::new(x, y, 'T', "troll", colors::DARKER_GREEN, true);
+                    troll.fighter = Some(
+                        Fighter{hp: 16, max_hp: 16, defense: 1, power: 4, xp: 100,
+                                death: Some(DeathCallback::Monster)});
+                    troll.ai = Some(MonsterAI{
                         monster_id: monster_id,
                         old_ai: None,
                         ai_type: MonsterAIType::Basic,
                     });
-                troll
+                    troll
+                },
             };
 
             objects.push(monster);
