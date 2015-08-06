@@ -42,17 +42,15 @@ const LEVEL_SCREEN_WIDTH: i32 = 40;
 const ROOM_MAX_SIZE: i32 = 10;
 const ROOM_MIN_SIZE: i32 = 6;
 const MAX_ROOMS: i32 = 30;
-const MAX_ROOM_MONSTERS: i32 = 3;
-const MAX_ROOM_ITEMS: i32 = 2;
 
 // spell values
-const HEAL_AMOUNT: i32 = 4;
-const LIGHTNING_DAMAGE: i32 = 20;
+const HEAL_AMOUNT: i32 = 40;
+const LIGHTNING_DAMAGE: i32 = 40;
 const LIGHTNING_RANGE: i32 = 5;
 const CONFUSE_RANGE: i32 = 8;
 const CONFUSE_NUM_TURNS: i32 = 10;
 const FIREBALL_RADIUS: i32 = 3;
-const FIREBALL_DAMAGE: i32 = 12;
+const FIREBALL_DAMAGE: i32 = 25;
 
 // experience and level-ups
 const LEVEL_UP_BASE: i32 = 200;
@@ -459,7 +457,7 @@ fn create_v_tunnel(y1: i32, y2: i32, x: i32, map: &mut Map) {
 }
 
 fn make_map(player_id: &mut usize, stairs_id: &mut usize,
-            objects: &mut Vec<Object>, inventory: &mut Vec<usize>) -> Map {
+            objects: &mut Vec<Object>, inventory: &mut Vec<usize>, level: i32) -> Map {
     // fill map with "blocked" tiles
     let mut map = vec![vec![Tile{blocked: true, explored: false, block_sight: true};
                             MAP_HEIGHT as usize];
@@ -521,7 +519,7 @@ fn make_map(player_id: &mut usize, stairs_id: &mut usize,
             // item at the same position:
 
             // add some contents to this room, such as monsters
-            place_objects(new_room, &map, objects);
+            place_objects(new_room, &map, objects, level);
 
             // center coordinates of the new room, will be useful later
             let (new_x, new_y) = new_room.center();
@@ -582,22 +580,45 @@ enum ItemType {
     Confuse,
 }
 
-fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>) {
+fn from_dungeon_level(table: &[(u32, i32)], level: i32) -> u32 {
+    // returns a value that depends on level. the table specifies
+    // what value occurs after each level, default is 0.
+    for &(value, table_level) in table.iter().rev() {
+        if level >= table_level {
+            return value;
+        }
+    }
+    return 0;
+}
+
+fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>, level: i32) {
     use rand::distributions::{Weighted, WeightedChoice, IndependentSample};
     let rng = &mut rand::thread_rng();
 
+    // maximum number of monsters per room
+    let max_monsters = from_dungeon_level(&[(2, 1), (3, 4), (5, 6)], level);
+
+
     // choose random number of monsters
-    let num_monsters = rng.gen_range(0, MAX_ROOM_MONSTERS);
+    let num_monsters = rng.gen_range(0, max_monsters);
 
     // chance of each monster
+    let troll_chance = from_dungeon_level(&[(15, 3), (30, 5), (60, 7)], level);
     let mut monster_chances = [Weighted {weight: 80, item: MonsterType::Orc},
-                               Weighted {weight: 20, item: MonsterType::Troll}];
+                               Weighted {weight: troll_chance, item: MonsterType::Troll}];
     let monster_choice = WeightedChoice::new(&mut monster_chances);
 
-    let mut item_chances = [Weighted {weight: 70, item: ItemType::Heal},
-                            Weighted {weight: 10, item: ItemType::Lighting},
-                            Weighted {weight: 10, item: ItemType::Fireball},
-                            Weighted {weight: 10, item: ItemType::Confuse}];
+    // maximum number of items per room
+    let max_items = from_dungeon_level(&[(1, 1), (2, 4)], level);
+
+    // chance of each item (by default they have a chance of 0 at level 1, which then goes up)
+    let mut item_chances = [Weighted {weight: 35, item: ItemType::Heal},
+                            Weighted {weight: from_dungeon_level(&[(25, 4)], level),
+                                      item: ItemType::Lighting},
+                            Weighted {weight: from_dungeon_level(&[(25, 6)], level),
+                                      item: ItemType::Fireball},
+                            Weighted {weight: from_dungeon_level(&[(10, 2)], level),
+                                      item: ItemType::Confuse}];
     let item_choice = WeightedChoice::new(&mut item_chances);
 
     for _ in 0..num_monsters {
@@ -613,7 +634,7 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>) {
                     // create an orc
                     let mut orc = Object::new(x, y, 'o', "orc", colors::DESATURATED_GREEN, true);
                     orc.fighter = Some(
-                        Fighter{hp: 10, max_hp: 10, defense: 0, power: 3, xp: 35,
+                        Fighter{hp: 20, max_hp: 20, defense: 0, power: 4, xp: 35,
                                 death: Some(DeathCallback::Monster)});
                     orc.ai = Some(MonsterAI{
                         monster_id: monster_id,
@@ -626,7 +647,7 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>) {
                     // create a troll
                     let mut troll = Object::new(x, y, 'T', "troll", colors::DARKER_GREEN, true);
                     troll.fighter = Some(
-                        Fighter{hp: 16, max_hp: 16, defense: 1, power: 4, xp: 100,
+                        Fighter{hp: 30, max_hp: 30, defense: 2, power: 8, xp: 100,
                                 death: Some(DeathCallback::Monster)});
                     troll.ai = Some(MonsterAI{
                         monster_id: monster_id,
@@ -642,7 +663,7 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>) {
     }
 
     // choose random number of items
-    let num_items = rng.gen_range(0, MAX_ROOM_ITEMS);
+    let num_items = rng.gen_range(0, max_items);
     for _ in 0..num_items {
         // choose random spot for this item
         let x = rng.gen_range(room.x1 + 1, room.x2 - 1);
@@ -1281,7 +1302,7 @@ impl Game {
         let mut player = Object::new(0, 0, '@', "player", colors::WHITE, true);
         player.fighter = Some(
             Fighter{
-                hp: 30, max_hp: 30, defense: 2, power: 5, xp: 0,
+                hp: 100, max_hp: 100, defense: 1, power: 4, xp: 0,
                 death: Some(DeathCallback::Player)});
         player.level = 1;
 
@@ -1289,12 +1310,14 @@ impl Game {
         let mut player_id = 0;
         let mut inventory = vec![];
         let mut stairs_id = 0;
+        let dungeon_level = 1;
 
         // Generate map (at this point it's not drawn to the screen)
         let mut game = Game{
             state: GameState::Playing,
-            dungeon_level: 1,
-            map: make_map(&mut player_id, &mut stairs_id, &mut objects, &mut inventory),
+            dungeon_level: dungeon_level,
+            map: make_map(&mut player_id, &mut stairs_id, &mut objects, &mut inventory,
+                          dungeon_level),
             fov_recompute: false,
             // create the list of game messages and their colors, starts empty
             messages: vec![],
@@ -1332,7 +1355,7 @@ impl Game {
         self.dungeon_level += 1;
         // create a fresh new level!
         self.map = make_map(&mut self.player_id, &mut self.stairs_id,
-                            &mut self.objects, &mut self.inventory);
+                            &mut self.objects, &mut self.inventory, self.dungeon_level);
         self.initialize_fov(tcod);
     }
 
