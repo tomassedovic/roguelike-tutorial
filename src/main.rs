@@ -122,6 +122,7 @@ struct Object {
     fighter: Option<Fighter>,
     ai: Option<MonsterAI>,
     item: Option<Item>,
+    equipment: Option<Equipment>,
 }
 
 impl Object {
@@ -140,6 +141,7 @@ impl Object {
             fighter: None,
             ai: None,
             item: None,
+            equipment: None,
         }
     }
 
@@ -257,6 +259,11 @@ fn pick_item_up(id: usize, game: &mut Game) {
 }
 
 fn use_item(id: usize, inventory_index: usize, game: &mut Game, tcod: &mut TcodState) {
+    // special case: if the object has the Equipment component, the "use" action is to equip/dequip
+    if game.objects[id].item.is_some() && game.objects[id].equipment.is_some() {
+        toggle_equip(id, game);
+        return
+    }
     // just call the "use_item" if it is defined
     if let Some(item) = game.objects[id].item {
         match item.use_item(game, tcod) {
@@ -281,6 +288,54 @@ fn drop_item(id: usize, inventory_index: usize, game: &mut Game) {
     game.objects[id].on_ground = true;
     let msg = format!("You dropped a {}.", game.objects[id].name);
     game.message(msg, colors::YELLOW);
+}
+
+fn toggle_equip(id: usize, game: &mut Game) {
+    if game.objects[id].equipment.as_ref().map_or(false, |e| e.is_equipped) {
+        dequip(id, game);
+    } else {
+        equip(id, game);
+    }
+}
+
+fn equip(id: usize, game: &mut Game) {
+    // equip object and show a message about it
+    if let Some(mut equipment) = game.objects[id].equipment.take() {
+        equipment.is_equipped = true;
+        let msg = format!("Equipped {} on {}.", game.objects[id].name, equipment.slot);
+        game.message(msg, colors::LIGHT_GREEN);
+
+        game.objects[id].equipment = Some(equipment);
+    }
+}
+
+// TODO: Do we want to do this instead of the equip above??
+//
+//It's safer in that we don't have to think about putting the
+// equipment back. But it's more lines and I'm not sure whether it's
+// cleaner or not
+fn _equip2(id: usize, game: &mut Game) {
+    // equip object and show a message about it
+    game.objects[id].equipment.as_mut().map(|equipment| {
+        equipment.is_equipped = true;
+        equipment.slot.clone()  // TODO: if we have slot as enum, this will be simpler
+    }).map(|slot| {
+        let msg = format!("Equipped {} on {}.", game.objects[id].name, slot);
+        game.message(msg, colors::LIGHT_GREEN);
+    });
+}
+
+fn dequip(id: usize, game: &mut Game) {
+    // dequip object and show a message about it
+    if let Some(mut equipment) = game.objects[id].equipment.take() {
+        if equipment.is_equipped {
+            equipment.is_equipped = false;
+            let msg = format!("Dequipped {} from {}.", game.objects[id].name, equipment.slot);
+            game.message(msg, colors::LIGHT_YELLOW);
+        }
+
+        game.objects[id].equipment = Some(equipment);
+    }
 }
 
 
@@ -397,6 +452,7 @@ enum Item {
     Lightning,
     Fireball,
     Confuse,
+    None,
 }
 
 impl Item {
@@ -407,6 +463,7 @@ impl Item {
             Lightning => cast_lightning,
             Fireball => cast_fireball,
             Confuse => cast_confuse,
+            Item::None => cast_nothing,
         };
         callback(game, tcod)
     }
@@ -415,6 +472,12 @@ impl Item {
 enum UseResult {
     Used,
     Cancelled,
+}
+
+#[derive(Debug, PartialEq, Clone, RustcEncodable, RustcDecodable)]
+struct Equipment {
+    slot: String,  // TODO: replace this with an enum?
+    is_equipped: bool,
 }
 
 fn is_blocked(x: i32, y: i32, map: &Map, objects: &[Object]) -> bool {
@@ -578,6 +641,7 @@ enum ItemType {
     Lighting,
     Fireball,
     Confuse,
+    Sword,
 }
 
 fn from_dungeon_level(table: &[(u32, i32)], level: i32) -> u32 {
@@ -618,7 +682,8 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>, level: i32) {
                             Weighted {weight: from_dungeon_level(&[(25, 6)], level),
                                       item: ItemType::Fireball},
                             Weighted {weight: from_dungeon_level(&[(10, 2)], level),
-                                      item: ItemType::Confuse}];
+                                      item: ItemType::Confuse},
+                            Weighted {weight: 25, item: ItemType::Sword}];
     let item_choice = WeightedChoice::new(&mut item_chances);
 
     for _ in 0..num_monsters {
@@ -702,6 +767,15 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>, level: i32) {
                     let mut object = Object::new(x, y, '#', "scroll of confusion",
                                                  colors::LIGHT_YELLOW, false);
                     object.item = Some(item_component);
+                    object
+                }
+                ItemType::Sword => {
+                    // create a sword
+                    let equipment_component = Equipment{slot: "right hand".into(),
+                                                        is_equipped: false};
+                    let mut object = Object::new(x, y, '/', "sword", colors::SKY, false);
+                    object.equipment = Some(equipment_component);
+                    object.item = Some(Item::None);
                     object
                 }
             };
@@ -1260,6 +1334,11 @@ fn cast_confuse(game: &mut Game, tcod: &mut TcodState) -> UseResult {
         UseResult::Used
     })
 }
+
+// This is a no-op function for items that have any effect by
+// themselves. E.g. Equimpent is also an item, but its use action is
+// special-cased.
+fn cast_nothing(_game: &mut Game, _tcod: &mut TcodState) -> UseResult { UseResult::Used }
 
 
 struct TcodState {
