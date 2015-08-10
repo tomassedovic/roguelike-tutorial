@@ -706,6 +706,7 @@ enum ItemType {
     Fireball,
     Confuse,
     Sword,
+    Shield,
 }
 
 fn from_dungeon_level(table: &[(u32, i32)], level: i32) -> u32 {
@@ -747,7 +748,10 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>, level: i32) {
                                       item: ItemType::Fireball},
                             Weighted {weight: from_dungeon_level(&[(10, 2)], level),
                                       item: ItemType::Confuse},
-                            Weighted {weight: 25, item: ItemType::Sword}];
+                            Weighted {weight: from_dungeon_level(&[(5, 4)], level),
+                                      item: ItemType::Sword},
+                            Weighted {weight: from_dungeon_level(&[(15, 8)], level),
+                                      item: ItemType::Shield}];
     let item_choice = WeightedChoice::new(&mut item_chances);
 
     for _ in 0..num_monsters {
@@ -843,6 +847,20 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>, level: i32) {
                         max_hp_bonus: 0,
                     };
                     let mut object = Object::new(x, y, '/', "sword", colors::SKY, false);
+                    object.equipment = Some(equipment_component);
+                    object.item = Some(Item::None);
+                    object
+                }
+                ItemType::Shield => {
+                    // create a sword
+                    let equipment_component = Equipment{
+                        slot: "left hand".into(),
+                        is_equipped: false,
+                        power_bonus: 0,
+                        defense_bonus: 1,
+                        max_hp_bonus: 0,
+                    };
+                    let mut object = Object::new(x, y, '[', "shield", colors::DARKER_ORANGE, false);
                     object.equipment = Some(equipment_component);
                     object.item = Some(Item::None);
                     object
@@ -1471,7 +1489,7 @@ impl Game {
         let mut player = Object::new(0, 0, '@', "player", colors::WHITE, true);
         player.fighter = Some(
             Fighter{
-                hp: 100, base_max_hp: 100, base_defense: 1, base_power: 4, xp: 0,
+                hp: 100, base_max_hp: 100, base_defense: 1, base_power: 2, xp: 0,
                 death: Some(DeathCallback::Player)});
         player.level = 1;
 
@@ -1493,12 +1511,29 @@ impl Game {
             objects: objects,
             player_id: player_id,
             stairs_id: stairs_id,
-            inventory: vec![],
+            inventory: inventory,
         };
         game.initialize_fov(tcod);
         // a warm welcoming message!
         game.message("Welcome stranger! Prepare to perish in the Tombs of the Ancient Kings.",
                      colors::RED);
+
+        // initial equipment: a dagger
+        let mut dagger = Object::new(0, 0, '-', "dagger", colors::SKY, false);
+        let equipment_component = Equipment{
+            slot: "right hand".into(),
+            is_equipped: false,
+            power_bonus: 2,
+            defense_bonus: 0,
+            max_hp_bonus: 0,
+        };
+        dagger.equipment = Some(equipment_component);
+        dagger.item = Some(Item::None);
+        let dagger_id = game.objects.len();
+        game.objects.push(dagger);
+        game.inventory.push(dagger_id);
+        equip(dagger_id, &mut game);
+
         game
     }
 
