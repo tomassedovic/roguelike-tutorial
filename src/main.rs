@@ -1006,7 +1006,18 @@ fn inventory_menu(game: &mut Game, tcod: &mut TcodState, header: &str) -> Option
     let options = if game.inventory.len() == 0 {
         vec!["Inventory is empty.".to_owned()]
     } else {
-        game.inventory.iter().map(|&id| game.objects[id].name.clone()).collect()
+        game.inventory.iter().map(|&id| {
+            // show additional information, in case it's equipped
+            let text = match game.objects[id].equipment.as_ref() {
+                Some(equipment) if equipment.is_equipped => {
+                    format!("{} (on {})", game.objects[id].name, equipment.slot)
+                }
+                _ => {
+                    game.objects[id].name.clone()
+                }
+            };
+            text
+        }).collect()
     };
     let inventory_index = menu(&mut tcod.root, &mut tcod.con, header, &options, INVENTORY_WIDTH);
 
