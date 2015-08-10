@@ -229,7 +229,7 @@ fn move_towards(id: usize, target_x: i32, target_y: i32, game: &mut Game) {
 
 fn attack(attacker_id: usize, target_id: usize, game: &mut Game) {
     // a simple formula for attack damage
-    let damage = game.objects[attacker_id].fighter.as_ref().map(|f| f.power).unwrap() -
+    let damage = full_power(attacker_id, game) -
         game.objects[target_id].fighter.as_ref().map(|f| f.defense).unwrap();
     if damage > 0 {
         // make the target take some damage
@@ -362,7 +362,7 @@ struct Fighter {
     max_hp: i32,
     hp: i32,
     defense: i32,
-    power: i32,
+    base_power: i32,
     xp: i32,
     death: Option<DeathCallback>,
 }
@@ -496,6 +496,32 @@ enum UseResult {
 struct Equipment {
     slot: String,  // TODO: replace this with an enum?
     is_equipped: bool,
+    power_bonus: i32,
+    // defense_bonus: i32,
+    // max_hp_bonus: i32,
+}
+
+fn full_power(id: usize, game: &Game) -> i32 {
+    let base_power = game.objects[id].fighter.as_ref().map_or(0, |f| f.base_power);
+    // TODO: this is unstable, but maps closer to the Python tutorial and is easier to understand:
+    //let bonus: i32 = get_all_equipped(id, game).iter().map(|e| e.power_bonus).sum();
+    let bonus: i32 = get_all_equipped(id, game).iter().fold(0, |sum, e| sum + e.power_bonus);
+    base_power + bonus
+}
+
+/// returns a list of equipped items
+fn get_all_equipped(id: usize, game: &Game) -> Vec<Equipment> {
+    if id == game.player_id {
+        game.inventory
+            .iter()
+            .filter(|&&item_id| {
+                game.objects[item_id].equipment.as_ref().map_or(false, |e| e.is_equipped)
+            })
+            .map(|&item_id| game.objects[item_id].equipment.clone().unwrap())
+            .collect()
+    } else {
+        vec![]  // other objects have no equipment
+    }
 }
 
 fn get_equipped_in_slot(slot: &str, inventory: &[usize], objects: &[Object]) -> Option<usize> {
@@ -726,7 +752,7 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>, level: i32) {
                     // create an orc
                     let mut orc = Object::new(x, y, 'o', "orc", colors::DESATURATED_GREEN, true);
                     orc.fighter = Some(
-                        Fighter{hp: 20, max_hp: 20, defense: 0, power: 4, xp: 35,
+                        Fighter{hp: 20, max_hp: 20, defense: 0, base_power: 4, xp: 35,
                                 death: Some(DeathCallback::Monster)});
                     orc.ai = Some(MonsterAI{
                         monster_id: monster_id,
@@ -739,7 +765,7 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>, level: i32) {
                     // create a troll
                     let mut troll = Object::new(x, y, 'T', "troll", colors::DARKER_GREEN, true);
                     troll.fighter = Some(
-                        Fighter{hp: 30, max_hp: 30, defense: 2, power: 8, xp: 100,
+                        Fighter{hp: 30, max_hp: 30, defense: 2, base_power: 8, xp: 100,
                                 death: Some(DeathCallback::Monster)});
                     troll.ai = Some(MonsterAI{
                         monster_id: monster_id,
@@ -798,8 +824,11 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>, level: i32) {
                 }
                 ItemType::Sword => {
                     // create a sword
-                    let equipment_component = Equipment{slot: "right hand".into(),
-                                                        is_equipped: false};
+                    let equipment_component = Equipment{
+                        slot: "right hand".into(),
+                        is_equipped: false,
+                        power_bonus: 3,
+                    };
                     let mut object = Object::new(x, y, '/', "sword", colors::SKY, false);
                     object.equipment = Some(equipment_component);
                     object.item = Some(Item::None);
@@ -1117,10 +1146,11 @@ fn handle_keys(game: &mut Game, tcod: &mut TcodState, event: Option<Event>) -> P
                 // show character information
                 let level = game.objects[game.player_id].level;
                 let level_up_xp = LEVEL_UP_BASE + level * LEVEL_UP_FACTOR;
+                let power = full_power(game.player_id, game);
                 if let Some(fighter) = game.objects[game.player_id].fighter.as_ref() {
                     let msg = format!(
                         "Character information\n\nLevel: {}\nExperience: {}\nExperience to level up: {}\n\nMaximum HP: {}\nAttack: {}\nDefense: {}",
-                        level, fighter.xp, level_up_xp, fighter.max_hp, fighter.power, fighter.defense);
+                        level, fighter.xp, level_up_xp, fighter.max_hp, power, fighter.defense);
                     msgbox(&mut tcod.root, &mut tcod.con, &msg, CHARACTER_SCREEN_WIDTH);
                 }
             }
@@ -1140,6 +1170,7 @@ fn handle_keys(game: &mut Game, tcod: &mut TcodState, event: Option<Event>) -> P
 fn check_level_up(game: &mut Game, tcod: &mut TcodState) {
     // see if the player's experience is enough to level-up
     let level_up_xp = LEVEL_UP_BASE + game.objects[game.player_id].level * LEVEL_UP_FACTOR;
+    let power = full_power(game.player_id, game);
     let mut fighter = game.objects[game.player_id].fighter.take().unwrap();
     if fighter.xp >= level_up_xp {
         // it is! level up
@@ -1153,7 +1184,7 @@ fn check_level_up(game: &mut Game, tcod: &mut TcodState) {
             let choice = menu(&mut tcod.root, &mut tcod.con,
                               "Level up! Choose a stat to raise:\n",
                               &[format!("Constitution (+20 HP, from {})", fighter.max_hp),
-                                format!("Strength (+1 attack, from {})", fighter.power),
+                                format!("Strength (+1 attack, from {})", power),
                                 format!("Agility (+1 defense, from {})", fighter.defense)],
                               LEVEL_SCREEN_WIDTH);
             match choice {
@@ -1163,7 +1194,7 @@ fn check_level_up(game: &mut Game, tcod: &mut TcodState) {
                     break;
                 }
                 Some(1) => {
-                    fighter.power += 1;
+                    fighter.base_power += 1;
                     break;
                 }
                 Some(2) => {
@@ -1419,7 +1450,7 @@ impl Game {
         let mut player = Object::new(0, 0, '@', "player", colors::WHITE, true);
         player.fighter = Some(
             Fighter{
-                hp: 100, max_hp: 100, defense: 1, power: 4, xp: 0,
+                hp: 100, max_hp: 100, defense: 1, base_power: 4, xp: 0,
                 death: Some(DeathCallback::Player)});
         player.level = 1;
 
