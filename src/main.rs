@@ -255,6 +255,14 @@ fn pick_item_up(id: usize, game: &mut Game) {
         let msg = format!("You picked up a {}!", game.objects[id].name);
         game.message(msg, colors::GREEN);
         game.inventory.push(id);
+
+        // special case: automatically equip, if the corresponding equipment slot is unused
+        let equipment_slot = game.objects[id].equipment.as_ref().map(|e| e.slot.clone());
+        if let Some(equipment_slot) = equipment_slot {
+            if get_equipped_in_slot(&equipment_slot, &game.inventory, &game.objects).is_none() {
+                equip(id, game);
+            }
+        }
     }
 }
 
@@ -282,6 +290,9 @@ fn use_item(id: usize, inventory_index: usize, game: &mut Game, tcod: &mut TcodS
 }
 
 fn drop_item(id: usize, inventory_index: usize, game: &mut Game) {
+    if game.objects[id].equipment.is_some() {
+        dequip(id, game);
+    }
     game.inventory.swap_remove(inventory_index);
     let (px, py) = game.objects[game.player_id].pos();
     game.objects[id].set_pos(px, py);
@@ -299,6 +310,13 @@ fn toggle_equip(id: usize, game: &mut Game) {
 }
 
 fn equip(id: usize, game: &mut Game) {
+    // if the slot is already being used, dequip whatever is there first
+    // TODO: treat empty String as a slot that fails to get a match.
+    // This will have to be changed if we switch to a slot enum.
+    let slot = game.objects[id].equipment.as_ref().map_or("".into(), |e| e.slot.clone());
+    if let Some(old_equipment_id) = get_equipped_in_slot(&slot, &game.inventory, &game.objects) {
+        dequip(old_equipment_id, game);
+    }
     // equip object and show a message about it
     if let Some(mut equipment) = game.objects[id].equipment.take() {
         equipment.is_equipped = true;
@@ -478,6 +496,15 @@ enum UseResult {
 struct Equipment {
     slot: String,  // TODO: replace this with an enum?
     is_equipped: bool,
+}
+
+fn get_equipped_in_slot(slot: &str, inventory: &[usize], objects: &[Object]) -> Option<usize> {
+    for &id in inventory {
+        if objects[id].equipment.as_ref().map_or(false, |e| e.is_equipped && e.slot == slot) {
+            return Some(id)
+        }
+    }
+    None
 }
 
 fn is_blocked(x: i32, y: i32, map: &Map, objects: &[Object]) -> bool {
