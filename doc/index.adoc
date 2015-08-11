@@ -15,9 +15,39 @@ hey there
 
 it's awesome
 
+fast
+
+no null pointers
+
+no segfaults
+
 === Why libtcod?
 
 what else are you gonna do. opengl?
+
+== Some notes about this port
+
+* No globals
+* Python has rc pointers everywhere, doing the same thing in Rust is
+  possible-ish but really verbose and unpleasant. And you still can't
+  really get the backref owner concept going because the mutability
+  rules are stricter than in python (only one mutable borrow).
+* The Python tutorial is in one file. Clearly that's not something you
+  wanna do for a huge game, but this is small enough and it makes
+  following the tutorial easier.
+* This isn't trying to show the best architecture for roguelikes. It's
+  *an* architecture that works. It's not the most performant or
+  extensible one. But it's easy enough to follow and use to make more
+  stuff.
+* The original Python tutorial is a bit infamous because games that
+  people do after going through it all look samey. That's not a reason
+  to shun the tutorial, though. Just don't get caught in the game
+  desighn of it. The purpose of this is to teach you how to write a
+  game using libtcod. There's little of game design here. What I'd
+  recommend is: go through this, absorb the concepts but then start
+  from scratch when actually writing your game. And think about how to
+  make it unique.
+* 
 
 == Start the tutorial
 

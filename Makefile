@@ -1,5 +1,5 @@
 docs:
-	bundle exec asciidoctor -d book doc/*.adoc
+	bundle exec asciidoctor -d article doc/*.adoc
 
 clean:
 	rm doc/*.html
