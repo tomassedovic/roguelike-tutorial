@@ -1,8 +1,9 @@
 = Roguelike Tutorial in Rust + tcod
 :author: Tomas Sedovic
 :email: tomas@sedovic.cz
+:origtutorial: http://www.roguebasin.com/index.php?title=Complete_Roguelike_Tutorial,_using_python%2Blibtcod
 
-A port of the http://www.roguebasin.com/index.php?title=Complete_Roguelike_Tutorial,_using_python%2Blibtcod[Complete Roguelike Tutorial, using python+libtcod].
+A port of the {origtutorial}[Complete Roguelike Tutorial, using python+libtcod].
 
 == Short introduction
 
