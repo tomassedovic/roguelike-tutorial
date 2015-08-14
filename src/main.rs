@@ -1021,7 +1021,8 @@ fn player_move_or_attack(dx: i32, dy: i32, game: &mut Game) {
     }
 }
 
-fn menu(root: &mut Root, con: &mut Offscreen, header: &str, options: &[String], width: i32) -> Option<usize> {
+fn menu<T: AsRef<str>>(root: &mut Root, con: &mut Offscreen, header: &str,
+                       options: &[T], width: i32) -> Option<usize> {
     assert!(options.len() <= 26, "Cannot have a menu with more than 26 options.");
 
     // calculate total height for the header (after auto-wrap) and one line per option
@@ -1038,7 +1039,7 @@ fn menu(root: &mut Root, con: &mut Offscreen, header: &str, options: &[String], 
     // print all the options
     let first_letter = 'A' as u8;
     for (index, option_text) in options.iter().enumerate() {
-        let text = format!("({}) {}", (first_letter + index as u8) as char, option_text);
+        let text = format!("({}) {}", (first_letter + index as u8) as char, option_text.as_ref());
         window.print_ex(0, header_height + index as i32,
                         BackgroundFlag::None, TextAlignment::Left, text);
     }
@@ -1066,7 +1067,7 @@ fn menu(root: &mut Root, con: &mut Offscreen, header: &str, options: &[String], 
 fn inventory_menu(game: &mut Game, tcod: &mut TcodState, header: &str) -> Option<usize> {
     // how a menu with each item of the inventory as an option
     let options = if game.inventory.len() == 0 {
-        vec!["Inventory is empty.".to_owned()]
+        vec!["Inventory is empty.".into()]
     } else {
         game.inventory.iter().map(|&id| {
             // show additional information, in case it's equipped
@@ -1092,7 +1093,8 @@ fn inventory_menu(game: &mut Game, tcod: &mut TcodState, header: &str) -> Option
 }
 
 fn msgbox(root: &mut Root, con: &mut Offscreen, text: &str, width: i32) {
-    menu(root, con, text, &[], width);  // use menu() as a sort of "message_box"
+    let options: &[&str; 0] = &[];  // Need to annotate the type here else Rust gets confused :-(
+    menu(root, con, text, options, width);  // use menu() as a sort of "message_box"
 }
 
 fn handle_keys(game: &mut Game, tcod: &mut TcodState, event: Option<Event>) -> PlayerAction {
@@ -1677,7 +1679,7 @@ fn main_menu(root: Root, con: Offscreen, panel: Offscreen) {
         tcod::image::blit_2x(&img, (0, 0), (-1, -1), &mut tcod.root, (0, 0));
 
         // show options and wait for the player's choice
-        let choices = &["Play a new game".into(), "Continue last game".into(), "Quit".into()];
+        let choices = &["Play a new game", "Continue last game", "Quit"];
         let choice = menu(&mut tcod.root, &mut tcod.con, "", choices, 24);
 
         match choice {
