@@ -126,14 +126,13 @@ struct Object {
 }
 
 impl Object {
-    pub fn new<T: Into<Color>>(x: i32, y: i32, char: char, name: &str,
-               color: T, blocks: bool) -> Self {
+    pub fn new(x: i32, y: i32, char: char, name: &str, color: Color, blocks: bool) -> Self {
         Object {
             x: x,
             y: y,
             char: char,
             name: name.to_owned(),
-            color: color.into(),
+            color: color,
             blocks: blocks,
             always_visible: false,
             on_ground: true,
@@ -171,7 +170,7 @@ impl Object {
         // only show if it's visible to the player; or it's set to "always visible" and on an explored tile
         if fov.is_in_fov(self.x, self.y) || (self.always_visible &&
                                              map[self.x as usize][self.y as usize].explored) {
-            con.set_default_foreground(self.color.into());
+            con.set_default_foreground(self.color);
             con.put_char(self.x, self.y, self.char, BackgroundFlag::None);
         }
     }
@@ -975,7 +974,7 @@ fn render_all(game: &mut Game, tcod: &mut TcodState) {
         if y < 0 {
             break
         }
-        tcod.panel.set_default_foreground(color.into());
+        tcod.panel.set_default_foreground(color);
         tcod.panel.print_rect_ex(MSG_X, y, MSG_WIDTH, 0,
                             BackgroundFlag::None, TextAlignment::Left, msg);
     }
@@ -1270,7 +1269,7 @@ fn player_death(id: usize, game: &mut Game) {
     let player = &mut game.objects[id];
     // for added effect, transform the player into a corpse!
     player.char = '%';
-    player.color = colors::DARK_RED.into();
+    player.color = colors::DARK_RED;
 }
 
 fn monster_death(id: usize, game: &mut Game) {
@@ -1282,7 +1281,7 @@ fn monster_death(id: usize, game: &mut Game) {
     game.message(msg, colors::ORANGE);
     let monster = &mut game.objects[id];
     monster.char = '%';
-    monster.color = colors::DARK_RED.into();
+    monster.color = colors::DARK_RED;
     monster.blocks = false;
     monster.fighter = None;
     monster.ai = None;
@@ -1547,7 +1546,7 @@ impl Game {
             self.messages.remove(0);
         }
         // add the new line as a tuple, with the text and the color
-        self.messages.push((new_msg.into(), color.into()));
+        self.messages.push((new_msg.into(), color));
     }
 
     fn next_level(&mut self, tcod: &mut TcodState) {
