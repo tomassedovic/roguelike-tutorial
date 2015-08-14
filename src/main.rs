@@ -233,12 +233,12 @@ fn attack(attacker_id: usize, target_id: usize, game: &mut Game) {
         // make the target take some damage
         let msg = format!("{} attacks {} for {} hit points.",
                              game.objects[attacker_id].name, game.objects[target_id].name, damage);
-        game.message(msg, colors::WHITE);
+        game.messages.add(msg, colors::WHITE);
         take_damage(target_id, damage, game);
     } else {
         let msg = format!("{} attacks {} but it has no effect!",
                              game.objects[attacker_id].name, game.objects[target_id].name);
-        game.message(msg, colors::WHITE);
+        game.messages.add(msg, colors::WHITE);
     }
 }
 
@@ -247,11 +247,11 @@ fn pick_item_up(id: usize, game: &mut Game) {
     // add to the player's inventory and remove from the map
     if game.inventory.len() >= 26 {
         let msg = format!("Your inventory is full, cannot pick up {}.", game.objects[id].name);
-        game.message(msg, colors::RED);
+        game.messages.add(msg, colors::RED);
     } else {
         game.objects[id].on_ground = false;
         let msg = format!("You picked up a {}!", game.objects[id].name);
-        game.message(msg, colors::GREEN);
+        game.messages.add(msg, colors::GREEN);
         game.inventory.push(id);
 
         // special case: automatically equip, if the corresponding equipment slot is unused
@@ -278,12 +278,12 @@ fn use_item(id: usize, inventory_index: usize, game: &mut Game, tcod: &mut TcodS
                 game.inventory.remove(inventory_index);
             }
             UseResult::Cancelled => {
-                game.message("Cancelled", colors::WHITE);
+                game.messages.add("Cancelled", colors::WHITE);
             }
         };
     } else {
         let msg = format!("The {} cannot be used.", game.objects[id].name);
-        game.message(msg, colors::WHITE);
+        game.messages.add(msg, colors::WHITE);
     }
 }
 
@@ -296,7 +296,7 @@ fn drop_item(id: usize, inventory_index: usize, game: &mut Game) {
     game.objects[id].set_pos(px, py);
     game.objects[id].on_ground = true;
     let msg = format!("You dropped a {}.", game.objects[id].name);
-    game.message(msg, colors::YELLOW);
+    game.messages.add(msg, colors::YELLOW);
 }
 
 fn toggle_equip(id: usize, game: &mut Game) {
@@ -319,7 +319,7 @@ fn equip(id: usize, game: &mut Game) {
     if let Some(mut equipment) = game.objects[id].equipment.take() {
         equipment.is_equipped = true;
         let msg = format!("Equipped {} on {}.", game.objects[id].name, equipment.slot);
-        game.message(msg, colors::LIGHT_GREEN);
+        game.messages.add(msg, colors::LIGHT_GREEN);
 
         game.objects[id].equipment = Some(equipment);
     }
@@ -337,7 +337,7 @@ fn _equip2(id: usize, game: &mut Game) {
         equipment.slot.clone()  // TODO: if we have slot as enum, this will be simpler
     }).map(|slot| {
         let msg = format!("Equipped {} on {}.", game.objects[id].name, slot);
-        game.message(msg, colors::LIGHT_GREEN);
+        game.messages.add(msg, colors::LIGHT_GREEN);
     });
 }
 
@@ -347,7 +347,7 @@ fn dequip(id: usize, game: &mut Game) {
         if equipment.is_equipped {
             equipment.is_equipped = false;
             let msg = format!("Dequipped {} from {}.", game.objects[id].name, equipment.slot);
-            game.message(msg, colors::LIGHT_YELLOW);
+            game.messages.add(msg, colors::LIGHT_YELLOW);
         }
 
         game.objects[id].equipment = Some(equipment);
@@ -451,7 +451,7 @@ impl MonsterAI {
                 } else {  // restore the previous AI (this one will be deleted)
                     let msg = format!("The {} is no longer confused!",
                                          game.objects[self.monster_id].name);
-                    game.message(msg, colors::RED);
+                    game.messages.add(msg, colors::RED);
                     self.old_ai.take().map(|ai| *ai)
                 }
             }
@@ -1217,7 +1217,7 @@ fn check_level_up(game: &mut Game, tcod: &mut TcodState) {
         fighter.xp -= level_up_xp;
         let msg = format!("Your battle skills grow stronger! You reached level {}!",
                           game.objects[game.player_id].level);
-        game.message(msg, colors::YELLOW);
+        game.messages.add(msg, colors::YELLOW);
 
         loop {  // keep asking until a choice is made
             let choice = menu(&mut tcod.root, &mut tcod.con,
@@ -1263,7 +1263,7 @@ enum GameState {
 
 fn player_death(id: usize, game: &mut Game) {
     // the game ended!
-    game.message("You died!", colors::RED);
+    game.messages.add("You died!", colors::RED);
     game.state = GameState::Death;
 
     let player = &mut game.objects[id];
@@ -1278,7 +1278,7 @@ fn monster_death(id: usize, game: &mut Game) {
     let msg = format!("{} is dead! You gain {} experience points.",
                       game.objects[id].name,
                       game.objects[id].fighter.as_ref().unwrap().xp);
-    game.message(msg, colors::ORANGE);
+    game.messages.add(msg, colors::ORANGE);
     let monster = &mut game.objects[id];
     monster.char = '%';
     monster.color = colors::DARK_RED;
@@ -1367,11 +1367,11 @@ fn cast_heal(game: &mut Game, _tcod: &mut TcodState) -> UseResult {
     // out inside the block, we'd get back zero. Maybe reconsider the `take` strategy?
     if let Some(mut fighter) = game.objects[game.player_id].fighter.take() {
         if fighter.hp == max_hp {
-            game.message("You are already at full health.", colors::RED);
+            game.messages.add("You are already at full health.", colors::RED);
             game.objects[game.player_id].fighter = Some(fighter);
             return UseResult::Cancelled;
         }
-        game.message("Your wounds start to feel better!", colors::LIGHT_VIOLET);
+        game.messages.add("Your wounds start to feel better!", colors::LIGHT_VIOLET);
         fighter.heal(HEAL_AMOUNT);
         game.objects[game.player_id].fighter = Some(fighter);
         return UseResult::Used;
@@ -1387,24 +1387,24 @@ fn cast_lightning(game: &mut Game, tcod: &mut TcodState) -> UseResult {
         let msg = format!("A lightning bolt strikes the {} with a loud thunder!
  The damage is {} hit points.",
                           game.objects[monster_id].name, LIGHTNING_DAMAGE);
-        game.message(msg, colors::LIGHT_BLUE);
+        game.messages.add(msg, colors::LIGHT_BLUE);
         take_damage(monster_id, LIGHTNING_DAMAGE, game);
         UseResult::Used
     } else {  // no enemy found within maximum range
-        game.message("No enemy is close enough to strike.", colors::RED);
+        game.messages.add("No enemy is close enough to strike.", colors::RED);
         UseResult::Cancelled
     }
 }
 
 fn cast_fireball(game: &mut Game, tcod: &mut TcodState) -> UseResult {
     // ask the player for a target tile to throw a fireball at
-    game.message("Left-click a target tile for the fireball, or right-click to cancel.",
+    game.messages.add("Left-click a target tile for the fireball, or right-click to cancel.",
                  colors::LIGHT_CYAN);
     let (x, y) = match target_tile(game, tcod, None) {
         Some(tile_pos) => tile_pos,
         None => { return UseResult::Cancelled },
     };
-    game.message(format!("The fireball explodes, burning everything within {} tiles!",
+    game.messages.add(format!("The fireball explodes, burning everything within {} tiles!",
                          FIREBALL_RADIUS),
                  colors::ORANGE);
 
@@ -1417,7 +1417,7 @@ fn cast_fireball(game: &mut Game, tcod: &mut TcodState) -> UseResult {
     for &id in &burned_objects {
         let msg = format!("The {} gets burned for {} hit points.",
                           game.objects[id].name, FIREBALL_DAMAGE);
-        game.message(msg, colors::ORANGE);
+        game.messages.add(msg, colors::ORANGE);
         take_damage(id, FIREBALL_DAMAGE, game);
     }
     UseResult::Used
@@ -1425,7 +1425,7 @@ fn cast_fireball(game: &mut Game, tcod: &mut TcodState) -> UseResult {
 
 fn cast_confuse(game: &mut Game, tcod: &mut TcodState) -> UseResult {
     // ask the player for a target to confuse
-    game.message("Left-click an enemy to confuse it, or right-click to cancel.",
+    game.messages.add("Left-click an enemy to confuse it, or right-click to cancel.",
                  colors::LIGHT_CYAN);
     target_monster(game, tcod, Some(CONFUSE_RANGE as f32)).map_or(UseResult::Cancelled, |id| {
         // replace the monster's AI with a "confused" one; after some turns it will restore the old AI
@@ -1441,7 +1441,7 @@ fn cast_confuse(game: &mut Game, tcod: &mut TcodState) -> UseResult {
         }
         let msg = format!("The eyes of the {} look vacant, as he starts to stumble around!",
                           game.objects[id].name);
-        game.message(msg, colors::GREEN);
+        game.messages.add(msg, colors::GREEN);
         UseResult::Used
     })
 }
@@ -1493,6 +1493,10 @@ impl Messages {
         // add the new line as a tuple, with the text and the color
         self.messages.push((message.into(), color));
     }
+
+    fn iter(&self) -> std::slice::Iter<(String, Color)> {
+        self.messages.iter()
+    }
 }
 
 #[derive(RustcEncodable, RustcDecodable)]
@@ -1540,7 +1544,7 @@ impl Game {
         };
         game.initialize_fov(tcod);
         // a warm welcoming message!
-        game.message("Welcome stranger! Prepare to perish in the Tombs of the Ancient Kings.",
+        game.messages.add("Welcome stranger! Prepare to perish in the Tombs of the Ancient Kings.",
                      colors::RED);
 
         // initial equipment: a dagger
@@ -1564,14 +1568,14 @@ impl Game {
 
     fn next_level(&mut self, tcod: &mut TcodState) {
         // advance to the next level
-        self.message("You take a moment to rest, and recover your strength.", colors::LIGHT_VIOLET);
+        self.messages.add("You take a moment to rest, and recover your strength.", colors::LIGHT_VIOLET);
         let max_hp = full_max_hp(self.player_id, self);
         self.objects[self.player_id].fighter.as_mut().map(|f| {
             let heal_hp = max_hp / 2;
             f.heal(heal_hp);
         });  // heal the player by 50%
 
-        self.message("After a rare moment of peace, you descend deeper into the heart of the dungeon...",
+        self.messages.add("After a rare moment of peace, you descend deeper into the heart of the dungeon...",
                      colors::RED);
         self.dungeon_level += 1;
         // create a fresh new level!
