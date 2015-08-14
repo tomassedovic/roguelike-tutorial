@@ -1474,13 +1474,35 @@ impl TcodState {
 }
 
 #[derive(RustcEncodable, RustcDecodable)]
+struct Messages {
+    messages: Vec<(String, Color)>,
+}
+
+impl Messages {
+    fn new() -> Self {
+        Messages {
+            messages: vec![],
+        }
+    }
+
+    fn add<T: Into<String>>(&mut self, message: T, color: Color) {
+        // if the buffer is full, remove the first message to make room for the new one
+        if self.messages.len() == MSG_HEIGHT {
+            self.messages.remove(0);
+        }
+        // add the new line as a tuple, with the text and the color
+        self.messages.push((message.into(), color));
+    }
+}
+
+#[derive(RustcEncodable, RustcDecodable)]
 struct Game {
     state: GameState,
     dungeon_level: i32,
     map: Map,
     fov_recompute: bool,
-    messages: Vec<(String, Color)>,
     objects: Vec<Object>,
+    messages: Messages,
     player_id: usize,
     stairs_id: usize,
     inventory: Vec<usize>,
@@ -1510,7 +1532,7 @@ impl Game {
                           dungeon_level),
             fov_recompute: false,
             // create the list of game messages and their colors, starts empty
-            messages: vec![],
+            messages: Messages::new(),
             objects: objects,
             player_id: player_id,
             stairs_id: stairs_id,
@@ -1538,15 +1560,6 @@ impl Game {
         equip(dagger_id, &mut game);
 
         game
-    }
-
-    fn message<T: Into<String>>(&mut self, new_msg: T, color: Color) {
-        // if the buffer is full, remove the first message to make room for the new one
-        if self.messages.len() == MSG_HEIGHT {
-            self.messages.remove(0);
-        }
-        // add the new line as a tuple, with the text and the color
-        self.messages.push((new_msg.into(), color));
     }
 
     fn next_level(&mut self, tcod: &mut TcodState) {
