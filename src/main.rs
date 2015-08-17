@@ -984,7 +984,7 @@ fn render_all(game: &mut Game, tcod: &mut TcodState) {
 
     // print the game messages, one line at a time
     let mut y = MSG_HEIGHT as i32;
-    for &(ref msg, color) in game.messages.iter().rev() {
+    for &(ref msg, color) in game.messages.messages().iter().rev() {
         let msg_height = tcod.panel.get_height_rect(MSG_X, y, MSG_WIDTH, 0, msg);
         y -= msg_height;
         // TODO: this won't print a partial message if it crosses multiple lines. Can we fix that?
@@ -1539,8 +1539,8 @@ impl Messages {
         self.messages.push((message.into(), color));
     }
 
-    fn iter(&self) -> std::slice::Iter<(String, Color)> {
-        self.messages.iter()
+    fn messages(&self) -> &Vec<(String, Color)> {
+        &self.messages
     }
 }
 
