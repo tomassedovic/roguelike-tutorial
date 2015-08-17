@@ -63,10 +63,10 @@ const TORCH_RADIUS: i32 = 10;
 
 const LIMIT_FPS: i32 = 20;  // 20 frames-per-second maximum
 
-const COLOR_DARK_WALL: Color = Color{r: 0, g: 0, b: 100};
-const COLOR_LIGHT_WALL: Color = Color{r: 130, g: 110, b: 50};
-const COLOR_DARK_GROUND: Color = Color{r: 50, g: 50, b: 150};
-const COLOR_LIGHT_GROUND: Color = Color{r: 200, g: 180, b: 50};
+const COLOR_DARK_WALL: Color = Color { r: 0, g: 0, b: 100 };
+const COLOR_LIGHT_WALL: Color = Color { r: 130, g: 110, b: 50 };
+const COLOR_DARK_GROUND: Color = Color { r: 50, g: 50, b: 150 };
+const COLOR_LIGHT_GROUND: Color = Color { r: 200, g: 180, b: 50 };
 
 type Map = Vec<Vec<Tile>>;
 
@@ -87,12 +87,7 @@ struct Rect {
 
 impl Rect {
     pub fn new(x: i32, y: i32, w: i32, h: i32) -> Self {
-        Rect {
-            x1: x,
-            y1: y,
-            x2: x + w,
-            y2: y + h,
-        }
+        Rect { x1: x, y1: y, x2: x + w, y2: y + h }
     }
 
     pub fn center(&self) -> (i32, i32) {
@@ -103,8 +98,8 @@ impl Rect {
 
     pub fn intersect(&self, other: &Rect) -> bool {
         // returns true if this rectangle intersects with another one
-        (self.x1 <= other.x2) && (self.x2 >= other.x1) &&
-            (self.y1 <= other.y2) && (self.y2 >= other.y1)
+        (self.x1 <= other.x2) && (self.x2 >= other.x1) && (self.y1 <= other.y2) &&
+        (self.y2 >= other.y1)
     }
 }
 
@@ -167,9 +162,10 @@ impl Object {
 
     /// Set the color and then draw the character that represents this object at its position.
     pub fn draw(&self, con: &mut Console, map: &Map, fov: &FovMap) {
-        // only show if it's visible to the player; or it's set to "always visible" and on an explored tile
-        if fov.is_in_fov(self.x, self.y) || (self.always_visible &&
-                                             map[self.x as usize][self.y as usize].explored) {
+        // only show if it's visible to the player; or it's set to
+        // "always visible" and on an explored tile
+        if fov.is_in_fov(self.x, self.y) ||
+           (self.always_visible && map[self.x as usize][self.y as usize].explored) {
             con.set_default_foreground(self.color);
             con.put_char(self.x, self.y, self.char, BackgroundFlag::None);
         }
@@ -397,7 +393,9 @@ impl DeathCallback {
 #[derive(Copy, Clone, Debug, PartialEq, RustcEncodable, RustcDecodable)]
 enum MonsterAIType {
     Basic,
-    Confused{num_turns: i32},
+    Confused {
+        num_turns: i32,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq, RustcEncodable, RustcDecodable)]
@@ -491,7 +489,7 @@ enum UseResult {
 
 #[derive(Debug, PartialEq, Clone, RustcEncodable, RustcDecodable)]
 struct Equipment {
-    slot: String,  // TODO: replace this with an enum?
+    slot: String, // TODO: replace this with an enum?
     is_equipped: bool,
     power_bonus: i32,
     defense_bonus: i32,
@@ -587,8 +585,12 @@ fn range(min: i32, max: i32) -> i32 {
     rand::thread_rng().gen_range(min, max + 1)
 }
 
-fn make_map(player_id: &mut usize, stairs_id: &mut usize,
-            objects: &mut Vec<Object>, inventory: &mut Vec<usize>, level: i32) -> Map {
+fn make_map(player_id: &mut usize,
+            stairs_id: &mut usize,
+            objects: &mut Vec<Object>,
+            inventory: &mut Vec<usize>,
+            level: i32)
+            -> Map {
     // fill map with "blocked" tiles
     let mut map = vec![vec![Tile{blocked: true, explored: false, block_sight: true};
                             MAP_HEIGHT as usize];
@@ -812,7 +814,8 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>, level: i32) {
                 ItemType::Heal => {
                     // create a healing potion
                     let item_component = Item::Heal;
-                    let mut object = Object::new(x, y, '!', "healing potion", colors::VIOLET, false);
+                    let mut object = Object::new(x, y, '!', "healing potion",
+                                                 colors::VIOLET, false);
                     object.item = Some(item_component);
                     object
                 }
@@ -874,8 +877,15 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>, level: i32) {
     }
 }
 
-fn render_bar(panel: &mut Offscreen, x: i32, y: i32, total_width: i32, name: &str,
-              value: i32, maximum: i32, bar_color: Color, back_color: Color) {
+fn render_bar(panel: &mut Offscreen,
+              x: i32,
+              y: i32,
+              total_width: i32,
+              name: &str,
+              value: i32,
+              maximum: i32,
+              bar_color: Color,
+              back_color: Color) {
     // render a bar (HP, experience, etc). first calculate the width of the bar
     let bar_width = (value as f32 / maximum as f32 * total_width as f32) as i32;
 
@@ -921,9 +931,11 @@ fn render_all(game: &mut Game, tcod: &mut TcodState) {
                     // if it's not visible right now, the player can only see if it's explored
                     if game.map[x as usize][y as usize].explored {
                         if wall {
-                            tcod.con.set_char_background(x, y, COLOR_DARK_WALL, BackgroundFlag::Set);
+                            tcod.con.set_char_background(
+                                x, y, COLOR_DARK_WALL, BackgroundFlag::Set);
                         } else {
-                            tcod.con.set_char_background(x, y, COLOR_DARK_GROUND, BackgroundFlag::Set);
+                            tcod.con.set_char_background(
+                                x, y, COLOR_DARK_GROUND, BackgroundFlag::Set);
                         }
                     }
                 } else {
@@ -958,8 +970,13 @@ fn render_all(game: &mut Game, tcod: &mut TcodState) {
     }
 
     // blit the contents of "con" to the root console
-    tcod::console::blit(&mut tcod.con, (0, 0), (MAP_WIDTH, MAP_HEIGHT),
-                        &mut tcod.root, (0, 0), 1.0, 1.0);
+    tcod::console::blit(&mut tcod.con,
+                        (0, 0),
+                        (MAP_WIDTH, MAP_HEIGHT),
+                        &mut tcod.root,
+                        (0, 0),
+                        1.0,
+                        1.0);
 
     // prepare to render the GUI panel
     tcod.panel.set_default_background(colors::BLACK);
@@ -972,7 +989,7 @@ fn render_all(game: &mut Game, tcod: &mut TcodState) {
         y -= msg_height;
         // TODO: this won't print a partial message if it crosses multiple lines. Can we fix that?
         if y < 0 {
-            break
+            break;
         }
         tcod.panel.set_default_foreground(color);
         tcod.panel.print_rect_ex(MSG_X, y, MSG_WIDTH, 0,
@@ -982,8 +999,15 @@ fn render_all(game: &mut Game, tcod: &mut TcodState) {
     // show the player's stats
     let hp = game.objects[game.player_id].fighter.as_ref().map_or(0, |f| f.hp);
     let max_hp = full_max_hp(game.player_id, game);
-    render_bar(&mut tcod.panel, 1, 1, BAR_WIDTH, "HP", hp, max_hp,
-               colors::LIGHT_RED, colors::DARKER_RED);
+    render_bar(&mut tcod.panel,
+               1,
+               1,
+               BAR_WIDTH,
+               "HP",
+               hp,
+               max_hp,
+               colors::LIGHT_RED,
+               colors::DARKER_RED);
     tcod.panel.print_ex(1, 3, BackgroundFlag::None, TextAlignment::Left,
                         format!("Dungeon level: {}", game.dungeon_level));
 
@@ -993,8 +1017,13 @@ fn render_all(game: &mut Game, tcod: &mut TcodState) {
     tcod.panel.print_ex(1, 0, BackgroundFlag::None, TextAlignment::Left, names);
 
     // blit the contents of `panel` to the root console
-    tcod::console::blit(&mut tcod.panel, (0, 0), (SCREEN_WIDTH, PANEL_HEIGHT),
-                        &mut tcod.root, (0, PANEL_Y), 1.0, 1.0);
+    tcod::console::blit(&mut tcod.panel,
+                        (0, 0),
+                        (SCREEN_WIDTH, PANEL_HEIGHT),
+                        &mut tcod.root,
+                        (0, PANEL_Y),
+                        1.0,
+                        1.0);
 }
 
 fn player_move_or_attack(dx: i32, dy: i32, game: &mut Game) {
@@ -1021,8 +1050,12 @@ fn player_move_or_attack(dx: i32, dy: i32, game: &mut Game) {
     }
 }
 
-fn menu<T: AsRef<str>>(root: &mut Root, con: &mut Offscreen, header: &str,
-                       options: &[T], width: i32) -> Option<usize> {
+fn menu<T: AsRef<str>>(root: &mut Root,
+                       con: &mut Offscreen,
+                       header: &str,
+                       options: &[T],
+                       width: i32)
+                       -> Option<usize> {
     assert!(options.len() <= 26, "Cannot have a menu with more than 26 options.");
 
     // calculate total height for the header (after auto-wrap) and one line per option
@@ -1162,7 +1195,8 @@ fn handle_keys(game: &mut Game, tcod: &mut TcodState, event: Option<Event>) -> P
             Printable('i') => {
                 // show the inventory; if an item is selected, use it
                 let inventory_index = inventory_menu(
-                    game, tcod, "Press the key next to an item to use it, or any other to cancel.\n");
+                    game, tcod,
+                    "Press the key next to an item to use it, or any other to cancel.\n");
                 if let Some(inventory_index) = inventory_index {
                     let item_id = game.inventory[inventory_index];
                     use_item(item_id, inventory_index, game, tcod);
@@ -1171,7 +1205,8 @@ fn handle_keys(game: &mut Game, tcod: &mut TcodState, event: Option<Event>) -> P
             Printable('d') => {
                 // show the inventory; if an item is selected, drop it
                 let inventory_index = inventory_menu(
-                    game, tcod, "Press the key next to an item to drop it, or any other to cancel.\n");
+                    game, tcod,
+                    "Press the key next to an item to drop it, or any other to cancel.\n");
                 if let Some(inventory_index) = inventory_index {
                     let item_id = game.inventory[inventory_index];
                     drop_item(item_id, inventory_index, game);
@@ -1186,12 +1221,15 @@ fn handle_keys(game: &mut Game, tcod: &mut TcodState, event: Option<Event>) -> P
                 let max_hp = full_max_hp(game.player_id, game);
                 if let Some(fighter) = game.objects[game.player_id].fighter.as_ref() {
                     let msg = format!(
-                        "Character information\n\nLevel: {}\nExperience: {}\nExperience to level up: {}\n\nMaximum HP: {}\nAttack: {}\nDefense: {}",
+                        "Character information\n\nLevel: {}\nExperience: {}\nExperience to level \
+                         up: {}\n\nMaximum HP: {}\nAttack: {}\nDefense: {}",
                         level, fighter.xp, level_up_xp, max_hp, power, defense);
                     msgbox(&mut tcod.root, &mut tcod.con, &msg, CHARACTER_SCREEN_WIDTH);
                 }
             }
-            // TODO: handle the keyboard better here!! `Special(Number3)` is a hack to make sure I can descend on my silly keyboard layout!
+            // TODO: handle the keyboard better here!!
+            // `Special(Number3)` is a hack to make sure I can descend
+            // on my silly keyboard layout!
             Printable('<') | Special(tcod::input::KeyCode::Number3) => {
                 // go down stairs, if the player is on them
                 if game.objects[game.stairs_id].pos() == game.objects[game.player_id].pos() {
@@ -1222,7 +1260,8 @@ fn check_level_up(game: &mut Game, tcod: &mut TcodState) {
         game.messages.add(msg, colors::YELLOW);
 
         loop {  // keep asking until a choice is made
-            let choice = menu(&mut tcod.root, &mut tcod.con,
+            let choice = menu(&mut tcod.root,
+                              &mut tcod.con,
                               "Level up! Choose a stat to raise:\n",
                               &[format!("Constitution (+20 HP, from {})", max_hp),
                                 format!("Strength (+1 attack, from {})", power),
@@ -1292,7 +1331,10 @@ fn monster_death(id: usize, game: &mut Game) {
 
 /// return the position of a tile left-clicked in player's FOV (optionally in a
 /// range), or (None,None) if right-clicked.
-fn target_tile(game: &mut Game, tcod: &mut TcodState, max_range: Option<f32>) -> Option<(i32, i32)> {
+fn target_tile(game: &mut Game,
+               tcod: &mut TcodState,
+               max_range: Option<f32>)
+               -> Option<(i32, i32)> {
     use tcod::input::KeyCode::Escape;
     loop {
         // render the screen. this erases the inventory and shows the names of
@@ -1350,7 +1392,8 @@ fn closest_monster(max_range: i32, game: &Game, tcod: &TcodState) -> Option<usiz
 
     // TODO: this could be done more succinctly with Iter::min_by but that's unstable now.
     for (id, object) in game.objects.iter().enumerate() {
-        if id != game.player_id && object.fighter.is_some() && tcod.fov_map.is_in_fov(object.x, object.y) {
+        if id != game.player_id && object.fighter.is_some() &&
+           tcod.fov_map.is_in_fov(object.x, object.y) {
             // calculate distance between this object and the player
             let dist = game.objects[game.player_id].distance_to(object);
             if dist < closest_dist {  // it's closer, so remember it
@@ -1386,8 +1429,8 @@ fn cast_lightning(game: &mut Game, tcod: &mut TcodState) -> UseResult {
     let monster_id = closest_monster(LIGHTNING_RANGE, game, tcod);
     if let Some(monster_id) = monster_id {
         // zap it!
-        let msg = format!("A lightning bolt strikes the {} with a loud thunder!
- The damage is {} hit points.",
+        let msg = format!("A lightning bolt strikes the {} with a loud thunder! \
+                           The damage is {} hit points.",
                           game.objects[monster_id].name, LIGHTNING_DAMAGE);
         game.messages.add(msg, colors::LIGHT_BLUE);
         take_damage(monster_id, LIGHTNING_DAMAGE, game);
@@ -1430,7 +1473,8 @@ fn cast_confuse(game: &mut Game, tcod: &mut TcodState) -> UseResult {
     game.messages.add("Left-click an enemy to confuse it, or right-click to cancel.",
                  colors::LIGHT_CYAN);
     target_monster(game, tcod, Some(CONFUSE_RANGE as f32)).map_or(UseResult::Cancelled, |id| {
-        // replace the monster's AI with a "confused" one; after some turns it will restore the old AI
+        // replace the monster's AI with a "confused" one; after some
+        // turns it will restore the old AI
         {
             let mut monster = &mut game.objects[id];
             let old_ai = monster.ai.take();
@@ -1451,7 +1495,9 @@ fn cast_confuse(game: &mut Game, tcod: &mut TcodState) -> UseResult {
 // This is a no-op function for items that have any effect by
 // themselves. E.g. Equimpent is also an item, but its use action is
 // special-cased.
-fn cast_nothing(_game: &mut Game, _tcod: &mut TcodState) -> UseResult { UseResult::Used }
+fn cast_nothing(_game: &mut Game, _tcod: &mut TcodState) -> UseResult {
+    UseResult::Used
+}
 
 
 struct TcodState {
@@ -1470,7 +1516,6 @@ impl TcodState {
             panel: panel,
             fov_map: FovMap::new(MAP_WIDTH, MAP_HEIGHT),
             mouse: Default::default(),
-
         }
     }
 }
@@ -1482,9 +1527,7 @@ struct Messages {
 
 impl Messages {
     fn new() -> Self {
-        Messages {
-            messages: vec![],
-        }
+        Messages { messages: vec![] }
     }
 
     fn add<T: Into<String>>(&mut self, message: T, color: Color) {
@@ -1531,10 +1574,13 @@ impl Game {
         let dungeon_level = 1;
 
         // Generate map (at this point it's not drawn to the screen)
-        let mut game = Game{
+        let mut game = Game {
             state: GameState::Playing,
             dungeon_level: dungeon_level,
-            map: make_map(&mut player_id, &mut stairs_id, &mut objects, &mut inventory,
+            map: make_map(&mut player_id,
+                          &mut stairs_id,
+                          &mut objects,
+                          &mut inventory,
                           dungeon_level),
             fov_recompute: false,
             // create the list of game messages and their colors, starts empty
@@ -1547,11 +1593,11 @@ impl Game {
         game.initialize_fov(tcod);
         // a warm welcoming message!
         game.messages.add("Welcome stranger! Prepare to perish in the Tombs of the Ancient Kings.",
-                     colors::RED);
+                          colors::RED);
 
         // initial equipment: a dagger
         let mut dagger = Object::new(0, 0, '-', "dagger", colors::SKY, false);
-        let equipment_component = Equipment{
+        let equipment_component = Equipment {
             slot: "right hand".into(),
             is_equipped: false,
             power_bonus: 2,
@@ -1570,15 +1616,17 @@ impl Game {
 
     fn next_level(&mut self, tcod: &mut TcodState) {
         // advance to the next level
-        self.messages.add("You take a moment to rest, and recover your strength.", colors::LIGHT_VIOLET);
+        self.messages.add(
+            "You take a moment to rest, and recover your strength.", colors::LIGHT_VIOLET);
         let max_hp = full_max_hp(self.player_id, self);
         self.objects[self.player_id].fighter.as_mut().map(|f| {
             let heal_hp = max_hp / 2;
             f.heal(heal_hp);
         });  // heal the player by 50%
 
-        self.messages.add("After a rare moment of peace, you descend deeper into the heart of the dungeon...",
-                     colors::RED);
+        self.messages.add(
+            "After a rare moment of peace, you descend deeper into the heart of the dungeon...",
+            colors::RED);
         self.dungeon_level += 1;
         // create a fresh new level!
         self.map = make_map(&mut self.player_id, &mut self.stairs_id,
@@ -1649,7 +1697,7 @@ impl Game {
             player_action = handle_keys(self, tcod, event);
             if player_action == PlayerAction::Exit {
                 self.save_game();
-                break
+                break;
             }
 
             // let monsters take their turn
