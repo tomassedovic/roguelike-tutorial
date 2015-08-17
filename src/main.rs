@@ -227,14 +227,14 @@ fn attack(attacker_id: usize, target_id: usize, game: &mut Game) {
     let damage = full_power(attacker_id, game) - full_defense(target_id, game);
     if damage > 0 {
         // make the target take some damage
-        let msg = format!("{} attacks {} for {} hit points.",
-                             game.objects[attacker_id].name, game.objects[target_id].name, damage);
-        game.log.add(msg, colors::WHITE);
+        game.log.add(format!("{} attacks {} for {} hit points.",
+                             game.objects[attacker_id].name, game.objects[target_id].name, damage),
+                     colors::WHITE);
         take_damage(target_id, damage, game);
     } else {
-        let msg = format!("{} attacks {} but it has no effect!",
-                             game.objects[attacker_id].name, game.objects[target_id].name);
-        game.log.add(msg, colors::WHITE);
+        game.log.add(format!("{} attacks {} but it has no effect!",
+                             game.objects[attacker_id].name, game.objects[target_id].name),
+                     colors::WHITE);
     }
 }
 
@@ -242,12 +242,11 @@ fn attack(attacker_id: usize, target_id: usize, game: &mut Game) {
 fn pick_item_up(id: usize, game: &mut Game) {
     // add to the player's inventory and remove from the map
     if game.inventory.len() >= 26 {
-        let msg = format!("Your inventory is full, cannot pick up {}.", game.objects[id].name);
-        game.log.add(msg, colors::RED);
+        game.log.add(format!("Your inventory is full, cannot pick up {}.", game.objects[id].name),
+                     colors::RED);
     } else {
         game.objects[id].on_ground = false;
-        let msg = format!("You picked up a {}!", game.objects[id].name);
-        game.log.add(msg, colors::GREEN);
+        game.log.add(format!("You picked up a {}!", game.objects[id].name), colors::GREEN);
         game.inventory.push(id);
 
         // special case: automatically equip, if the corresponding equipment slot is unused
@@ -278,8 +277,7 @@ fn use_item(id: usize, inventory_index: usize, game: &mut Game, tcod: &mut TcodS
             }
         };
     } else {
-        let msg = format!("The {} cannot be used.", game.objects[id].name);
-        game.log.add(msg, colors::WHITE);
+        game.log.add(format!("The {} cannot be used.", game.objects[id].name), colors::WHITE);
     }
 }
 
@@ -291,8 +289,7 @@ fn drop_item(id: usize, inventory_index: usize, game: &mut Game) {
     let (px, py) = game.objects[game.player_id].pos();
     game.objects[id].set_pos(px, py);
     game.objects[id].on_ground = true;
-    let msg = format!("You dropped a {}.", game.objects[id].name);
-    game.log.add(msg, colors::YELLOW);
+    game.log.add(format!("You dropped a {}.", game.objects[id].name), colors::YELLOW);
 }
 
 fn toggle_equip(id: usize, game: &mut Game) {
@@ -314,8 +311,8 @@ fn equip(id: usize, game: &mut Game) {
     // equip object and show a message about it
     if let Some(mut equipment) = game.objects[id].equipment.take() {
         equipment.is_equipped = true;
-        let msg = format!("Equipped {} on {}.", game.objects[id].name, equipment.slot);
-        game.log.add(msg, colors::LIGHT_GREEN);
+        game.log.add(format!("Equipped {} on {}.", game.objects[id].name, equipment.slot),
+                     colors::LIGHT_GREEN);
 
         game.objects[id].equipment = Some(equipment);
     }
@@ -332,8 +329,8 @@ fn _equip2(id: usize, game: &mut Game) {
         equipment.is_equipped = true;
         equipment.slot.clone()  // TODO: if we have slot as enum, this will be simpler
     }).map(|slot| {
-        let msg = format!("Equipped {} on {}.", game.objects[id].name, slot);
-        game.log.add(msg, colors::LIGHT_GREEN);
+        game.log.add(format!("Equipped {} on {}.", game.objects[id].name, slot),
+                     colors::LIGHT_GREEN);
     });
 }
 
@@ -342,8 +339,8 @@ fn dequip(id: usize, game: &mut Game) {
     if let Some(mut equipment) = game.objects[id].equipment.take() {
         if equipment.is_equipped {
             equipment.is_equipped = false;
-            let msg = format!("Dequipped {} from {}.", game.objects[id].name, equipment.slot);
-            game.log.add(msg, colors::LIGHT_YELLOW);
+            game.log.add(format!("Dequipped {} from {}.", game.objects[id].name, equipment.slot),
+                         colors::LIGHT_YELLOW);
         }
 
         game.objects[id].equipment = Some(equipment);
@@ -447,9 +444,9 @@ impl MonsterAI {
                     self.ai_type = Confused{num_turns: num_turns - 1};
                     None
                 } else {  // restore the previous AI (this one will be deleted)
-                    let msg = format!("The {} is no longer confused!",
-                                         game.objects[self.monster_id].name);
-                    game.log.add(msg, colors::RED);
+                    game.log.add(format!("The {} is no longer confused!",
+                                         game.objects[self.monster_id].name),
+                                 colors::RED);
                     self.old_ai.take().map(|ai| *ai)
                 }
             }
@@ -1255,9 +1252,9 @@ fn check_level_up(game: &mut Game, tcod: &mut TcodState) {
         // it is! level up
         game.objects[game.player_id].level += 1;
         fighter.xp -= level_up_xp;
-        let msg = format!("Your battle skills grow stronger! You reached level {}!",
-                          game.objects[game.player_id].level);
-        game.log.add(msg, colors::YELLOW);
+        game.log.add(format!("Your battle skills grow stronger! You reached level {}!",
+                             game.objects[game.player_id].level),
+                     colors::YELLOW);
 
         loop {  // keep asking until a choice is made
             let choice = menu(&mut tcod.root,
@@ -1316,10 +1313,10 @@ fn player_death(id: usize, game: &mut Game) {
 fn monster_death(id: usize, game: &mut Game) {
     // transform it into a nasty corpse! it doesn't block, can't be
     // attacked and doesn't move
-    let msg = format!("{} is dead! You gain {} experience points.",
-                      game.objects[id].name,
-                      game.objects[id].fighter.as_ref().unwrap().xp);
-    game.log.add(msg, colors::ORANGE);
+    game.log.add(format!("{} is dead! You gain {} experience points.",
+                         game.objects[id].name,
+                         game.objects[id].fighter.as_ref().unwrap().xp),
+                 colors::ORANGE);
     let monster = &mut game.objects[id];
     monster.char = '%';
     monster.color = colors::DARK_RED;
@@ -1429,10 +1426,10 @@ fn cast_lightning(game: &mut Game, tcod: &mut TcodState) -> UseResult {
     let monster_id = closest_monster(LIGHTNING_RANGE, game, tcod);
     if let Some(monster_id) = monster_id {
         // zap it!
-        let msg = format!("A lightning bolt strikes the {} with a loud thunder! \
-                           The damage is {} hit points.",
-                          game.objects[monster_id].name, LIGHTNING_DAMAGE);
-        game.log.add(msg, colors::LIGHT_BLUE);
+        game.log.add(format!("A lightning bolt strikes the {} with a loud thunder! \
+                              The damage is {} hit points.",
+                             game.objects[monster_id].name, LIGHTNING_DAMAGE),
+                     colors::LIGHT_BLUE);
         take_damage(monster_id, LIGHTNING_DAMAGE, game);
         UseResult::Used
     } else {  // no enemy found within maximum range
@@ -1460,9 +1457,9 @@ fn cast_fireball(game: &mut Game, tcod: &mut TcodState) -> UseResult {
         .map(|(id, _obj)| id)
         .collect();
     for &id in &burned_objects {
-        let msg = format!("The {} gets burned for {} hit points.",
-                          game.objects[id].name, FIREBALL_DAMAGE);
-        game.log.add(msg, colors::ORANGE);
+        game.log.add(format!("The {} gets burned for {} hit points.",
+                             game.objects[id].name, FIREBALL_DAMAGE),
+                     colors::ORANGE);
         take_damage(id, FIREBALL_DAMAGE, game);
     }
     UseResult::Used
@@ -1485,9 +1482,9 @@ fn cast_confuse(game: &mut Game, tcod: &mut TcodState) -> UseResult {
             };
             monster.ai = Some(confuse_ai);
         }
-        let msg = format!("The eyes of the {} look vacant, as he starts to stumble around!",
-                          game.objects[id].name);
-        game.log.add(msg, colors::GREEN);
+        game.log.add(format!("The eyes of the {} look vacant, as he starts to stumble around!",
+                             game.objects[id].name),
+                     colors::GREEN);
         UseResult::Used
     })
 }
