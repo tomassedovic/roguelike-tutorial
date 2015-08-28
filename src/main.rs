@@ -11,8 +11,7 @@ use std::fs::File;
 use std::io::{Read, Write};
 use tcod::console::{Root, Offscreen, Console, FontLayout, FontType, BackgroundFlag, TextAlignment};
 use tcod::colors::{self, Color};
-use tcod::input::{self, Event, MouseState};
-use tcod::input::Key::{Special, Printable};
+use tcod::input::{self, Key, Event, Mouse};
 use tcod::map::Map as FovMap;
 use tcod::map::FovAlgorithm;
 use rand::Rng;
@@ -902,7 +901,7 @@ fn render_bar(panel: &mut Offscreen,
                    &format!("{}: {}/{}", name, value, maximum));
 }
 
-fn get_names_under_mouse(mouse: MouseState, objects: &[Object], fov_map: &FovMap) -> String {
+fn get_names_under_mouse(mouse: Mouse, objects: &[Object], fov_map: &FovMap) -> String {
     // return a string with the names of all objects under the mouse
     let (x, y) = (mouse.cx as i32, mouse.cy as i32);
 
@@ -1081,9 +1080,9 @@ fn menu<T: AsRef<str>>(root: &mut Root,
 
     // present the root console to the player and wait for a key-press
     root.flush();
-    let keystate = root.wait_for_keypress(true);
-    if let Printable(c) = keystate.key {
-        let index = c.to_ascii_uppercase() as usize - 'A' as usize;
+    let key = root.wait_for_keypress(true);
+    if key.printable.is_alphabetic() {
+        let index = key.printable.to_ascii_uppercase() as usize - 'A' as usize;
         if index < options.len() {
             Some(index)
         } else {
@@ -1129,57 +1128,57 @@ fn msgbox(root: &mut Root, con: &mut Offscreen, text: &str, width: i32) {
 
 fn handle_keys(game: &mut Game, tcod: &mut TcodState, event: Option<Event>) -> PlayerAction {
     use tcod::input::KeyCode::*;
-    let keypress = if let Some(Event::Key(keystate)) = event {
-        keystate
+    let key = if let Some(Event::Key(key)) = event {
+        key
     } else {
         return PlayerAction::DidntTakeTurn;
     };
     // Alt+Enter: toggle fullscreen
-    if keypress.key == Special(Enter) && keypress.left_alt {
+    if let Key { code: Enter, alt: true, .. } = key {
         let fullscreen = !tcod.root.is_fullscreen();
         tcod.root.set_fullscreen(fullscreen);
-    } else if keypress.key == Special(Escape) {
+    } else if key.code == Escape {
         return PlayerAction::Exit;  // exit game
     }
     if game.state == GameState::Playing {
-        match keypress.key {
+        match key {
             // movement keys
-            Special(Up) | Special(NumPad8) => {
+            Key { code: Up, .. } | Key { code: NumPad8, .. } => {
                 player_move_or_attack(0, -1, game);
                 return PlayerAction::None;
             }
-            Special(Down) | Special(NumPad2) => {
+            Key { code: Down, .. } | Key { code: NumPad2, .. } => {
                 player_move_or_attack(0, 1, game);
                 return PlayerAction::None;
             }
-            Special(Left) | Special(NumPad4) => {
+            Key { code: Left, .. } | Key { code: NumPad4, .. } => {
                 player_move_or_attack(-1, 0, game);
                 return PlayerAction::None;
             }
-            Special(Right) | Special(NumPad6) => {
+            Key { code: Right, .. } | Key { code: NumPad6, .. } => {
                 player_move_or_attack(1, 0, game);
                 return PlayerAction::None;
             }
-            Special(Home) | Special(NumPad7) => {
+            Key { code: Home, .. } | Key { code: NumPad7, .. } => {
                 player_move_or_attack(-1, -1, game);
                 return PlayerAction::None;
             }
-            Special(PageUp) | Special(NumPad9) => {
+            Key { code: PageUp, .. } | Key { code: NumPad9, .. } => {
                 player_move_or_attack(1, -1, game);
                 return PlayerAction::None;
             }
-            Special(End) | Special(NumPad1) => {
+            Key { code: End, .. } | Key { code: NumPad1, .. } => {
                 player_move_or_attack(-1, 1, game);
                 return PlayerAction::None;
             }
-            Special(PageDown) | Special(NumPad3) => {
+            Key { code: PageDown, .. } | Key { code: NumPad3, .. } => {
                 player_move_or_attack(1, 1, game);
                 return PlayerAction::None;
             }
-            Special(NumPad5) => {
+            Key { code: NumPad5, .. } => {
                 return PlayerAction::None;  // do nothing ie wait for the monster to come to you
             }
-            Printable('g') => {
+            Key { printable: 'g', .. } => {
                 let (px, py) = game.objects[game.player_id].pos();
                 let item_id = game.objects.iter().position(|object| {
                     object.pos() == (px, py) && object.item.is_some() && object.on_ground
@@ -1189,7 +1188,7 @@ fn handle_keys(game: &mut Game, tcod: &mut TcodState, event: Option<Event>) -> P
                     pick_item_up(item_id, game);
                 }
             }
-            Printable('i') => {
+            Key { printable: 'i', .. } => {
                 // show the inventory; if an item is selected, use it
                 let inventory_index = inventory_menu(
                     game, tcod,
@@ -1199,7 +1198,7 @@ fn handle_keys(game: &mut Game, tcod: &mut TcodState, event: Option<Event>) -> P
                     use_item(item_id, inventory_index, game, tcod);
                 }
             }
-            Printable('d') => {
+            Key { printable: 'd', .. } => {
                 // show the inventory; if an item is selected, drop it
                 let inventory_index = inventory_menu(
                     game, tcod,
@@ -1209,7 +1208,7 @@ fn handle_keys(game: &mut Game, tcod: &mut TcodState, event: Option<Event>) -> P
                     drop_item(item_id, inventory_index, game);
                 }
             }
-            Printable('c') => {
+            Key { printable: 'c', .. } => {
                 // show character information
                 let level = game.objects[game.player_id].level;
                 let level_up_xp = LEVEL_UP_BASE + level * LEVEL_UP_FACTOR;
@@ -1224,10 +1223,7 @@ fn handle_keys(game: &mut Game, tcod: &mut TcodState, event: Option<Event>) -> P
                     msgbox(&mut tcod.root, &mut tcod.con, &msg, CHARACTER_SCREEN_WIDTH);
                 }
             }
-            // TODO: handle the keyboard better here!!
-            // `Special(Number3)` is a hack to make sure I can descend
-            // on my silly keyboard layout!
-            Printable('<') | Special(tcod::input::KeyCode::Number3) => {
+            Key { printable: '<', .. } => {
                 // go down stairs, if the player is on them
                 if game.objects[game.stairs_id].pos() == game.objects[game.player_id].pos() {
                     game.next_level(tcod);
@@ -1341,7 +1337,7 @@ fn target_tile(game: &mut Game,
         let mut key = None;
         match event {
             Some(Event::Mouse(m)) => tcod.mouse = m,
-            Some(Event::Key(k)) => key = Some(k.key),
+            Some(Event::Key(k)) => key = Some(k),
             None => {}
         }
         render_all(game, tcod);
@@ -1357,7 +1353,7 @@ fn target_tile(game: &mut Game,
             return Some((x, y))
         }
 
-        let escape = key.map_or(false, |k| k == Special(Escape));
+        let escape = key.map_or(false, |k| k.code == Escape);
         if tcod.mouse.rbutton_pressed || escape {
             return None  // cancel if the player right-clicked or pressed Escape
         }
@@ -1502,7 +1498,7 @@ struct TcodState {
     con: Offscreen,
     panel: Offscreen,
     fov_map: FovMap,
-    mouse: MouseState,
+    mouse: Mouse,
 }
 
 impl TcodState {

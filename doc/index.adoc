@@ -47,7 +47,7 @@ what else are you gonna do. opengl?
   recommend is: go through this, absorb the concepts but then start
   from scratch when actually writing your game. And think about how to
   make it unique.
-* 
+*
 
 == Start the tutorial
 
