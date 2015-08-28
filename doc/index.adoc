@@ -5,6 +5,10 @@
 
 A port of the {origtutorial}[Complete Roguelike Tutorial, using python+libtcod].
 
+CAUTION: This text is so preliminary, it's not even a _draft_ at this
+point. More like asking a five-year-old if they want to play with toy
+soldiers.
+
 == Short introduction
 
 === Welcome!
