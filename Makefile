@@ -1,7 +1,10 @@
+all: clean docs
+
 docs:
-	bundle exec asciidoctor -d article doc/*.adoc
+	@mkdir -p target/tutorial
+	bundle exec asciidoctor --doctype article --destination-dir target/tutorial doc/*.adoc
 
 clean:
-	rm doc/*.html
+	rm target/tutorial/*.html
 
-.PHONY: docs clean
+.PHONY: all docs clean
