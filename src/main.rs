@@ -9,7 +9,7 @@ use std::ascii::AsciiExt;
 use std::cmp::{self, Ordering};
 use std::fs::File;
 use std::io::{Read, Write};
-use tcod::console::{Root, Offscreen, Console, FontLayout, FontType, BackgroundFlag, TextAlignment};
+use tcod::console::*;
 use tcod::colors::{self, Color};
 use tcod::input::{self, Key, Event, Mouse};
 use tcod::map::Map as FovMap;
