@@ -1046,86 +1046,6 @@ fn player_move_or_attack(dx: i32, dy: i32, game: &mut Game) {
     }
 }
 
-fn menu<T: AsRef<str>>(root: &mut Root,
-                       con: &mut Offscreen,
-                       header: &str,
-                       options: &[T],
-                       width: i32)
-                       -> Option<usize> {
-    assert!(options.len() <= 26, "Cannot have a menu with more than 26 options.");
-
-    // calculate total height for the header (after auto-wrap) and one line per option
-    let header_height = con.get_height_rect(0, 0, width, SCREEN_HEIGHT, header);
-    let height = options.len() as i32 + header_height;
-
-    // create an off-screen console that represents the menu's window
-    let mut window = Offscreen::new(width, height);
-
-    // print the header, with auto-wrap
-    window.set_default_foreground(colors::WHITE);
-    window.print_rect_ex(0, 0, width, height, BackgroundFlag::None, TextAlignment::Left, header);
-
-    // print all the options
-    let first_letter = 'A' as u8;
-    for (index, option_text) in options.iter().enumerate() {
-        let text = format!("({}) {}", (first_letter + index as u8) as char, option_text.as_ref());
-        window.print_ex(0, header_height + index as i32,
-                        BackgroundFlag::None, TextAlignment::Left, text);
-    }
-
-    // blit the contents of "window" to the root console
-    let x = SCREEN_WIDTH / 2 - width / 2;
-    let y = SCREEN_HEIGHT / 2 - height / 2;
-    tcod::console::blit(&mut window, (0, 0), (width, height), root, (x, y), 1.0, 0.7);
-
-    // present the root console to the player and wait for a key-press
-    root.flush();
-    let key = root.wait_for_keypress(true);
-    if key.printable.is_alphabetic() {
-        let index = key.printable.to_ascii_uppercase() as usize - 'A' as usize;
-        if index < options.len() {
-            Some(index)
-        } else {
-            None
-        }
-    } else {
-        None
-    }
-}
-
-fn inventory_menu(game: &mut Game, tcod: &mut TcodState, header: &str) -> Option<usize> {
-    // how a menu with each item of the inventory as an option
-    let options = if game.inventory.len() == 0 {
-        vec!["Inventory is empty.".into()]
-    } else {
-        game.inventory.iter().map(|&id| {
-            // show additional information, in case it's equipped
-            let text = match game.objects[id].equipment.as_ref() {
-                Some(equipment) if equipment.is_equipped => {
-                    format!("{} (on {})", game.objects[id].name, equipment.slot)
-                }
-                _ => {
-                    game.objects[id].name.clone()
-                }
-            };
-            text
-        }).collect()
-    };
-    let inventory_index = menu(&mut tcod.root, &mut tcod.con, header, &options, INVENTORY_WIDTH);
-
-    // if an item was chosen, return it
-    if game.inventory.len() > 0 {
-        inventory_index
-    } else {
-        None
-    }
-}
-
-fn msgbox(root: &mut Root, con: &mut Offscreen, text: &str, width: i32) {
-    let options: &[&str; 0] = &[];  // Need to annotate the type here else Rust gets confused :-(
-    menu(root, con, text, options, width);  // use menu() as a sort of "message_box"
-}
-
 fn handle_keys(game: &mut Game, tcod: &mut TcodState, event: Option<Event>) -> PlayerAction {
     use tcod::input::KeyCode::*;
     let key = if let Some(Event::Key(key)) = event {
@@ -1190,8 +1110,8 @@ fn handle_keys(game: &mut Game, tcod: &mut TcodState, event: Option<Event>) -> P
             }
             Key { printable: 'i', .. } => {
                 // show the inventory; if an item is selected, use it
-                let inventory_index = inventory_menu(
-                    game, tcod,
+                let inventory_index = tcod.inventory_menu(
+                    game,
                     "Press the key next to an item to use it, or any other to cancel.\n");
                 if let Some(inventory_index) = inventory_index {
                     let item_id = game.inventory[inventory_index];
@@ -1200,8 +1120,8 @@ fn handle_keys(game: &mut Game, tcod: &mut TcodState, event: Option<Event>) -> P
             }
             Key { printable: 'd', .. } => {
                 // show the inventory; if an item is selected, drop it
-                let inventory_index = inventory_menu(
-                    game, tcod,
+                let inventory_index = tcod.inventory_menu(
+                    game,
                     "Press the key next to an item to drop it, or any other to cancel.\n");
                 if let Some(inventory_index) = inventory_index {
                     let item_id = game.inventory[inventory_index];
@@ -1220,7 +1140,7 @@ fn handle_keys(game: &mut Game, tcod: &mut TcodState, event: Option<Event>) -> P
                         "Character information\n\nLevel: {}\nExperience: {}\nExperience to level \
                          up: {}\n\nMaximum HP: {}\nAttack: {}\nDefense: {}",
                         level, fighter.xp, level_up_xp, max_hp, power, defense);
-                    msgbox(&mut tcod.root, &mut tcod.con, &msg, CHARACTER_SCREEN_WIDTH);
+                    tcod.msgbox(&msg, CHARACTER_SCREEN_WIDTH);
                 }
             }
             Key { printable: '<', .. } => {
@@ -1253,13 +1173,11 @@ fn check_level_up(game: &mut Game, tcod: &mut TcodState) {
                      colors::YELLOW);
 
         loop {  // keep asking until a choice is made
-            let choice = menu(&mut tcod.root,
-                              &mut tcod.con,
-                              "Level up! Choose a stat to raise:\n",
-                              &[format!("Constitution (+20 HP, from {})", max_hp),
-                                format!("Strength (+1 attack, from {})", power),
-                                format!("Agility (+1 defense, from {})", defense)],
-                              LEVEL_SCREEN_WIDTH);
+            let choice = tcod.menu("Level up! Choose a stat to raise:\n",
+                                   &[format!("Constitution (+20 HP, from {})", max_hp),
+                                     format!("Strength (+1 attack, from {})", power),
+                                     format!("Agility (+1 defense, from {})", defense)],
+                                   LEVEL_SCREEN_WIDTH);
             match choice {
                 Some(0) => {
                     fighter.base_max_hp += 20;
@@ -1511,6 +1429,81 @@ impl TcodState {
             mouse: Default::default(),
         }
     }
+
+    fn menu<T: AsRef<str>>(&mut self, header: &str, options: &[T], width: i32) -> Option<usize> {
+        assert!(options.len() <= 26, "Cannot have a menu with more than 26 options.");
+
+        // calculate total height for the header (after auto-wrap) and one line per option
+        let header_height = self.con.get_height_rect(0, 0, width, SCREEN_HEIGHT, header);
+        let height = options.len() as i32 + header_height;
+
+        // create an off-screen console that represents the menu's window
+        let mut window = Offscreen::new(width, height);
+
+        // print the header, with auto-wrap
+        window.set_default_foreground(colors::WHITE);
+        window.print_rect_ex(0, 0, width, height, BackgroundFlag::None, TextAlignment::Left, header);
+
+        // print all the options
+        let first_letter = 'A' as u8;
+        for (index, option_text) in options.iter().enumerate() {
+            let text = format!("({}) {}", (first_letter + index as u8) as char, option_text.as_ref());
+            window.print_ex(0, header_height + index as i32,
+                            BackgroundFlag::None, TextAlignment::Left, text);
+        }
+
+        // blit the contents of "window" to the root console
+        let x = SCREEN_WIDTH / 2 - width / 2;
+        let y = SCREEN_HEIGHT / 2 - height / 2;
+        tcod::console::blit(&mut window, (0, 0), (width, height), &mut self.root, (x, y), 1.0, 0.7);
+
+        // present the root console to the player and wait for a key-press
+        self.root.flush();
+        let key = self.root.wait_for_keypress(true);
+        if key.printable.is_alphabetic() {
+            let index = key.printable.to_ascii_uppercase() as usize - 'A' as usize;
+            if index < options.len() {
+                Some(index)
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    }
+
+    fn inventory_menu(&mut self, game: &mut Game, header: &str) -> Option<usize> {
+        // how a menu with each item of the inventory as an option
+        let options = if game.inventory.len() == 0 {
+            vec!["Inventory is empty.".into()]
+        } else {
+            game.inventory.iter().map(|&id| {
+                // show additional information, in case it's equipped
+                let text = match game.objects[id].equipment.as_ref() {
+                    Some(equipment) if equipment.is_equipped => {
+                        format!("{} (on {})", game.objects[id].name, equipment.slot)
+                    }
+                    _ => {
+                        game.objects[id].name.clone()
+                    }
+                };
+                text
+            }).collect()
+        };
+        let inventory_index = self.menu(header, &options, INVENTORY_WIDTH);
+
+        // if an item was chosen, return it
+        if game.inventory.len() > 0 {
+            inventory_index
+        } else {
+            None
+        }
+    }
+
+    fn msgbox(&mut self, text: &str, width: i32) {
+        let options: &[&str; 0] = &[];  // Need to annotate the type here else Rust gets confused :-(
+        self.menu(text, options, width);  // use menu() as a sort of "message_box"
+    }
 }
 
 #[derive(RustcEncodable, RustcDecodable)]
@@ -1714,7 +1707,7 @@ fn main_menu(root: Root, con: Offscreen, panel: Offscreen) {
 
         // show options and wait for the player's choice
         let choices = &["Play a new game", "Continue last game", "Quit"];
-        let choice = menu(&mut tcod.root, &mut tcod.con, "", choices, 24);
+        let choice = tcod.menu("", choices, 24);
 
         match choice {
             Some(0) => {  // new game
@@ -1727,7 +1720,7 @@ fn main_menu(root: Root, con: Offscreen, panel: Offscreen) {
                         return game.play_game(&mut tcod);
                     }
                     Err(_) => {
-                        msgbox(&mut tcod.root, &mut tcod.con, "\n No saved game to load.\n", 24);
+                        tcod.msgbox("\n No saved game to load.\n", 24);
                     }
                 }
             }
