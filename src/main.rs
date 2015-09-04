@@ -8,7 +8,7 @@ extern crate rustc_serialize;
 use std::ascii::AsciiExt;
 use std::cmp::{self, Ordering};
 use std::fs::File;
-use std::io::{Read, Write};
+use std::io::{Read, Write, Error};
 use tcod::console::*;
 use tcod::colors::{self, Color};
 use tcod::input::{self, Key, Event, Mouse};
@@ -1647,23 +1647,16 @@ impl Game {
         file.write_all(json_save_state.as_bytes()).unwrap();
     }
 
-    fn load_game(tcod: &mut TcodState) -> Result<Self, ()> {
+    fn load_game(tcod: &mut TcodState) -> Result<Self, Error> {
+        use std::io::ErrorKind::InvalidData;
         let mut json_save_state = String::new();
-        let mut file = match File::open("savegame") {
-            Ok(file) => file,
-            Err(_) => return Err(()),
+        let mut file = try!{ File::open("savegame") };
+        try!{ file.read_to_string(&mut json_save_state) };
+        let mut game = try!{
+            json::decode::<Game>(&json_save_state).map_err(|e| Error::new(InvalidData, e))
         };
-        match file.read_to_string(&mut json_save_state) {
-            Ok(_) => {},
-            Err(_) => return Err(()),
-        }
-        match json::decode::<Game>(&json_save_state) {
-            Ok(mut game) => {
-                game.initialize_fov(tcod);
-                Ok(game)
-            }
-            Err(_) => return Err(()),
-        }
+        game.initialize_fov(tcod);
+        Ok(game)
     }
 
     fn play_game(&mut self, tcod: &mut TcodState) {
