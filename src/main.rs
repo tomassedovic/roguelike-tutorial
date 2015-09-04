@@ -734,26 +734,26 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>, level: i32) {
 
     // chance of each monster
     let troll_chance = from_dungeon_level(&[(15, 3), (30, 5), (60, 7)], level);
-    let mut monster_chances = [Weighted {weight: 80, item: MonsterType::Orc},
-                               Weighted {weight: troll_chance, item: MonsterType::Troll}];
-    let monster_choice = WeightedChoice::new(&mut monster_chances);
+    let monster_chances = &mut [Weighted {weight: 80, item: MonsterType::Orc},
+                                Weighted {weight: troll_chance, item: MonsterType::Troll}];
+    let monster_choice = WeightedChoice::new(monster_chances);
 
     // maximum number of items per room
     let max_items = from_dungeon_level(&[(1, 1), (2, 4)], level) as i32;
 
     // chance of each item (by default they have a chance of 0 at level 1, which then goes up)
-    let mut item_chances = [Weighted {weight: 35, item: ItemType::Heal},
-                            Weighted {weight: from_dungeon_level(&[(25, 4)], level),
-                                      item: ItemType::Lighting},
-                            Weighted {weight: from_dungeon_level(&[(25, 6)], level),
-                                      item: ItemType::Fireball},
-                            Weighted {weight: from_dungeon_level(&[(10, 2)], level),
-                                      item: ItemType::Confuse},
-                            Weighted {weight: from_dungeon_level(&[(5, 4)], level),
-                                      item: ItemType::Sword},
-                            Weighted {weight: from_dungeon_level(&[(15, 8)], level),
-                                      item: ItemType::Shield}];
-    let item_choice = WeightedChoice::new(&mut item_chances);
+    let item_chances = &mut [Weighted {weight: 35, item: ItemType::Heal},
+                             Weighted {weight: from_dungeon_level(&[(25, 4)], level),
+                                       item: ItemType::Lighting},
+                             Weighted {weight: from_dungeon_level(&[(25, 6)], level),
+                                       item: ItemType::Fireball},
+                             Weighted {weight: from_dungeon_level(&[(10, 2)], level),
+                                       item: ItemType::Confuse},
+                             Weighted {weight: from_dungeon_level(&[(5, 4)], level),
+                                       item: ItemType::Sword},
+                             Weighted {weight: from_dungeon_level(&[(15, 8)], level),
+                                       item: ItemType::Shield}];
+    let item_choice = WeightedChoice::new(item_chances);
 
     for _ in 0..num_monsters {
         // choose random spot for this monster
