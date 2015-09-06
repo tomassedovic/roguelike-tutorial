@@ -111,7 +111,6 @@ struct Object {
     color: Color,
     blocks: bool,
     always_visible: bool,
-    on_ground: bool,
     level: i32,
     fighter: Option<Fighter>,
     ai: Option<MonsterAI>,
@@ -129,7 +128,6 @@ impl Object {
             color: color,
             blocks: blocks,
             always_visible: false,
-            on_ground: true,
             level: 0,
             fighter: None,
             ai: None,
@@ -244,7 +242,6 @@ fn pick_item_up(id: usize, game: &mut Game) {
         game.log.add(format!("Your inventory is full, cannot pick up {}.", game.objects[id].name),
                      colors::RED);
     } else {
-        game.objects[id].on_ground = false;
         game.log.add(format!("You picked up a {}!", game.objects[id].name), colors::GREEN);
         game.inventory.push(id);
 
@@ -287,7 +284,6 @@ fn drop_item(id: usize, inventory_index: usize, game: &mut Game) {
     game.inventory.swap_remove(inventory_index);
     let (px, py) = game.objects[game.player_id].pos();
     game.objects[id].set_pos(px, py);
-    game.objects[id].on_ground = true;
     game.log.add(format!("You dropped a {}.", game.objects[id].name), colors::YELLOW);
 }
 
@@ -949,7 +945,7 @@ fn render_all(game: &mut Game, tcod: &mut TcodState) {
     }
 
     // Grab all renderable objects
-    let mut render_objects: Vec<_> = game.objects.iter().filter(|o| o.on_ground).collect();
+    let mut render_objects: Vec<_> = game.objects.iter().collect();
     // Put the fighters first, then items, then everything else. This will not
     // affect the order of the original game.objects vector.
     render_objects.sort_by(|o1, o2| {
@@ -1101,7 +1097,7 @@ fn handle_keys(game: &mut Game, tcod: &mut TcodState, event: Option<Event>) -> P
             Key { printable: 'g', .. } => {
                 let (px, py) = game.objects[game.player_id].pos();
                 let item_id = game.objects.iter().position(|object| {
-                    object.pos() == (px, py) && object.item.is_some() && object.on_ground
+                    object.pos() == (px, py) && object.item.is_some()
                 });
                 // pick up an item
                 if let Some(item_id) = item_id {
