@@ -1683,7 +1683,9 @@ impl Game {
             if self.state == GameState::Playing && player_action != PlayerAction::DidntTakeTurn {
                 // We have to use indexes here otherwise we get a double borrow of `objects`
                 // TODO: this will fail if we reorder objects or remove some!!!
-                for id in 0..self.objects.len() {
+                // NOTE: reversing the order lets us remove the
+                // current item. But we're no doing that, soo...
+                for id in (0..self.objects.len()).rev() {
                     let ai = self.objects[id].ai.take();
                     if let Some(mut old_ai) = ai {
                         let new_ai = old_ai.take_turn(self, tcod);
