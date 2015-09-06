@@ -590,10 +590,7 @@ fn make_map(player_id: &mut usize,
                             MAP_HEIGHT as usize];
                        MAP_WIDTH as usize];
 
-    let mut new_objects = vec![];
-    *player_id = new_objects.len();  // new player ID
-    new_objects.push(objects[*player_id].clone());
-    *objects = new_objects;
+    objects.truncate(1);  // Player is the first element, remove everything else
 
     let mut rooms = vec![];
 
