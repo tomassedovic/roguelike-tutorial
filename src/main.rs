@@ -395,6 +395,7 @@ enum MonsterAIType {
 
 #[derive(Clone, Debug, PartialEq, RustcEncodable, RustcDecodable)]
 struct MonsterAI {
+    // TODO: crash, can't rely on stable IDs now
     monster_id: usize,
     old_ai: Option<Box<MonsterAI>>,
     ai_type: MonsterAIType,
@@ -581,7 +582,6 @@ fn range(min: i32, max: i32) -> i32 {
 }
 
 fn make_map(player_id: &mut usize,
-            stairs_id: &mut usize,
             objects: &mut Vec<Object>,
             level: i32)
             -> Map {
@@ -659,7 +659,6 @@ fn make_map(player_id: &mut usize,
     let (last_room_x, last_room_y) = rooms[rooms.len() - 1].center();
     let mut stairs = Object::new(last_room_x, last_room_y, '<', "stairs", colors::WHITE, false);
     stairs.always_visible = true;
-    *stairs_id = objects.len();
     objects.push(stairs);
 
     map
@@ -1114,7 +1113,11 @@ fn handle_keys(game: &mut Game, tcod: &mut TcodState, event: Option<Event>) -> P
             }
             Key { printable: '<', .. } => {
                 // go down stairs, if the player is on them
-                if game.objects[game.stairs_id].pos() == game.objects[game.player_id].pos() {
+                let player_pos = game.objects[game.player_id].pos();
+                let player_stands_on_stairs = game.objects.iter().any(|object| {
+                    object.pos() == player_pos && object.name == "stairs"
+                });
+                if player_stands_on_stairs {
                     game.next_level(tcod);
                 }
             }
@@ -1508,7 +1511,6 @@ struct Game {
     objects: Vec<Object>,
     log: MessageLog,
     player_id: usize,
-    stairs_id: usize,
     inventory: Vec<Object>,
 }
 
@@ -1524,7 +1526,6 @@ impl Game {
 
         let mut objects = vec![player];
         let mut player_id = 0;
-        let mut stairs_id = 0;
         let dungeon_level = 1;
 
         // Generate map (at this point it's not drawn to the screen)
@@ -1532,7 +1533,6 @@ impl Game {
             state: GameState::Playing,
             dungeon_level: dungeon_level,
             map: make_map(&mut player_id,
-                          &mut stairs_id,
                           &mut objects,
                           dungeon_level),
             fov_recompute: false,
@@ -1540,7 +1540,6 @@ impl Game {
             log: MessageLog::new(),
             objects: objects,
             player_id: player_id,
-            stairs_id: stairs_id,
             inventory: vec![],
         };
         game.initialize_fov(tcod);
@@ -1581,8 +1580,7 @@ impl Game {
             colors::RED);
         self.dungeon_level += 1;
         // create a fresh new level!
-        self.map = make_map(&mut self.player_id, &mut self.stairs_id,
-                            &mut self.objects, self.dungeon_level);
+        self.map = make_map(&mut self.player_id, &mut self.objects, self.dungeon_level);
         self.initialize_fov(tcod);
     }
 
