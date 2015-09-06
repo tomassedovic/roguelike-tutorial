@@ -242,74 +242,77 @@ fn pick_item_up(id: usize, game: &mut Game) {
         game.log.add(format!("Your inventory is full, cannot pick up {}.", game.objects[id].name),
                      colors::RED);
     } else {
-        game.log.add(format!("You picked up a {}!", game.objects[id].name), colors::GREEN);
-        game.inventory.push(id);
+        let item = game.objects.swap_remove(id);
+        game.log.add(format!("You picked up a {}!", item.name), colors::GREEN);
+        let inventory_id = game.inventory.len();
+        let equipment_slot = item.equipment.as_ref().map(|e| e.slot.clone());
+        game.inventory.push(item);
 
         // special case: automatically equip, if the corresponding equipment slot is unused
-        let equipment_slot = game.objects[id].equipment.as_ref().map(|e| e.slot.clone());
         if let Some(equipment_slot) = equipment_slot {
-            if get_equipped_in_slot(&equipment_slot, &game.inventory, &game.objects).is_none() {
-                equip(id, game);
+            if get_equipped_in_slot(&equipment_slot, &game.inventory).is_none() {
+                equip(inventory_id, game);
             }
         }
     }
 }
 
-fn use_item(id: usize, inventory_index: usize, game: &mut Game, tcod: &mut TcodState) {
+fn use_item(inventory_id: usize, game: &mut Game, tcod: &mut TcodState) {
     // special case: if the object has the Equipment component, the "use" action is to equip/dequip
-    if game.objects[id].item.is_some() && game.objects[id].equipment.is_some() {
-        toggle_equip(id, game);
+    if game.inventory[inventory_id].item.is_some() && game.inventory[inventory_id].equipment.is_some() {
+        toggle_equip(inventory_id, game);
         return
     }
     // just call the "use_item" if it is defined
-    if let Some(item) = game.objects[id].item {
+    if let Some(item) = game.inventory[inventory_id].item {
         match item.use_item(game, tcod) {
             UseResult::Used => {
                 // destroy after use, unless it was cancelled for some reason
-                game.inventory.remove(inventory_index);
+                game.inventory.swap_remove(inventory_id);
             }
             UseResult::Cancelled => {
                 game.log.add("Cancelled", colors::WHITE);
             }
         };
     } else {
-        game.log.add(format!("The {} cannot be used.", game.objects[id].name), colors::WHITE);
+        game.log.add(format!("The {} cannot be used.", game.inventory[inventory_id].name), colors::WHITE);
     }
 }
 
-fn drop_item(id: usize, inventory_index: usize, game: &mut Game) {
-    if game.objects[id].equipment.is_some() {
-        dequip(id, game);
+fn drop_item(inventory_id: usize, game: &mut Game) {
+    if game.inventory[inventory_id].equipment.is_some() {
+        dequip(inventory_id, game);
     }
-    game.inventory.swap_remove(inventory_index);
+    let mut item = game.inventory.swap_remove(inventory_id);
     let (px, py) = game.objects[game.player_id].pos();
-    game.objects[id].set_pos(px, py);
-    game.log.add(format!("You dropped a {}.", game.objects[id].name), colors::YELLOW);
+    item.set_pos(px, py);
+    game.log.add(format!("You dropped a {}.", item.name), colors::YELLOW);
+    game.objects.push(item);
 }
 
-fn toggle_equip(id: usize, game: &mut Game) {
-    if game.objects[id].equipment.as_ref().map_or(false, |e| e.is_equipped) {
-        dequip(id, game);
+fn toggle_equip(inventory_id: usize, game: &mut Game) {
+    if game.inventory[inventory_id].equipment.as_ref().map_or(false, |e| e.is_equipped) {
+        dequip(inventory_id, game);
     } else {
-        equip(id, game);
+        equip(inventory_id, game);
     }
 }
 
-fn equip(id: usize, game: &mut Game) {
+fn equip(inventory_id: usize, game: &mut Game) {
     // if the slot is already being used, dequip whatever is there first
     // TODO: treat empty String as a slot that fails to get a match.
     // This will have to be changed if we switch to a slot enum.
-    let slot = game.objects[id].equipment.as_ref().map_or("".into(), |e| e.slot.clone());
-    if let Some(old_equipment_id) = get_equipped_in_slot(&slot, &game.inventory, &game.objects) {
+    let slot = game.inventory[inventory_id].equipment.as_ref().map_or("".into(), |e| e.slot.clone());
+    if let Some(old_equipment_id) = get_equipped_in_slot(&slot, &game.inventory) {
         dequip(old_equipment_id, game);
     }
     // equip object and show a message about it
-    if let Some(mut equipment) = game.objects[id].equipment.take() {
+    if let Some(mut equipment) = game.inventory[inventory_id].equipment.take() {
         equipment.is_equipped = true;
-        game.log.add(format!("Equipped {} on {}.", game.objects[id].name, equipment.slot),
+        game.log.add(format!("Equipped {} on {}.", game.inventory[inventory_id].name, equipment.slot),
                      colors::LIGHT_GREEN);
 
-        game.objects[id].equipment = Some(equipment);
+        game.inventory[inventory_id].equipment = Some(equipment);
     }
 }
 
@@ -329,16 +332,16 @@ fn _equip2(id: usize, game: &mut Game) {
     });
 }
 
-fn dequip(id: usize, game: &mut Game) {
+fn dequip(inventory_id: usize, game: &mut Game) {
     // dequip object and show a message about it
-    if let Some(mut equipment) = game.objects[id].equipment.take() {
+    if let Some(mut equipment) = game.inventory[inventory_id].equipment.take() {
         if equipment.is_equipped {
             equipment.is_equipped = false;
-            game.log.add(format!("Dequipped {} from {}.", game.objects[id].name, equipment.slot),
+            game.log.add(format!("Dequipped {} from {}.", game.inventory[inventory_id].name, equipment.slot),
                          colors::LIGHT_YELLOW);
         }
 
-        game.objects[id].equipment = Some(equipment);
+        game.inventory[inventory_id].equipment = Some(equipment);
     }
 }
 
@@ -513,20 +516,20 @@ fn get_all_equipped(id: usize, game: &Game) -> Vec<Equipment> {
     if id == game.player_id {
         game.inventory
             .iter()
-            .filter(|&&item_id| {
-                game.objects[item_id].equipment.as_ref().map_or(false, |e| e.is_equipped)
+            .filter(|item| {
+                item.equipment.as_ref().map_or(false, |e| e.is_equipped)
             })
-            .map(|&item_id| game.objects[item_id].equipment.clone().unwrap())
+            .map(|item| item.equipment.clone().unwrap())
             .collect()
     } else {
         vec![]  // other objects have no equipment
     }
 }
 
-fn get_equipped_in_slot(slot: &str, inventory: &[usize], objects: &[Object]) -> Option<usize> {
-    for &id in inventory {
-        if objects[id].equipment.as_ref().map_or(false, |e| e.is_equipped && e.slot == slot) {
-            return Some(id)
+fn get_equipped_in_slot(slot: &str, inventory: &[Object]) -> Option<usize> {
+    for (inventory_id, item) in inventory.iter().enumerate() {
+        if item.equipment.as_ref().map_or(false, |e| e.is_equipped && e.slot == slot) {
+            return Some(inventory_id)
         }
     }
     None
@@ -580,7 +583,6 @@ fn range(min: i32, max: i32) -> i32 {
 fn make_map(player_id: &mut usize,
             stairs_id: &mut usize,
             objects: &mut Vec<Object>,
-            inventory: &mut Vec<usize>,
             level: i32)
             -> Map {
     // fill map with "blocked" tiles
@@ -589,33 +591,9 @@ fn make_map(player_id: &mut usize,
                        MAP_WIDTH as usize];
 
     let mut new_objects = vec![];
-    let mut new_inventory = vec![];
-
-    // NOTE: When making a map to a lower level, we will create new objects and
-    // inventory lists. This is because we're going to keep the player and any
-    // items in the inventory around but not anything that's left on the
-    // previous level -- corpses, monsters, items on the ground.
-    //
-    // Since we don't have stairs up, if we wanted to keep them around, we'd
-    // have to make sure they don't get rendered on the new level.
-    //
-    // Because inventory only stores indexes to the items the player carries, we
-    // would have to be extra careful and recalculate the indexes if we wanted
-    // to take the items out to a new vector or remove everything else from
-    // objects. To make things easier, we will clone the player and items to a
-    // new vector and use its indices for the inventory instead. We will then
-    // replace the old objects & inventory with the new ones.
-
     *player_id = new_objects.len();  // new player ID
     new_objects.push(objects[*player_id].clone());
-
-    for item_id in inventory.iter() {
-        new_inventory.push(new_objects.len());  // new ID of the inventory item
-        new_objects.push(objects[*item_id].clone());
-    }
-
     *objects = new_objects;
-    *inventory = new_inventory;
 
     let mut rooms = vec![];
 
@@ -1110,8 +1088,7 @@ fn handle_keys(game: &mut Game, tcod: &mut TcodState, event: Option<Event>) -> P
                     game,
                     "Press the key next to an item to use it, or any other to cancel.\n");
                 if let Some(inventory_index) = inventory_index {
-                    let item_id = game.inventory[inventory_index];
-                    use_item(item_id, inventory_index, game, tcod);
+                    use_item(inventory_index, game, tcod);
                 }
             }
             Key { printable: 'd', .. } => {
@@ -1120,8 +1097,7 @@ fn handle_keys(game: &mut Game, tcod: &mut TcodState, event: Option<Event>) -> P
                     game,
                     "Press the key next to an item to drop it, or any other to cancel.\n");
                 if let Some(inventory_index) = inventory_index {
-                    let item_id = game.inventory[inventory_index];
-                    drop_item(item_id, inventory_index, game);
+                    drop_item(inventory_index, game);
                 }
             }
             Key { printable: 'c', .. } => {
@@ -1473,14 +1449,14 @@ impl TcodState {
         let options = if game.inventory.len() == 0 {
             vec!["Inventory is empty.".into()]
         } else {
-            game.inventory.iter().map(|&id| {
+            game.inventory.iter().map(|item| {
                 // show additional information, in case it's equipped
-                let text = match game.objects[id].equipment.as_ref() {
+                let text = match item.equipment.as_ref() {
                     Some(equipment) if equipment.is_equipped => {
-                        format!("{} (on {})", game.objects[id].name, equipment.slot)
+                        format!("{} (on {})", item.name, equipment.slot)
                     }
                     _ => {
-                        game.objects[id].name.clone()
+                        item.name.clone()
                     }
                 };
                 text
@@ -1536,7 +1512,7 @@ struct Game {
     log: MessageLog,
     player_id: usize,
     stairs_id: usize,
-    inventory: Vec<usize>,
+    inventory: Vec<Object>,
 }
 
 impl Game {
@@ -1551,7 +1527,6 @@ impl Game {
 
         let mut objects = vec![player];
         let mut player_id = 0;
-        let mut inventory = vec![];
         let mut stairs_id = 0;
         let dungeon_level = 1;
 
@@ -1562,7 +1537,6 @@ impl Game {
             map: make_map(&mut player_id,
                           &mut stairs_id,
                           &mut objects,
-                          &mut inventory,
                           dungeon_level),
             fov_recompute: false,
             // create the list of game messages and their colors, starts empty
@@ -1570,7 +1544,7 @@ impl Game {
             objects: objects,
             player_id: player_id,
             stairs_id: stairs_id,
-            inventory: inventory,
+            inventory: vec![],
         };
         game.initialize_fov(tcod);
         // a warm welcoming message!
@@ -1588,9 +1562,8 @@ impl Game {
         };
         dagger.equipment = Some(equipment_component);
         dagger.item = Some(Item::None);
-        let dagger_id = game.objects.len();
-        game.objects.push(dagger);
-        game.inventory.push(dagger_id);
+        let dagger_id = game.inventory.len();
+        game.inventory.push(dagger);
         equip(dagger_id, &mut game);
 
         game
@@ -1612,7 +1585,7 @@ impl Game {
         self.dungeon_level += 1;
         // create a fresh new level!
         self.map = make_map(&mut self.player_id, &mut self.stairs_id,
-                            &mut self.objects, &mut self.inventory, self.dungeon_level);
+                            &mut self.objects, self.dungeon_level);
         self.initialize_fov(tcod);
     }
 
