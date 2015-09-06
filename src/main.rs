@@ -395,56 +395,53 @@ enum MonsterAIType {
 
 #[derive(Clone, Debug, PartialEq, RustcEncodable, RustcDecodable)]
 struct MonsterAI {
-    // TODO: crash, can't rely on stable IDs now
-    monster_id: usize,
     old_ai: Option<Box<MonsterAI>>,
     ai_type: MonsterAIType,
 }
 
 impl MonsterAI {
-    fn take_turn(&mut self, game: &mut Game, tcod: &mut TcodState) -> Option<MonsterAI> {
+    fn take_turn(&mut self, monster_id: usize, game: &mut Game, tcod: &mut TcodState) -> Option<MonsterAI> {
         use MonsterAIType::*;
         match self.ai_type {
-            Basic => self.monster_basic_ai(game, tcod),
-            Confused{..} => self.monster_confused_ai(game, tcod),
+            Basic => self.monster_basic_ai(monster_id, game, tcod),
+            Confused{..} => self.monster_confused_ai(monster_id, game, tcod),
         }
     }
 
-    fn monster_basic_ai(&mut self, game: &mut Game, tcod: &mut TcodState) -> Option<MonsterAI> {
+    fn monster_basic_ai(&mut self, monster_id: usize, game: &mut Game, tcod: &mut TcodState) -> Option<MonsterAI> {
         // a basic monster takes its turn. If you can see it, it can see you
-        let (monster_x, monster_y) = game.objects[self.monster_id].pos();
+        let (monster_x, monster_y) = game.objects[monster_id].pos();
         if tcod.fov_map.is_in_fov(monster_x, monster_y) {
             // move towards player if far away
             let distance = {
-                let monster = &game.objects[self.monster_id];
+                let monster = &game.objects[monster_id];
                 let player = &game.objects[game.player_id];
                 monster.distance_to(player)
             };
             if distance >= 2.0 {
                 let (player_x, player_y) = game.objects[game.player_id].pos();
-                move_towards(self.monster_id, player_x, player_y, game);
+                move_towards(monster_id, player_x, player_y, game);
             } else if game.objects[game.player_id].fighter.as_ref().map_or(
                 false, |fighter| fighter.hp > 0) {
                 // close enough, attack! (if the player is still alive.)
-                attack(self.monster_id, game.player_id, game);
+                attack(monster_id, game.player_id, game);
             }
         }
         None
     }
 
-    fn monster_confused_ai(&mut self, game: &mut Game, _tcod: &mut TcodState) -> Option<MonsterAI> {
+    fn monster_confused_ai(&mut self, monster_id: usize, game: &mut Game, _tcod: &mut TcodState) -> Option<MonsterAI> {
         use MonsterAIType::*;
         match self.ai_type {
             Confused{num_turns} => {
                 if num_turns > 0 {  // still confused...
                     // move in a random direction, and decrease the number of turns confused
-                    move_by(self.monster_id, range(-1, 1), range(-1, 1),
-                            game);
+                    move_by(monster_id, range(-1, 1), range(-1, 1), game);
                     self.ai_type = Confused{num_turns: num_turns - 1};
                     None
                 } else {  // restore the previous AI (this one will be deleted)
                     game.log.add(format!("The {} is no longer confused!",
-                                         game.objects[self.monster_id].name),
+                                         game.objects[monster_id].name),
                                  colors::RED);
                     self.old_ai.take().map(|ai| *ai)
                 }
@@ -732,7 +729,6 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>, level: i32) {
 
         // only place it if the tile is not blocked
         if !is_blocked(x, y, map, objects) {
-            let monster_id = objects.len();  // This is going to be the index of the next object
             let monster = match monster_choice.ind_sample(rng) {
                 MonsterType::Orc => {
                     // create an orc
@@ -741,7 +737,6 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>, level: i32) {
                         Fighter{hp: 20, base_max_hp: 20, base_defense: 0, base_power: 4, xp: 35,
                                 death: Some(DeathCallback::Monster)});
                     orc.ai = Some(MonsterAI{
-                        monster_id: monster_id,
                         old_ai: None,
                         ai_type: MonsterAIType::Basic,
                     });
@@ -754,7 +749,6 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>, level: i32) {
                         Fighter{hp: 30, base_max_hp: 30, base_defense: 2, base_power: 8, xp: 100,
                                 death: Some(DeathCallback::Monster)});
                     troll.ai = Some(MonsterAI{
-                        monster_id: monster_id,
                         old_ai: None,
                         ai_type: MonsterAIType::Basic,
                     });
@@ -1362,7 +1356,6 @@ fn cast_confuse(game: &mut Game, tcod: &mut TcodState) -> UseResult {
             let mut monster = &mut game.objects[id];
             let old_ai = monster.ai.take();
             let confuse_ai = MonsterAI {
-                monster_id: id,
                 old_ai: old_ai.map(|ai| Box::new(ai)),
                 ai_type: MonsterAIType::Confused{num_turns: CONFUSE_NUM_TURNS},
             };
@@ -1652,7 +1645,7 @@ impl Game {
                 for id in (0..self.objects.len()).rev() {
                     let ai = self.objects[id].ai.take();
                     if let Some(mut old_ai) = ai {
-                        let new_ai = old_ai.take_turn(self, tcod);
+                        let new_ai = old_ai.take_turn(id, self, tcod);
                         self.objects[id].ai = new_ai.or(Some(old_ai));
                     }
                 }
