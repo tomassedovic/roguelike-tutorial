@@ -67,6 +67,8 @@ const COLOR_LIGHT_WALL: Color = Color { r: 130, g: 110, b: 50 };
 const COLOR_DARK_GROUND: Color = Color { r: 50, g: 50, b: 150 };
 const COLOR_LIGHT_GROUND: Color = Color { r: 200, g: 180, b: 50 };
 
+const PLAYER: usize = 0;
+
 type Map = Vec<Vec<Tile>>;
 
 #[derive(Copy, Clone, RustcEncodable, RustcDecodable)]
@@ -189,8 +191,8 @@ fn take_damage(id: usize, damage: i32, game: &mut Game) {
         }
     });
     death.map(|(death, xp)| {
-        if id != game.player_id {
-            game.objects[game.player_id].fighter.as_mut().unwrap().xp += xp;
+        if id != PLAYER {
+            game.objects[PLAYER].fighter.as_mut().unwrap().xp += xp;
         }
         death.callback(id, game);
     });
@@ -284,7 +286,7 @@ fn drop_item(inventory_id: usize, game: &mut Game) {
         dequip(inventory_id, game);
     }
     let mut item = game.inventory.swap_remove(inventory_id);
-    let (px, py) = game.objects[game.player_id].pos();
+    let (px, py) = game.objects[PLAYER].pos();
     item.set_pos(px, py);
     game.log.add(format!("You dropped a {}.", item.name), colors::YELLOW);
     game.objects.push(item);
@@ -415,16 +417,16 @@ impl MonsterAI {
             // move towards player if far away
             let distance = {
                 let monster = &game.objects[monster_id];
-                let player = &game.objects[game.player_id];
+                let player = &game.objects[PLAYER];
                 monster.distance_to(player)
             };
             if distance >= 2.0 {
-                let (player_x, player_y) = game.objects[game.player_id].pos();
+                let (player_x, player_y) = game.objects[PLAYER].pos();
                 move_towards(monster_id, player_x, player_y, game);
-            } else if game.objects[game.player_id].fighter.as_ref().map_or(
+            } else if game.objects[PLAYER].fighter.as_ref().map_or(
                 false, |fighter| fighter.hp > 0) {
                 // close enough, attack! (if the player is still alive.)
-                attack(monster_id, game.player_id, game);
+                attack(monster_id, PLAYER, game);
             }
         }
         None
@@ -511,7 +513,7 @@ fn full_max_hp(id: usize, game: &Game) -> i32 {
 
 /// returns a list of equipped items
 fn get_all_equipped(id: usize, game: &Game) -> Vec<Equipment> {
-    if id == game.player_id {
+    if id == PLAYER {
         game.inventory
             .iter()
             .filter(|item| {
@@ -578,8 +580,7 @@ fn range(min: i32, max: i32) -> i32 {
     rand::thread_rng().gen_range(min, max + 1)
 }
 
-fn make_map(player_id: &mut usize,
-            objects: &mut Vec<Object>,
+fn make_map(objects: &mut Vec<Object>,
             level: i32)
             -> Map {
     // fill map with "blocked" tiles
@@ -621,7 +622,7 @@ fn make_map(player_id: &mut usize,
             let (new_x, new_y) = new_room.center();
 
             if rooms.is_empty() {
-                let player = &mut objects[*player_id];
+                let player = &mut objects[PLAYER];
                 // TODO: this is where we set player's position for the first
                 // time. This should happen before we place any objects,
                 // otherwise something could spawn here already.
@@ -879,7 +880,7 @@ fn get_names_under_mouse(mouse: Mouse, objects: &[Object], fov_map: &FovMap) -> 
 fn render_all(game: &mut Game, tcod: &mut TcodState) {
     if game.fov_recompute {
         game.fov_recompute = false;
-        let (player_x, player_y) = game.objects[game.player_id].pos();
+        let (player_x, player_y) = game.objects[PLAYER].pos();
         tcod.fov_map.compute_fov(player_x, player_y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALGO);
 
         // go through all tiles, and set their background color according to the FOV
@@ -957,8 +958,8 @@ fn render_all(game: &mut Game, tcod: &mut TcodState) {
     }
 
     // show the player's stats
-    let hp = game.objects[game.player_id].fighter.as_ref().map_or(0, |f| f.hp);
-    let max_hp = full_max_hp(game.player_id, game);
+    let hp = game.objects[PLAYER].fighter.as_ref().map_or(0, |f| f.hp);
+    let max_hp = full_max_hp(PLAYER, game);
     render_bar(&mut tcod.panel,
                1,
                1,
@@ -989,7 +990,7 @@ fn render_all(game: &mut Game, tcod: &mut TcodState) {
 fn player_move_or_attack(dx: i32, dy: i32, game: &mut Game) {
     // the coordinates the player is moving to/attacking
     let (x, y) = {
-        let p = &game.objects[game.player_id];
+        let p = &game.objects[PLAYER];
         (p.x + dx, p.y + dy)
     };
 
@@ -1001,10 +1002,10 @@ fn player_move_or_attack(dx: i32, dy: i32, game: &mut Game) {
     // attack if target found, move otherwise
     match target {
         Some(target) => {
-            attack(game.player_id, target, game);
+            attack(PLAYER, target, game);
         }
         None => {
-            move_by(game.player_id, dx, dy, game);
+            move_by(PLAYER, dx, dy, game);
             game.fov_recompute = true;
         }
     }
@@ -1063,7 +1064,7 @@ fn handle_keys(game: &mut Game, tcod: &mut TcodState, event: Option<Event>) -> P
                 return PlayerAction::None;  // do nothing ie wait for the monster to come to you
             }
             Key { printable: 'g', .. } => {
-                let (px, py) = game.objects[game.player_id].pos();
+                let (px, py) = game.objects[PLAYER].pos();
                 let item_id = game.objects.iter().position(|object| {
                     object.pos() == (px, py) && object.item.is_some()
                 });
@@ -1092,12 +1093,12 @@ fn handle_keys(game: &mut Game, tcod: &mut TcodState, event: Option<Event>) -> P
             }
             Key { printable: 'c', .. } => {
                 // show character information
-                let level = game.objects[game.player_id].level;
+                let level = game.objects[PLAYER].level;
                 let level_up_xp = LEVEL_UP_BASE + level * LEVEL_UP_FACTOR;
-                let power = full_power(game.player_id, game);
-                let defense = full_defense(game.player_id, game);
-                let max_hp = full_max_hp(game.player_id, game);
-                if let Some(fighter) = game.objects[game.player_id].fighter.as_ref() {
+                let power = full_power(PLAYER, game);
+                let defense = full_defense(PLAYER, game);
+                let max_hp = full_max_hp(PLAYER, game);
+                if let Some(fighter) = game.objects[PLAYER].fighter.as_ref() {
                     let msg = format!(
                         "Character information\n\nLevel: {}\nExperience: {}\nExperience to level \
                          up: {}\n\nMaximum HP: {}\nAttack: {}\nDefense: {}",
@@ -1107,7 +1108,7 @@ fn handle_keys(game: &mut Game, tcod: &mut TcodState, event: Option<Event>) -> P
             }
             Key { printable: '<', .. } => {
                 // go down stairs, if the player is on them
-                let player_pos = game.objects[game.player_id].pos();
+                let player_pos = game.objects[PLAYER].pos();
                 let player_stands_on_stairs = game.objects.iter().any(|object| {
                     object.pos() == player_pos && object.name == "stairs"
                 });
@@ -1123,19 +1124,19 @@ fn handle_keys(game: &mut Game, tcod: &mut TcodState, event: Option<Event>) -> P
 
 fn check_level_up(game: &mut Game, tcod: &mut TcodState) {
     // see if the player's experience is enough to level-up
-    let level_up_xp = LEVEL_UP_BASE + game.objects[game.player_id].level * LEVEL_UP_FACTOR;
+    let level_up_xp = LEVEL_UP_BASE + game.objects[PLAYER].level * LEVEL_UP_FACTOR;
     // TODO: NOTE: We have to pull max_hp etc. out because since it's taken
     // out inside the block, we'd get back zero. Maybe reconsider the `take` strategy?
-    let power = full_power(game.player_id, game);
-    let defense = full_defense(game.player_id, game);
-    let max_hp = full_max_hp(game.player_id, game);
-    let mut fighter = game.objects[game.player_id].fighter.take().unwrap();
+    let power = full_power(PLAYER, game);
+    let defense = full_defense(PLAYER, game);
+    let max_hp = full_max_hp(PLAYER, game);
+    let mut fighter = game.objects[PLAYER].fighter.take().unwrap();
     if fighter.xp >= level_up_xp {
         // it is! level up
-        game.objects[game.player_id].level += 1;
+        game.objects[PLAYER].level += 1;
         fighter.xp -= level_up_xp;
         game.log.add(format!("Your battle skills grow stronger! You reached level {}!",
-                             game.objects[game.player_id].level),
+                             game.objects[PLAYER].level),
                      colors::YELLOW);
 
         loop {  // keep asking until a choice is made
@@ -1163,7 +1164,7 @@ fn check_level_up(game: &mut Game, tcod: &mut TcodState) {
         }
 
     }
-    game.objects[game.player_id].fighter = Some(fighter);
+    game.objects[PLAYER].fighter = Some(fighter);
 }
 
 #[derive(Copy, Clone, PartialEq)]
@@ -1232,7 +1233,7 @@ fn target_tile(game: &mut Game,
         // is specified, if it's in that range
         let in_fov = tcod.fov_map.is_in_fov(x, y);
         let in_range = max_range.map_or(
-            true, |range| game.objects[game.player_id].distance(x, y) <= range);
+            true, |range| game.objects[PLAYER].distance(x, y) <= range);
         if tcod.mouse.lbutton_pressed && in_fov && in_range {
             return Some((x, y))
         }
@@ -1253,7 +1254,7 @@ fn target_monster(game: &mut Game, tcod: &mut TcodState, max_range: Option<f32>)
             Some((x, y)) => {
                 // return the first clicked monster, otherwise continue looping
                 for (id, obj) in game.objects.iter().enumerate() {
-                    if obj.pos() == (x, y) && obj.fighter.is_some() && id != game.player_id {
+                    if obj.pos() == (x, y) && obj.fighter.is_some() && id != PLAYER {
                         return Some(id)
                     }
                 }
@@ -1269,10 +1270,10 @@ fn closest_monster(max_range: i32, game: &Game, tcod: &TcodState) -> Option<usiz
 
     // TODO: this could be done more succinctly with Iter::min_by but that's unstable now.
     for (id, object) in game.objects.iter().enumerate() {
-        if id != game.player_id && object.fighter.is_some() &&
+        if id != PLAYER && object.fighter.is_some() &&
            tcod.fov_map.is_in_fov(object.x, object.y) {
             // calculate distance between this object and the player
-            let dist = game.objects[game.player_id].distance_to(object);
+            let dist = game.objects[PLAYER].distance_to(object);
             if dist < closest_dist {  // it's closer, so remember it
                 closest_enemy = Some(id);
                 closest_dist = dist;
@@ -1284,18 +1285,18 @@ fn closest_monster(max_range: i32, game: &Game, tcod: &TcodState) -> Option<usiz
 
 fn cast_heal(game: &mut Game, _tcod: &mut TcodState) -> UseResult {
     // heal the player
-    let max_hp = full_max_hp(game.player_id, game);
+    let max_hp = full_max_hp(PLAYER, game);
     // TODO: NOTE: We have to pull max_hp out because since it's taken
     // out inside the block, we'd get back zero. Maybe reconsider the `take` strategy?
-    if let Some(mut fighter) = game.objects[game.player_id].fighter.take() {
+    if let Some(mut fighter) = game.objects[PLAYER].fighter.take() {
         if fighter.hp == max_hp {
             game.log.add("You are already at full health.", colors::RED);
-            game.objects[game.player_id].fighter = Some(fighter);
+            game.objects[PLAYER].fighter = Some(fighter);
             return UseResult::Cancelled;
         }
         game.log.add("Your wounds start to feel better!", colors::LIGHT_VIOLET);
         fighter.heal(HEAL_AMOUNT);
-        game.objects[game.player_id].fighter = Some(fighter);
+        game.objects[PLAYER].fighter = Some(fighter);
         return UseResult::Used;
     }
     return UseResult::Cancelled;
@@ -1503,7 +1504,6 @@ struct Game {
     fov_recompute: bool,
     objects: Vec<Object>,
     log: MessageLog,
-    player_id: usize,
     inventory: Vec<Object>,
 }
 
@@ -1518,21 +1518,18 @@ impl Game {
         player.level = 1;
 
         let mut objects = vec![player];
-        let mut player_id = 0;
         let dungeon_level = 1;
 
         // Generate map (at this point it's not drawn to the screen)
         let mut game = Game {
             state: GameState::Playing,
             dungeon_level: dungeon_level,
-            map: make_map(&mut player_id,
-                          &mut objects,
+            map: make_map(&mut objects,
                           dungeon_level),
             fov_recompute: false,
             // create the list of game messages and their colors, starts empty
             log: MessageLog::new(),
             objects: objects,
-            player_id: player_id,
             inventory: vec![],
         };
         game.initialize_fov(tcod);
@@ -1562,8 +1559,8 @@ impl Game {
         // advance to the next level
         self.log.add(
             "You take a moment to rest, and recover your strength.", colors::LIGHT_VIOLET);
-        let max_hp = full_max_hp(self.player_id, self);
-        self.objects[self.player_id].fighter.as_mut().map(|f| {
+        let max_hp = full_max_hp(PLAYER, self);
+        self.objects[PLAYER].fighter.as_mut().map(|f| {
             let heal_hp = max_hp / 2;
             f.heal(heal_hp);
         });  // heal the player by 50%
@@ -1573,7 +1570,7 @@ impl Game {
             colors::RED);
         self.dungeon_level += 1;
         // create a fresh new level!
-        self.map = make_map(&mut self.player_id, &mut self.objects, self.dungeon_level);
+        self.map = make_map(&mut self.objects, self.dungeon_level);
         self.initialize_fov(tcod);
     }
 
