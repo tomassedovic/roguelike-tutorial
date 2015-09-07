@@ -240,8 +240,7 @@ fn mut_two<'a, T>(first_index: usize, second_index: usize, items: &'a mut [T])
     }
 }
 
-fn attack(attacker_id: usize, target_id: usize, objects: &mut [Object], game: &mut Game) {
-    let (attacker, target) = mut_two(attacker_id, target_id, objects);
+fn attack(attacker: &mut Object, target: &mut Object, game: &mut Game) {
     // a simple formula for attack damage
     let damage = full_power(attacker, game) - full_defense(target, game);
     if damage > 0 {
@@ -449,7 +448,8 @@ impl MonsterAI {
             } else if objects[PLAYER].fighter.as_ref().map_or(
                 false, |fighter| fighter.hp > 0) {
                 // close enough, attack! (if the player is still alive.)
-                attack(monster_id, PLAYER, objects, game);
+                let (monster, player) = mut_two(monster_id, PLAYER, objects);
+                attack(monster, player, game);
             }
         }
         None
@@ -1018,14 +1018,15 @@ fn player_move_or_attack(dx: i32, dy: i32, objects: &mut [Object], game: &mut Ga
     };
 
     // try to find an attackable object there
-    let target = objects.iter().position(|object| {
+    let target_id = objects.iter().position(|object| {
         object.fighter.is_some() && object.pos() == (x, y)
     });
 
     // attack if target found, move otherwise
-    match target {
-        Some(target) => {
-            attack(PLAYER, target, objects, game);
+    match target_id {
+        Some(target_id) => {
+            let (player, target) = mut_two(PLAYER, target_id, objects);
+            attack(player, target, game);
         }
         None => {
             move_by(PLAYER, dx, dy, objects, game);
