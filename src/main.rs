@@ -178,8 +178,8 @@ impl Object {
 }
 
 
-fn take_damage(id: usize, damage: i32, objects: &mut [Object], game: &mut Game) {
-    let death = objects[id].fighter.as_mut().map_or(None, |fighter| {
+fn take_damage(object: &mut Object, damage: i32, game: &mut Game) -> Option<i32> {
+    let death = object.fighter.as_mut().map_or(None, |fighter| {
         // apply damage if possible
         if damage > 0 {
             fighter.hp -= damage;
@@ -191,11 +191,9 @@ fn take_damage(id: usize, damage: i32, objects: &mut [Object], game: &mut Game) 
         }
     });
     death.map(|(death, xp)| {
-        if id != PLAYER {
-            objects[PLAYER].fighter.as_mut().unwrap().xp += xp;
-        }
-        death.callback(&mut objects[id], game);
-    });
+        death.callback(object, game);
+        xp
+    })
 }
 
 /// move by the given amount, if the destination is not blocked
@@ -229,7 +227,11 @@ fn attack(attacker_id: usize, target_id: usize, objects: &mut [Object], game: &m
         game.log.add(format!("{} attacks {} for {} hit points.",
                              objects[attacker_id].name, objects[target_id].name, damage),
                      colors::WHITE);
-        take_damage(target_id, damage, objects, game);
+        take_damage(&mut objects[target_id], damage, game).map(|xp| {
+            if attacker_id == PLAYER {
+                objects[PLAYER].fighter.as_mut().unwrap().xp += xp;
+            }
+        });
     } else {
         game.log.add(format!("{} attacks {} but it has no effect!",
                              objects[attacker_id].name, objects[target_id].name),
@@ -1309,7 +1311,9 @@ fn cast_lightning(objects: &mut [Object], game: &mut Game, tcod: &mut TcodState)
                               The damage is {} hit points.",
                              objects[monster_id].name, LIGHTNING_DAMAGE),
                      colors::LIGHT_BLUE);
-        take_damage(monster_id, LIGHTNING_DAMAGE, objects, game);
+        take_damage(&mut objects[monster_id], LIGHTNING_DAMAGE, game).map(|xp| {
+            objects[PLAYER].fighter.as_mut().unwrap().xp += xp;
+        });
         UseResult::Used
     } else {  // no enemy found within maximum range
         game.log.add("No enemy is close enough to strike.", colors::RED);
@@ -1339,7 +1343,11 @@ fn cast_fireball(objects: &mut [Object], game: &mut Game, tcod: &mut TcodState) 
         game.log.add(format!("The {} gets burned for {} hit points.",
                              objects[id].name, FIREBALL_DAMAGE),
                      colors::ORANGE);
-        take_damage(id, FIREBALL_DAMAGE, objects, game);
+        take_damage(&mut objects[id], FIREBALL_DAMAGE, game).map(|xp| {
+            if id != PLAYER {
+                objects[PLAYER].fighter.as_mut().unwrap().xp += xp;
+            }
+        });
     }
     UseResult::Used
 }
