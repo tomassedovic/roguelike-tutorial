@@ -365,12 +365,11 @@ fn equip(inventory_id: usize, game: &mut Game) {
         dequip(old_equipment_id, game);
     }
     // equip object and show a message about it
-    if let Some(mut equipment) = game.inventory[inventory_id].equipment.take() {
+    let item = &mut game.inventory[inventory_id];
+    if let Some(equipment) = item.equipment.as_mut() {
         equipment.is_equipped = true;
-        game.log.add(format!("Equipped {} on {}.", game.inventory[inventory_id].name, equipment.slot),
+        game.log.add(format!("Equipped {} on {}.", item.name, equipment.slot),
                      colors::LIGHT_GREEN);
-
-        game.inventory[inventory_id].equipment = Some(equipment);
     }
 }
 
