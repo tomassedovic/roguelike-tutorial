@@ -295,13 +295,13 @@ fn mut_two<'a, T>(first_index: usize, second_index: usize, items: &'a mut [T])
 }
 
 // an item that can be picked up and used.
-fn pick_item_up(id: usize, objects: &mut Vec<Object>, game: &mut Game) {
+fn pick_item_up(object_id: usize, objects: &mut Vec<Object>, game: &mut Game) {
     // add to the player's inventory and remove from the map
     if game.inventory.len() >= 26 {
-        game.log.add(format!("Your inventory is full, cannot pick up {}.", objects[id].name),
+        game.log.add(format!("Your inventory is full, cannot pick up {}.", objects[object_id].name),
                      colors::RED);
     } else {
-        let item = objects.swap_remove(id);
+        let item = objects.swap_remove(object_id);
         game.log.add(format!("You picked up a {}!", item.name), colors::GREEN);
         let inventory_id = game.inventory.len();
         let equipment_slot = item.equipment.as_ref().map(|e| e.slot.clone());
