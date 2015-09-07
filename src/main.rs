@@ -194,7 +194,7 @@ fn take_damage(id: usize, damage: i32, objects: &mut [Object], game: &mut Game) 
         if id != PLAYER {
             objects[PLAYER].fighter.as_mut().unwrap().xp += xp;
         }
-        death.callback(id, objects, game);
+        death.callback(&mut objects[id], game);
     });
 }
 
@@ -375,13 +375,13 @@ enum DeathCallback {
 }
 
 impl DeathCallback {
-    fn callback(&self, id: usize, objects: &mut [Object], game: &mut Game) {
+    fn callback(&self, object: &mut Object, game: &mut Game) {
         use DeathCallback::*;
-        let callback: fn(id: usize, &mut [Object], &mut Game) = match *self {
+        let callback: fn(&mut Object, &mut Game) = match *self {
             Monster => monster_death,
             Player => player_death,
         };
-        callback(id, objects, game);
+        callback(object, game);
     }
 }
 
@@ -1179,25 +1179,23 @@ enum GameState {
     Death,
 }
 
-fn player_death(id: usize, objects: &mut [Object], game: &mut Game) {
+fn player_death(player: &mut Object, game: &mut Game) {
     // the game ended!
     game.log.add("You died!", colors::RED);
     game.state = GameState::Death;
 
-    let player = &mut objects[id];
     // for added effect, transform the player into a corpse!
     player.char = '%';
     player.color = colors::DARK_RED;
 }
 
-fn monster_death(id: usize, objects: &mut [Object], game: &mut Game) {
+fn monster_death(monster: &mut Object, game: &mut Game) {
     // transform it into a nasty corpse! it doesn't block, can't be
     // attacked and doesn't move
     game.log.add(format!("{} is dead! You gain {} experience points.",
-                         objects[id].name,
-                         objects[id].fighter.as_ref().unwrap().xp),
+                         monster.name,
+                         monster.fighter.as_ref().unwrap().xp),
                  colors::ORANGE);
-    let monster = &mut objects[id];
     monster.char = '%';
     monster.color = colors::DARK_RED;
     monster.blocks = false;
