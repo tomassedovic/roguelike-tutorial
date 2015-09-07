@@ -278,8 +278,7 @@ fn move_towards(id: usize, target_x: i32, target_y: i32, objects: &mut [Object],
 
 /// Mutably borrow two *separate* elements from the given slice.
 /// Panics when the indexes are equal or out of bounds.
-fn mut_two<'a, T>(first_index: usize, second_index: usize, items: &'a mut [T])
-                  -> (&'a mut T, &'a mut T) {
+fn mut_two<T>(first_index: usize, second_index: usize, items: &mut [T]) -> (&mut T, &mut T) {
     assert!(first_index != second_index);
     let split_at_index = if first_index < second_index {
         second_index
@@ -374,22 +373,6 @@ fn equip(inventory_id: usize, game: &mut Game) {
         game.inventory[inventory_id].equipment = Some(equipment);
     }
 }
-
-// TODO: Do we want to do this instead of the equip above??
-//
-//It's safer in that we don't have to think about putting the
-// equipment back. But it's more lines and I'm not sure whether it's
-// cleaner or not
-// fn _equip2(id: usize, game: &mut Game) {
-//     // equip object and show a message about it
-//     objects[id].equipment.as_mut().map(|equipment| {
-//         equipment.is_equipped = true;
-//         equipment.slot.clone()  // TODO: if we have slot as enum, this will be simpler
-//     }).map(|slot| {
-//         game.log.add(format!("Equipped {} on {}.", objects[id].name, slot),
-//                      colors::LIGHT_GREEN);
-//     });
-// }
 
 fn dequip(inventory_id: usize, game: &mut Game) {
     // dequip object and show a message about it
