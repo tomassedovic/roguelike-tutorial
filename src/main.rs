@@ -199,7 +199,7 @@ impl Object {
 
     fn attack(&mut self, target: &mut Object, game: &mut Game) {
         // a simple formula for attack damage
-        let damage = full_power(self, game) - full_defense(target, game);
+        let damage = self.full_power(game) - target.full_defense(game);
         if damage > 0 {
             // make the target take some damage
             game.log.add(format!("{} attacks {} for {} hit points.",
@@ -213,6 +213,41 @@ impl Object {
         } else {
             game.log.add(format!("{} attacks {} but it has no effect!", self.name, target.name),
                          colors::WHITE);
+        }
+    }
+
+    fn full_power(&self, game: &Game) -> i32 {
+        let base_power = self.fighter.as_ref().map_or(0, |f| f.base_power);
+        // TODO: this is unstable, but maps closer to the Python tutorial and is easier to understand:
+        //let bonus: i32 = get_all_equipped(id, game).iter().map(|e| e.power_bonus).sum();
+        let bonus = self.get_all_equipped(game).iter().fold(0, |sum, e| sum + e.power_bonus);
+        base_power + bonus
+    }
+
+    fn full_defense(&self, game: &Game) -> i32 {
+        let base_defense = self.fighter.as_ref().map_or(0, |f| f.base_defense);
+        let bonus = self.get_all_equipped(game).iter().fold(0, |sum, e| sum + e.defense_bonus);
+        base_defense + bonus
+    }
+
+    fn full_max_hp(&self, game: &Game) -> i32 {
+        let base_max_hp = self.fighter.as_ref().map_or(0, |f| f.base_max_hp);
+        let bonus = self.get_all_equipped(game).iter().fold(0, |sum, e| sum + e.max_hp_bonus);
+        base_max_hp + bonus
+    }
+
+    /// returns a list of equipped items
+    fn get_all_equipped(&self, game: &Game) -> Vec<Equipment> {
+        if self.is_player() {
+            game.inventory
+                .iter()
+                .filter(|item| {
+                    item.equipment.as_ref().map_or(false, |e| e.is_equipped)
+                })
+                .map(|item| item.equipment.clone().unwrap())
+                .collect()
+        } else {
+            vec![]  // other objects have no equipment
         }
     }
 }
@@ -512,41 +547,6 @@ struct Equipment {
     power_bonus: i32,
     defense_bonus: i32,
     max_hp_bonus: i32,
-}
-
-fn full_power(object: &Object, game: &Game) -> i32 {
-    let base_power = object.fighter.as_ref().map_or(0, |f| f.base_power);
-    // TODO: this is unstable, but maps closer to the Python tutorial and is easier to understand:
-    //let bonus: i32 = get_all_equipped(id, game).iter().map(|e| e.power_bonus).sum();
-    let bonus = get_all_equipped(object, game).iter().fold(0, |sum, e| sum + e.power_bonus);
-    base_power + bonus
-}
-
-fn full_defense(object: &Object, game: &Game) -> i32 {
-    let base_defense = object.fighter.as_ref().map_or(0, |f| f.base_defense);
-    let bonus = get_all_equipped(object, game).iter().fold(0, |sum, e| sum + e.defense_bonus);
-    base_defense + bonus
-}
-
-fn full_max_hp(object: &Object, game: &Game) -> i32 {
-    let base_max_hp = object.fighter.as_ref().map_or(0, |f| f.base_max_hp);
-    let bonus = get_all_equipped(object, game).iter().fold(0, |sum, e| sum + e.max_hp_bonus);
-    base_max_hp + bonus
-}
-
-/// returns a list of equipped items
-fn get_all_equipped(object: &Object, game: &Game) -> Vec<Equipment> {
-    if object.is_player() {
-        game.inventory
-            .iter()
-            .filter(|item| {
-                item.equipment.as_ref().map_or(false, |e| e.is_equipped)
-            })
-            .map(|item| item.equipment.clone().unwrap())
-            .collect()
-    } else {
-        vec![]  // other objects have no equipment
-    }
 }
 
 fn get_equipped_in_slot(slot: &str, inventory: &[Object]) -> Option<usize> {
@@ -982,7 +982,7 @@ fn render_all(objects: &[Object], game: &mut Game, tcod: &mut TcodState) {
 
     // show the player's stats
     let hp = objects[PLAYER].fighter.as_ref().map_or(0, |f| f.hp);
-    let max_hp = full_max_hp(&objects[PLAYER], game);
+    let max_hp = objects[PLAYER].full_max_hp(game);
     render_bar(&mut tcod.panel,
                1,
                1,
@@ -1120,9 +1120,9 @@ fn handle_keys(objects: &mut Vec<Object>, game: &mut Game, tcod: &mut TcodState,
                 let player = &objects[PLAYER];
                 let level = player.level;
                 let level_up_xp = LEVEL_UP_BASE + level * LEVEL_UP_FACTOR;
-                let power = full_power(player, game);
-                let defense = full_defense(player, game);
-                let max_hp = full_max_hp(player, game);
+                let power = player.full_power(game);
+                let defense = player.full_defense(game);
+                let max_hp = player.full_max_hp(game);
                 if let Some(fighter) = player.fighter.as_ref() {
                     let msg = format!(
                         "Character information\n\nLevel: {}\nExperience: {}\nExperience to level \
@@ -1153,9 +1153,9 @@ fn check_level_up(objects: &mut [Object], game: &mut Game, tcod: &mut TcodState)
     // TODO: NOTE: We have to pull max_hp etc. out because since it's taken
     // out inside the block, we'd get back zero. Maybe reconsider the `take` strategy?
     let player = &mut objects[PLAYER];
-    let power = full_power(player, game);
-    let defense = full_defense(player, game);
-    let max_hp = full_max_hp(player, game);
+    let power = player.full_power(game);
+    let defense = player.full_defense(game);
+    let max_hp = player.full_max_hp(game);
     let mut fighter = player.fighter.take().unwrap();
     if fighter.xp >= level_up_xp {
         // it is! level up
@@ -1310,7 +1310,7 @@ fn closest_monster(max_range: i32, objects: &mut [Object], tcod: &TcodState) -> 
 fn cast_heal(objects: &mut [Object], game: &mut Game, _tcod: &mut TcodState) -> UseResult {
     let player = &mut objects[PLAYER];
     // heal the player
-    let max_hp = full_max_hp(player, game);
+    let max_hp = player.full_max_hp(game);
     // TODO: NOTE: We have to pull max_hp out because since it's taken
     // out inside the block, we'd get back zero. Maybe reconsider the `take` strategy?
     if let Some(mut fighter) = player.fighter.take() {
@@ -1591,7 +1591,7 @@ impl Game {
             "You take a moment to rest, and recover your strength.", colors::LIGHT_VIOLET);
         {
             let player = &mut objects[PLAYER];
-            let max_hp = full_max_hp(player, self);
+            let max_hp = player.full_max_hp(self);
             player.fighter.as_mut().map(|f| {
                 let heal_hp = max_hp / 2;
                 f.heal(heal_hp);
