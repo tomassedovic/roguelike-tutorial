@@ -479,7 +479,11 @@ impl MonsterAI {
             Confused{num_turns} => {
                 if num_turns > 0 {  // still confused...
                     // move in a random direction, and decrease the number of turns confused
-                    move_by(monster_id, range(-1, 1), range(-1, 1), objects, game);
+                    move_by(monster_id,
+                            rand::thread_rng().gen_range(-1, 2),
+                            rand::thread_rng().gen_range(-1, 2),
+                            objects,
+                            game);
                     self.ai_type = Confused{num_turns: num_turns - 1};
                     None
                 } else {  // restore the previous AI (this one will be deleted)
@@ -580,12 +584,6 @@ fn create_v_tunnel(y1: i32, y2: i32, x: i32, map: &mut Map) {
     }
 }
 
-/// Generate range in the [low, high] (i.e. inclusive on both sides) interval.
-fn range(min: i32, max: i32) -> i32 {
-    // Rng::gen_range excludes the `max` value so we want to increment by one:
-    rand::thread_rng().gen_range(min, max + 1)
-}
-
 fn make_map(objects: &mut Vec<Object>,
             level: i32)
             -> Map {
@@ -600,11 +598,11 @@ fn make_map(objects: &mut Vec<Object>,
 
     for _ in 0..MAX_ROOMS {
         // random width and height
-        let w = range(ROOM_MIN_SIZE, ROOM_MAX_SIZE);
-        let h = range(ROOM_MIN_SIZE, ROOM_MAX_SIZE);
+        let w = rand::thread_rng().gen_range(ROOM_MIN_SIZE, ROOM_MAX_SIZE + 1);
+        let h = rand::thread_rng().gen_range(ROOM_MIN_SIZE, ROOM_MAX_SIZE + 1);
         // random position without going out of the boundaries of the map
-        let x = range(0, MAP_WIDTH - w - 1);
-        let y = range(0, MAP_HEIGHT - h - 1);
+        let x = rand::thread_rng().gen_range(0, MAP_WIDTH - w);
+        let y = rand::thread_rng().gen_range(0, MAP_HEIGHT - h);
 
         // "Rect" struct makes rectangles easier to work with
         let new_room = Rect::new(x, y, w, h);
@@ -704,7 +702,7 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>, level: i32) {
 
 
     // choose random number of monsters
-    let num_monsters = range(0, max_monsters);
+    let num_monsters = rand::thread_rng().gen_range(0, max_monsters + 1);
 
     // chance of each monster
     let troll_chance = from_dungeon_level(&[(15, 3), (30, 5), (60, 7)], level);
@@ -731,8 +729,8 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>, level: i32) {
 
     for _ in 0..num_monsters {
         // choose random spot for this monster
-        let x = range(room.x1 + 1, room.x2 - 1);
-        let y = range(room.y1 + 1, room.y2 - 1);
+        let x = rand::thread_rng().gen_range(room.x1 + 1, room.x2);
+        let y = rand::thread_rng().gen_range(room.y1 + 1, room.y2);
 
         // only place it if the tile is not blocked
         if !is_blocked(x, y, map, objects) {
@@ -768,11 +766,11 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>, level: i32) {
     }
 
     // choose random number of items
-    let num_items = range(0, max_items);
+    let num_items = rand::thread_rng().gen_range(0, max_items + 1);
     for _ in 0..num_items {
         // choose random spot for this item
-        let x = range(room.x1 + 1, room.x2 - 1);
-        let y = range(room.y1 + 1, room.y2 - 1);
+        let x = rand::thread_rng().gen_range(room.x1 + 1, room.x2);
+        let y = rand::thread_rng().gen_range(room.y1 + 1, room.y2);
 
         // only place it if the tile is not blocked
         if !is_blocked(x, y, map, objects) {
