@@ -1122,48 +1122,40 @@ fn handle_keys(objects: &mut Vec<Object>, game: &mut Game, tcod: &mut TcodState,
 }
 
 fn check_level_up(objects: &mut [Object], game: &mut Game, tcod: &mut TcodState) {
-    // see if the player's experience is enough to level-up
-    let level_up_xp = LEVEL_UP_BASE + objects[PLAYER].level * LEVEL_UP_FACTOR;
-    // TODO: NOTE: We have to pull max_hp etc. out because since it's taken
-    // out inside the block, we'd get back zero. Maybe reconsider the `take` strategy?
     let player = &mut objects[PLAYER];
-    let power = player.full_power(game);
-    let defense = player.full_defense(game);
-    let max_hp = player.full_max_hp(game);
-    let mut fighter = player.fighter.take().unwrap();
-    if fighter.xp >= level_up_xp {
+    let level_up_xp = LEVEL_UP_BASE + player.level * LEVEL_UP_FACTOR;
+    // see if the player's experience is enough to level-up
+    if player.fighter.as_ref().map_or(0, |f| f.xp) >= level_up_xp {
         // it is! level up
         player.level += 1;
-        fighter.xp -= level_up_xp;
         game.log.add(format!("Your battle skills grow stronger! You reached level {}!",
                              player.level),
                      colors::YELLOW);
-
-        loop {  // keep asking until a choice is made
-            let choice = tcod.menu("Level up! Choose a stat to raise:\n",
-                                   &[format!("Constitution (+20 HP, from {})", max_hp),
-                                     format!("Strength (+1 attack, from {})", power),
-                                     format!("Agility (+1 defense, from {})", defense)],
-                                   LEVEL_SCREEN_WIDTH);
-            match choice {
-                Some(0) => {
-                    fighter.base_max_hp += 20;
-                    fighter.hp += 20;
-                    break;
-                }
-                Some(1) => {
-                    fighter.base_power += 1;
-                    break;
-                }
-                Some(2) => {
-                    fighter.base_defense += 1;
-                    break;
-                }
-                _ => continue
+        let mut choice = None;
+        while choice.is_none() {  // keep asking until a choice is made
+            choice = tcod.menu(
+                "Level up! Choose a stat to raise:\n",
+                &[format!("Constitution (+20 HP, from {})", player.full_max_hp(game)),
+                  format!("Strength (+1 attack, from {})", player.full_power(game)),
+                  format!("Agility (+1 defense, from {})", player.full_defense(game))],
+                LEVEL_SCREEN_WIDTH);
+        };
+        let fighter = player.fighter.as_mut().unwrap();
+        fighter.xp -= level_up_xp;
+        match choice.unwrap() {
+            0 => {
+                fighter.base_max_hp += 20;
+                fighter.hp += 20;
             }
+            1 => {
+                fighter.base_power += 1;
+            }
+            2 => {
+                fighter.base_defense += 1;
+            }
+            _ => unreachable!(),
         }
     }
-    player.fighter = Some(fighter);
 }
 
 #[derive(Copy, Clone, PartialEq)]
