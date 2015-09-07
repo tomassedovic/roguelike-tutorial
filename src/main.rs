@@ -882,9 +882,10 @@ fn get_names_under_mouse(mouse: Mouse, objects: &[Object], fov_map: &FovMap) -> 
 }
 
 fn render_all(objects: &[Object], game: &mut Game, tcod: &mut TcodState) {
+    let player = &objects[PLAYER];
     if game.fov_recompute {
         game.fov_recompute = false;
-        let (player_x, player_y) = objects[PLAYER].pos();
+        let (player_x, player_y) = player.pos();
         tcod.fov_map.compute_fov(player_x, player_y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALGO);
 
         // go through all tiles, and set their background color according to the FOV
@@ -962,15 +963,13 @@ fn render_all(objects: &[Object], game: &mut Game, tcod: &mut TcodState) {
     }
 
     // show the player's stats
-    let hp = objects[PLAYER].fighter.as_ref().map_or(0, |f| f.hp);
-    let max_hp = objects[PLAYER].full_max_hp(game);
     render_bar(&mut tcod.panel,
                1,
                1,
                BAR_WIDTH,
                "HP",
-               hp,
-               max_hp,
+               player.fighter.as_ref().map_or(0, |f| f.hp),
+               player.full_max_hp(game),
                colors::LIGHT_RED,
                colors::DARKER_RED);
     tcod.panel.print_ex(1, 3, BackgroundFlag::None, TextAlignment::Left,
@@ -994,8 +993,8 @@ fn render_all(objects: &[Object], game: &mut Game, tcod: &mut TcodState) {
 fn player_move_or_attack(dx: i32, dy: i32, objects: &mut [Object], game: &mut Game) {
     // the coordinates the player is moving to/attacking
     let (x, y) = {
-        let p = &objects[PLAYER];
-        (p.x + dx, p.y + dy)
+        let player = &objects[PLAYER];
+        (player.x + dx, player.y + dy)
     };
 
     // try to find an attackable object there
@@ -1069,9 +1068,9 @@ fn handle_keys(objects: &mut Vec<Object>, game: &mut Game, tcod: &mut TcodState,
                 return PlayerAction::None;  // do nothing ie wait for the monster to come to you
             }
             Key { printable: 'g', .. } => {
-                let (px, py) = objects[PLAYER].pos();
+                let player_pos = objects[PLAYER].pos();
                 let item_id = objects.iter().position(|object| {
-                    object.pos() == (px, py) && object.item.is_some()
+                    object.pos() == player_pos && object.item.is_some()
                 });
                 // pick up an item
                 if let Some(item_id) = item_id {
@@ -1101,14 +1100,13 @@ fn handle_keys(objects: &mut Vec<Object>, game: &mut Game, tcod: &mut TcodState,
                 let player = &objects[PLAYER];
                 let level = player.level;
                 let level_up_xp = LEVEL_UP_BASE + level * LEVEL_UP_FACTOR;
-                let power = player.full_power(game);
-                let defense = player.full_defense(game);
-                let max_hp = player.full_max_hp(game);
                 if let Some(fighter) = player.fighter.as_ref() {
                     let msg = format!(
                         "Character information\n\nLevel: {}\nExperience: {}\nExperience to level \
                          up: {}\n\nMaximum HP: {}\nAttack: {}\nDefense: {}",
-                        level, fighter.xp, level_up_xp, max_hp, power, defense);
+                        level, fighter.xp, level_up_xp,
+                        player.full_max_hp(game), player.full_power(game),
+                        player.full_defense(game));
                     tcod.msgbox(&msg, CHARACTER_SCREEN_WIDTH);
                 }
             }
@@ -1275,7 +1273,7 @@ fn closest_monster(max_range: i32, objects: &mut [Object], tcod: &TcodState) -> 
 
     // TODO: this could be done more succinctly with Iter::min_by but that's unstable now.
     for (id, object) in objects.iter().enumerate() {
-        if id != PLAYER && object.fighter.is_some() &&
+        if !object.is_player() && object.fighter.is_some() &&
            tcod.fov_map.is_in_fov(object.x, object.y) {
             // calculate distance between this object and the player
             let dist = objects[PLAYER].distance_to(object);
@@ -1291,9 +1289,9 @@ fn closest_monster(max_range: i32, objects: &mut [Object], tcod: &TcodState) -> 
 fn cast_heal(objects: &mut [Object], game: &mut Game, _tcod: &mut TcodState) -> UseResult {
     let player = &mut objects[PLAYER];
     // heal the player
-    let max_hp = player.full_max_hp(game);
     // TODO: NOTE: We have to pull max_hp out because since it's taken
     // out inside the block, we'd get back zero. Maybe reconsider the `take` strategy?
+    let max_hp = player.full_max_hp(game);
     if let Some(mut fighter) = player.fighter.take() {
         if fighter.hp == max_hp {
             game.log.add("You are already at full health.", colors::RED);
