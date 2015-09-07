@@ -178,8 +178,8 @@ impl Object {
 }
 
 
-fn take_damage(id: usize, damage: i32, game: &mut Game) {
-    let death = game.objects[id].fighter.as_mut().map_or(None, |fighter| {
+fn take_damage(id: usize, damage: i32, objects: &mut [Object], game: &mut Game) {
+    let death = objects[id].fighter.as_mut().map_or(None, |fighter| {
         // apply damage if possible
         if damage > 0 {
             fighter.hp -= damage;
@@ -192,24 +192,24 @@ fn take_damage(id: usize, damage: i32, game: &mut Game) {
     });
     death.map(|(death, xp)| {
         if id != PLAYER {
-            game.objects[PLAYER].fighter.as_mut().unwrap().xp += xp;
+            objects[PLAYER].fighter.as_mut().unwrap().xp += xp;
         }
-        death.callback(id, game);
+        death.callback(id, objects, game);
     });
 }
 
 /// move by the given amount, if the destination is not blocked
-fn move_by(id: usize, dx: i32, dy: i32, game: &mut Game) {
-    let (x, y) = game.objects[id].pos();
-    if !is_blocked(x + dx, y + dy, &game.map, &game.objects) {
-        game.objects[id].set_pos(x + dx, y + dy);
+fn move_by(id: usize, dx: i32, dy: i32, objects: &mut [Object], game: &mut Game) {
+    let (x, y) = objects[id].pos();
+    if !is_blocked(x + dx, y + dy, &game.map, &objects) {
+        objects[id].set_pos(x + dx, y + dy);
     }
 }
 
-fn move_towards(id: usize, target_x: i32, target_y: i32, game: &mut Game) {
+fn move_towards(id: usize, target_x: i32, target_y: i32, objects: &mut [Object], game: &mut Game) {
     // vector from this object to the target, and distance
     let (dx, dy) = {
-        let (ox, oy) = game.objects[id].pos();
+        let (ox, oy) = objects[id].pos();
         (target_x - ox, target_y - oy)
     };
     let distance = ((dx.pow(2) + dy.pow(2)) as f32).sqrt();
@@ -218,33 +218,33 @@ fn move_towards(id: usize, target_x: i32, target_y: i32, game: &mut Game) {
     // convert to integer so the movement is restricted to the map grid
     let dx = (dx as f32 / distance).round() as i32;
     let dy = (dy as f32 / distance).round() as i32;
-    move_by(id, dx, dy, game);
+    move_by(id, dx, dy, objects, game);
 }
 
-fn attack(attacker_id: usize, target_id: usize, game: &mut Game) {
+fn attack(attacker_id: usize, target_id: usize, objects: &mut [Object], game: &mut Game) {
     // a simple formula for attack damage
-    let damage = full_power(attacker_id, game) - full_defense(target_id, game);
+    let damage = full_power(attacker_id, objects, game) - full_defense(target_id, objects, game);
     if damage > 0 {
         // make the target take some damage
         game.log.add(format!("{} attacks {} for {} hit points.",
-                             game.objects[attacker_id].name, game.objects[target_id].name, damage),
+                             objects[attacker_id].name, objects[target_id].name, damage),
                      colors::WHITE);
-        take_damage(target_id, damage, game);
+        take_damage(target_id, damage, objects, game);
     } else {
         game.log.add(format!("{} attacks {} but it has no effect!",
-                             game.objects[attacker_id].name, game.objects[target_id].name),
+                             objects[attacker_id].name, objects[target_id].name),
                      colors::WHITE);
     }
 }
 
 // an item that can be picked up and used.
-fn pick_item_up(id: usize, game: &mut Game) {
+fn pick_item_up(id: usize, objects: &mut Vec<Object>, game: &mut Game) {
     // add to the player's inventory and remove from the map
     if game.inventory.len() >= 26 {
-        game.log.add(format!("Your inventory is full, cannot pick up {}.", game.objects[id].name),
+        game.log.add(format!("Your inventory is full, cannot pick up {}.", objects[id].name),
                      colors::RED);
     } else {
-        let item = game.objects.swap_remove(id);
+        let item = objects.swap_remove(id);
         game.log.add(format!("You picked up a {}!", item.name), colors::GREEN);
         let inventory_id = game.inventory.len();
         let equipment_slot = item.equipment.as_ref().map(|e| e.slot.clone());
@@ -259,7 +259,7 @@ fn pick_item_up(id: usize, game: &mut Game) {
     }
 }
 
-fn use_item(inventory_id: usize, game: &mut Game, tcod: &mut TcodState) {
+fn use_item(inventory_id: usize, objects: &mut [Object], game: &mut Game, tcod: &mut TcodState) {
     // special case: if the object has the Equipment component, the "use" action is to equip/dequip
     if game.inventory[inventory_id].item.is_some() && game.inventory[inventory_id].equipment.is_some() {
         toggle_equip(inventory_id, game);
@@ -267,7 +267,7 @@ fn use_item(inventory_id: usize, game: &mut Game, tcod: &mut TcodState) {
     }
     // just call the "use_item" if it is defined
     if let Some(item) = game.inventory[inventory_id].item {
-        match item.use_item(game, tcod) {
+        match item.use_item(objects, game, tcod) {
             UseResult::Used => {
                 // destroy after use, unless it was cancelled for some reason
                 game.inventory.remove(inventory_id);
@@ -281,15 +281,15 @@ fn use_item(inventory_id: usize, game: &mut Game, tcod: &mut TcodState) {
     }
 }
 
-fn drop_item(inventory_id: usize, game: &mut Game) {
+fn drop_item(inventory_id: usize, objects: &mut Vec<Object>, game: &mut Game) {
     if game.inventory[inventory_id].equipment.is_some() {
         dequip(inventory_id, game);
     }
     let mut item = game.inventory.remove(inventory_id);
-    let (px, py) = game.objects[PLAYER].pos();
+    let (px, py) = objects[PLAYER].pos();
     item.set_pos(px, py);
     game.log.add(format!("You dropped a {}.", item.name), colors::YELLOW);
-    game.objects.push(item);
+    objects.push(item);
 }
 
 fn toggle_equip(inventory_id: usize, game: &mut Game) {
@@ -323,16 +323,16 @@ fn equip(inventory_id: usize, game: &mut Game) {
 //It's safer in that we don't have to think about putting the
 // equipment back. But it's more lines and I'm not sure whether it's
 // cleaner or not
-fn _equip2(id: usize, game: &mut Game) {
-    // equip object and show a message about it
-    game.objects[id].equipment.as_mut().map(|equipment| {
-        equipment.is_equipped = true;
-        equipment.slot.clone()  // TODO: if we have slot as enum, this will be simpler
-    }).map(|slot| {
-        game.log.add(format!("Equipped {} on {}.", game.objects[id].name, slot),
-                     colors::LIGHT_GREEN);
-    });
-}
+// fn _equip2(id: usize, game: &mut Game) {
+//     // equip object and show a message about it
+//     objects[id].equipment.as_mut().map(|equipment| {
+//         equipment.is_equipped = true;
+//         equipment.slot.clone()  // TODO: if we have slot as enum, this will be simpler
+//     }).map(|slot| {
+//         game.log.add(format!("Equipped {} on {}.", objects[id].name, slot),
+//                      colors::LIGHT_GREEN);
+//     });
+// }
 
 fn dequip(inventory_id: usize, game: &mut Game) {
     // dequip object and show a message about it
@@ -375,13 +375,13 @@ enum DeathCallback {
 }
 
 impl DeathCallback {
-    fn callback(&self, id: usize, game: &mut Game) {
+    fn callback(&self, id: usize, objects: &mut [Object], game: &mut Game) {
         use DeathCallback::*;
-        let callback: fn(id: usize, &mut Game) = match *self {
+        let callback: fn(id: usize, &mut [Object], &mut Game) = match *self {
             Monster => monster_death,
             Player => player_death,
         };
-        callback(id, game);
+        callback(id, objects, game);
     }
 }
 
@@ -402,48 +402,48 @@ struct MonsterAI {
 }
 
 impl MonsterAI {
-    fn take_turn(&mut self, monster_id: usize, game: &mut Game, tcod: &mut TcodState) -> Option<MonsterAI> {
+    fn take_turn(&mut self, monster_id: usize, objects: &mut [Object], game: &mut Game, tcod: &mut TcodState) -> Option<MonsterAI> {
         use MonsterAIType::*;
         match self.ai_type {
-            Basic => self.monster_basic_ai(monster_id, game, tcod),
-            Confused{..} => self.monster_confused_ai(monster_id, game, tcod),
+            Basic => self.monster_basic_ai(monster_id, objects, game, tcod),
+            Confused{..} => self.monster_confused_ai(monster_id, objects, game, tcod),
         }
     }
 
-    fn monster_basic_ai(&mut self, monster_id: usize, game: &mut Game, tcod: &mut TcodState) -> Option<MonsterAI> {
+    fn monster_basic_ai(&mut self, monster_id: usize, objects: &mut [Object], game: &mut Game, tcod: &mut TcodState) -> Option<MonsterAI> {
         // a basic monster takes its turn. If you can see it, it can see you
-        let (monster_x, monster_y) = game.objects[monster_id].pos();
+        let (monster_x, monster_y) = objects[monster_id].pos();
         if tcod.fov_map.is_in_fov(monster_x, monster_y) {
             // move towards player if far away
             let distance = {
-                let monster = &game.objects[monster_id];
-                let player = &game.objects[PLAYER];
+                let monster = &objects[monster_id];
+                let player = &objects[PLAYER];
                 monster.distance_to(player)
             };
             if distance >= 2.0 {
-                let (player_x, player_y) = game.objects[PLAYER].pos();
-                move_towards(monster_id, player_x, player_y, game);
-            } else if game.objects[PLAYER].fighter.as_ref().map_or(
+                let (player_x, player_y) = objects[PLAYER].pos();
+                move_towards(monster_id, player_x, player_y, objects, game);
+            } else if objects[PLAYER].fighter.as_ref().map_or(
                 false, |fighter| fighter.hp > 0) {
                 // close enough, attack! (if the player is still alive.)
-                attack(monster_id, PLAYER, game);
+                attack(monster_id, PLAYER, objects, game);
             }
         }
         None
     }
 
-    fn monster_confused_ai(&mut self, monster_id: usize, game: &mut Game, _tcod: &mut TcodState) -> Option<MonsterAI> {
+    fn monster_confused_ai(&mut self, monster_id: usize, objects: &mut [Object], game: &mut Game, _tcod: &mut TcodState) -> Option<MonsterAI> {
         use MonsterAIType::*;
         match self.ai_type {
             Confused{num_turns} => {
                 if num_turns > 0 {  // still confused...
                     // move in a random direction, and decrease the number of turns confused
-                    move_by(monster_id, range(-1, 1), range(-1, 1), game);
+                    move_by(monster_id, range(-1, 1), range(-1, 1), objects, game);
                     self.ai_type = Confused{num_turns: num_turns - 1};
                     None
                 } else {  // restore the previous AI (this one will be deleted)
                     game.log.add(format!("The {} is no longer confused!",
-                                         game.objects[monster_id].name),
+                                         objects[monster_id].name),
                                  colors::RED);
                     self.old_ai.take().map(|ai| *ai)
                 }
@@ -464,16 +464,16 @@ enum Item {
 }
 
 impl Item {
-    fn use_item(&self, game: &mut Game, tcod: &mut TcodState) -> UseResult {
+    fn use_item(&self, objects: &mut [Object], game: &mut Game, tcod: &mut TcodState) -> UseResult {
         use Item::*;
-        let callback: fn(&mut Game, &mut TcodState) -> UseResult = match *self {
+        let callback: fn(&mut [Object], &mut Game, &mut TcodState) -> UseResult = match *self {
             Heal => cast_heal,
             Lightning => cast_lightning,
             Fireball => cast_fireball,
             Confuse => cast_confuse,
             Item::None => cast_nothing,
         };
-        callback(game, tcod)
+        callback(objects, game, tcod)
     }
 }
 
@@ -491,22 +491,22 @@ struct Equipment {
     max_hp_bonus: i32,
 }
 
-fn full_power(id: usize, game: &Game) -> i32 {
-    let base_power = game.objects[id].fighter.as_ref().map_or(0, |f| f.base_power);
+fn full_power(id: usize, objects: &[Object], game: &Game) -> i32 {
+    let base_power = objects[id].fighter.as_ref().map_or(0, |f| f.base_power);
     // TODO: this is unstable, but maps closer to the Python tutorial and is easier to understand:
     //let bonus: i32 = get_all_equipped(id, game).iter().map(|e| e.power_bonus).sum();
     let bonus = get_all_equipped(id, game).iter().fold(0, |sum, e| sum + e.power_bonus);
     base_power + bonus
 }
 
-fn full_defense(id: usize, game: &Game) -> i32 {
-    let base_defense = game.objects[id].fighter.as_ref().map_or(0, |f| f.base_defense);
+fn full_defense(id: usize, objects: &[Object], game: &Game) -> i32 {
+    let base_defense = objects[id].fighter.as_ref().map_or(0, |f| f.base_defense);
     let bonus = get_all_equipped(id, game).iter().fold(0, |sum, e| sum + e.defense_bonus);
     base_defense + bonus
 }
 
-fn full_max_hp(id: usize, game: &Game) -> i32 {
-    let base_max_hp = game.objects[id].fighter.as_ref().map_or(0, |f| f.base_max_hp);
+fn full_max_hp(id: usize, objects: &[Object], game: &Game) -> i32 {
+    let base_max_hp = objects[id].fighter.as_ref().map_or(0, |f| f.base_max_hp);
     let bonus = get_all_equipped(id, game).iter().fold(0, |sum, e| sum + e.max_hp_bonus);
     base_max_hp + bonus
 }
@@ -877,10 +877,10 @@ fn get_names_under_mouse(mouse: Mouse, objects: &[Object], fov_map: &FovMap) -> 
         }).map(|obj| obj.name.clone()).collect::<Vec<_>>().connect(", ")
 }
 
-fn render_all(game: &mut Game, tcod: &mut TcodState) {
+fn render_all(objects: &[Object], game: &mut Game, tcod: &mut TcodState) {
     if game.fov_recompute {
         game.fov_recompute = false;
-        let (player_x, player_y) = game.objects[PLAYER].pos();
+        let (player_x, player_y) = objects[PLAYER].pos();
         tcod.fov_map.compute_fov(player_x, player_y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALGO);
 
         // go through all tiles, and set their background color according to the FOV
@@ -914,9 +914,9 @@ fn render_all(game: &mut Game, tcod: &mut TcodState) {
     }
 
     // Grab all renderable objects
-    let mut render_objects: Vec<_> = game.objects.iter().collect();
+    let mut render_objects: Vec<_> = objects.iter().collect();
     // Put the fighters first, then items, then everything else. This will not
-    // affect the order of the original game.objects vector.
+    // affect the order of the original objects vector.
     render_objects.sort_by(|o1, o2| {
         if o1.fighter.is_some() || o2.fighter.is_some() {
             return o1.fighter.is_some().cmp(&o2.fighter.is_some());
@@ -958,8 +958,8 @@ fn render_all(game: &mut Game, tcod: &mut TcodState) {
     }
 
     // show the player's stats
-    let hp = game.objects[PLAYER].fighter.as_ref().map_or(0, |f| f.hp);
-    let max_hp = full_max_hp(PLAYER, game);
+    let hp = objects[PLAYER].fighter.as_ref().map_or(0, |f| f.hp);
+    let max_hp = full_max_hp(PLAYER, objects, game);
     render_bar(&mut tcod.panel,
                1,
                1,
@@ -974,7 +974,7 @@ fn render_all(game: &mut Game, tcod: &mut TcodState) {
 
     // display names of objects under the mouse
     tcod.panel.set_default_foreground(colors::LIGHT_GREY);
-    let names = get_names_under_mouse(tcod.mouse, &game.objects, &tcod.fov_map);
+    let names = get_names_under_mouse(tcod.mouse, objects, &tcod.fov_map);
     tcod.panel.print_ex(1, 0, BackgroundFlag::None, TextAlignment::Left, names);
 
     // blit the contents of `panel` to the root console
@@ -987,31 +987,31 @@ fn render_all(game: &mut Game, tcod: &mut TcodState) {
                         1.0);
 }
 
-fn player_move_or_attack(dx: i32, dy: i32, game: &mut Game) {
+fn player_move_or_attack(dx: i32, dy: i32, objects: &mut [Object], game: &mut Game) {
     // the coordinates the player is moving to/attacking
     let (x, y) = {
-        let p = &game.objects[PLAYER];
+        let p = &objects[PLAYER];
         (p.x + dx, p.y + dy)
     };
 
     // try to find an attackable object there
-    let target = game.objects.iter().position(|object| {
+    let target = objects.iter().position(|object| {
         object.fighter.is_some() && object.pos() == (x, y)
     });
 
     // attack if target found, move otherwise
     match target {
         Some(target) => {
-            attack(PLAYER, target, game);
+            attack(PLAYER, target, objects, game);
         }
         None => {
-            move_by(PLAYER, dx, dy, game);
+            move_by(PLAYER, dx, dy, objects, game);
             game.fov_recompute = true;
         }
     }
 }
 
-fn handle_keys(game: &mut Game, tcod: &mut TcodState, event: Option<Event>) -> PlayerAction {
+fn handle_keys(objects: &mut Vec<Object>, game: &mut Game, tcod: &mut TcodState, event: Option<Event>) -> PlayerAction {
     use tcod::input::KeyCode::*;
     let key = if let Some(Event::Key(key)) = event {
         key
@@ -1029,48 +1029,48 @@ fn handle_keys(game: &mut Game, tcod: &mut TcodState, event: Option<Event>) -> P
         match key {
             // movement keys
             Key { code: Up, .. } | Key { code: NumPad8, .. } => {
-                player_move_or_attack(0, -1, game);
+                player_move_or_attack(0, -1, objects, game);
                 return PlayerAction::None;
             }
             Key { code: Down, .. } | Key { code: NumPad2, .. } => {
-                player_move_or_attack(0, 1, game);
+                player_move_or_attack(0, 1, objects, game);
                 return PlayerAction::None;
             }
             Key { code: Left, .. } | Key { code: NumPad4, .. } => {
-                player_move_or_attack(-1, 0, game);
+                player_move_or_attack(-1, 0, objects, game);
                 return PlayerAction::None;
             }
             Key { code: Right, .. } | Key { code: NumPad6, .. } => {
-                player_move_or_attack(1, 0, game);
+                player_move_or_attack(1, 0, objects, game);
                 return PlayerAction::None;
             }
             Key { code: Home, .. } | Key { code: NumPad7, .. } => {
-                player_move_or_attack(-1, -1, game);
+                player_move_or_attack(-1, -1, objects, game);
                 return PlayerAction::None;
             }
             Key { code: PageUp, .. } | Key { code: NumPad9, .. } => {
-                player_move_or_attack(1, -1, game);
+                player_move_or_attack(1, -1, objects, game);
                 return PlayerAction::None;
             }
             Key { code: End, .. } | Key { code: NumPad1, .. } => {
-                player_move_or_attack(-1, 1, game);
+                player_move_or_attack(-1, 1, objects, game);
                 return PlayerAction::None;
             }
             Key { code: PageDown, .. } | Key { code: NumPad3, .. } => {
-                player_move_or_attack(1, 1, game);
+                player_move_or_attack(1, 1, objects, game);
                 return PlayerAction::None;
             }
             Key { code: NumPad5, .. } => {
                 return PlayerAction::None;  // do nothing ie wait for the monster to come to you
             }
             Key { printable: 'g', .. } => {
-                let (px, py) = game.objects[PLAYER].pos();
-                let item_id = game.objects.iter().position(|object| {
+                let (px, py) = objects[PLAYER].pos();
+                let item_id = objects.iter().position(|object| {
                     object.pos() == (px, py) && object.item.is_some()
                 });
                 // pick up an item
                 if let Some(item_id) = item_id {
-                    pick_item_up(item_id, game);
+                    pick_item_up(item_id, objects, game);
                 }
             }
             Key { printable: 'i', .. } => {
@@ -1079,7 +1079,7 @@ fn handle_keys(game: &mut Game, tcod: &mut TcodState, event: Option<Event>) -> P
                     game,
                     "Press the key next to an item to use it, or any other to cancel.\n");
                 if let Some(inventory_index) = inventory_index {
-                    use_item(inventory_index, game, tcod);
+                    use_item(inventory_index, objects, game, tcod);
                 }
             }
             Key { printable: 'd', .. } => {
@@ -1088,17 +1088,17 @@ fn handle_keys(game: &mut Game, tcod: &mut TcodState, event: Option<Event>) -> P
                     game,
                     "Press the key next to an item to drop it, or any other to cancel.\n");
                 if let Some(inventory_index) = inventory_index {
-                    drop_item(inventory_index, game);
+                    drop_item(inventory_index, objects, game);
                 }
             }
             Key { printable: 'c', .. } => {
                 // show character information
-                let level = game.objects[PLAYER].level;
+                let level = objects[PLAYER].level;
                 let level_up_xp = LEVEL_UP_BASE + level * LEVEL_UP_FACTOR;
-                let power = full_power(PLAYER, game);
-                let defense = full_defense(PLAYER, game);
-                let max_hp = full_max_hp(PLAYER, game);
-                if let Some(fighter) = game.objects[PLAYER].fighter.as_ref() {
+                let power = full_power(PLAYER, objects, game);
+                let defense = full_defense(PLAYER, objects, game);
+                let max_hp = full_max_hp(PLAYER, objects, game);
+                if let Some(fighter) = objects[PLAYER].fighter.as_ref() {
                     let msg = format!(
                         "Character information\n\nLevel: {}\nExperience: {}\nExperience to level \
                          up: {}\n\nMaximum HP: {}\nAttack: {}\nDefense: {}",
@@ -1108,12 +1108,12 @@ fn handle_keys(game: &mut Game, tcod: &mut TcodState, event: Option<Event>) -> P
             }
             Key { printable: '<', .. } => {
                 // go down stairs, if the player is on them
-                let player_pos = game.objects[PLAYER].pos();
-                let player_stands_on_stairs = game.objects.iter().any(|object| {
+                let player_pos = objects[PLAYER].pos();
+                let player_stands_on_stairs = objects.iter().any(|object| {
                     object.pos() == player_pos && object.name == "stairs"
                 });
                 if player_stands_on_stairs {
-                    game.next_level(tcod);
+                    game.next_level(objects, tcod);
                 }
             }
             _ => { }
@@ -1122,21 +1122,21 @@ fn handle_keys(game: &mut Game, tcod: &mut TcodState, event: Option<Event>) -> P
     return PlayerAction::DidntTakeTurn;
 }
 
-fn check_level_up(game: &mut Game, tcod: &mut TcodState) {
+fn check_level_up(objects: &mut [Object], game: &mut Game, tcod: &mut TcodState) {
     // see if the player's experience is enough to level-up
-    let level_up_xp = LEVEL_UP_BASE + game.objects[PLAYER].level * LEVEL_UP_FACTOR;
+    let level_up_xp = LEVEL_UP_BASE + objects[PLAYER].level * LEVEL_UP_FACTOR;
     // TODO: NOTE: We have to pull max_hp etc. out because since it's taken
     // out inside the block, we'd get back zero. Maybe reconsider the `take` strategy?
-    let power = full_power(PLAYER, game);
-    let defense = full_defense(PLAYER, game);
-    let max_hp = full_max_hp(PLAYER, game);
-    let mut fighter = game.objects[PLAYER].fighter.take().unwrap();
+    let power = full_power(PLAYER, objects, game);
+    let defense = full_defense(PLAYER, objects, game);
+    let max_hp = full_max_hp(PLAYER, objects, game);
+    let mut fighter = objects[PLAYER].fighter.take().unwrap();
     if fighter.xp >= level_up_xp {
         // it is! level up
-        game.objects[PLAYER].level += 1;
+        objects[PLAYER].level += 1;
         fighter.xp -= level_up_xp;
         game.log.add(format!("Your battle skills grow stronger! You reached level {}!",
-                             game.objects[PLAYER].level),
+                             objects[PLAYER].level),
                      colors::YELLOW);
 
         loop {  // keep asking until a choice is made
@@ -1162,9 +1162,8 @@ fn check_level_up(game: &mut Game, tcod: &mut TcodState) {
                 _ => continue
             }
         }
-
     }
-    game.objects[PLAYER].fighter = Some(fighter);
+    objects[PLAYER].fighter = Some(fighter);
 }
 
 #[derive(Copy, Clone, PartialEq)]
@@ -1180,25 +1179,25 @@ enum GameState {
     Death,
 }
 
-fn player_death(id: usize, game: &mut Game) {
+fn player_death(id: usize, objects: &mut [Object], game: &mut Game) {
     // the game ended!
     game.log.add("You died!", colors::RED);
     game.state = GameState::Death;
 
-    let player = &mut game.objects[id];
+    let player = &mut objects[id];
     // for added effect, transform the player into a corpse!
     player.char = '%';
     player.color = colors::DARK_RED;
 }
 
-fn monster_death(id: usize, game: &mut Game) {
+fn monster_death(id: usize, objects: &mut [Object], game: &mut Game) {
     // transform it into a nasty corpse! it doesn't block, can't be
     // attacked and doesn't move
     game.log.add(format!("{} is dead! You gain {} experience points.",
-                         game.objects[id].name,
-                         game.objects[id].fighter.as_ref().unwrap().xp),
+                         objects[id].name,
+                         objects[id].fighter.as_ref().unwrap().xp),
                  colors::ORANGE);
-    let monster = &mut game.objects[id];
+    let monster = &mut objects[id];
     monster.char = '%';
     monster.color = colors::DARK_RED;
     monster.blocks = false;
@@ -1209,7 +1208,8 @@ fn monster_death(id: usize, game: &mut Game) {
 
 /// return the position of a tile left-clicked in player's FOV (optionally in a
 /// range), or (None,None) if right-clicked.
-fn target_tile(game: &mut Game,
+fn target_tile(objects: &[Object],
+               game: &mut Game,
                tcod: &mut TcodState,
                max_range: Option<f32>)
                -> Option<(i32, i32)> {
@@ -1225,7 +1225,7 @@ fn target_tile(game: &mut Game,
             Some(Event::Key(k)) => key = Some(k),
             None => {}
         }
-        render_all(game, tcod);
+        render_all(objects, game, tcod);
 
         let (x, y) = (tcod.mouse.cx as i32, tcod.mouse.cy as i32);
 
@@ -1233,7 +1233,7 @@ fn target_tile(game: &mut Game,
         // is specified, if it's in that range
         let in_fov = tcod.fov_map.is_in_fov(x, y);
         let in_range = max_range.map_or(
-            true, |range| game.objects[PLAYER].distance(x, y) <= range);
+            true, |range| objects[PLAYER].distance(x, y) <= range);
         if tcod.mouse.lbutton_pressed && in_fov && in_range {
             return Some((x, y))
         }
@@ -1247,13 +1247,13 @@ fn target_tile(game: &mut Game,
 
 
 /// returns a clicked monster inside FOV up to a range, or None if right-clicked
-fn target_monster(game: &mut Game, tcod: &mut TcodState, max_range: Option<f32>) -> Option<usize> {
+fn target_monster(objects: &[Object], game: &mut Game, tcod: &mut TcodState, max_range: Option<f32>) -> Option<usize> {
     loop {
-        match target_tile(game, tcod, max_range) {
+        match target_tile(objects, game, tcod, max_range) {
             None => return None,
             Some((x, y)) => {
                 // return the first clicked monster, otherwise continue looping
-                for (id, obj) in game.objects.iter().enumerate() {
+                for (id, obj) in objects.iter().enumerate() {
                     if obj.pos() == (x, y) && obj.fighter.is_some() && id != PLAYER {
                         return Some(id)
                     }
@@ -1263,17 +1263,17 @@ fn target_monster(game: &mut Game, tcod: &mut TcodState, max_range: Option<f32>)
     }
 }
 
-fn closest_monster(max_range: i32, game: &Game, tcod: &TcodState) -> Option<usize> {
+fn closest_monster(max_range: i32, objects: &mut [Object], tcod: &TcodState) -> Option<usize> {
     // find closest enemy, up to a maximum range, and in the player's FOV
     let mut closest_enemy = None;
     let mut closest_dist = (max_range + 1) as f32;  // start with (slightly more than) maximum range
 
     // TODO: this could be done more succinctly with Iter::min_by but that's unstable now.
-    for (id, object) in game.objects.iter().enumerate() {
+    for (id, object) in objects.iter().enumerate() {
         if id != PLAYER && object.fighter.is_some() &&
            tcod.fov_map.is_in_fov(object.x, object.y) {
             // calculate distance between this object and the player
-            let dist = game.objects[PLAYER].distance_to(object);
+            let dist = objects[PLAYER].distance_to(object);
             if dist < closest_dist {  // it's closer, so remember it
                 closest_enemy = Some(id);
                 closest_dist = dist;
@@ -1283,35 +1283,35 @@ fn closest_monster(max_range: i32, game: &Game, tcod: &TcodState) -> Option<usiz
     closest_enemy
 }
 
-fn cast_heal(game: &mut Game, _tcod: &mut TcodState) -> UseResult {
+fn cast_heal(objects: &mut [Object], game: &mut Game, _tcod: &mut TcodState) -> UseResult {
     // heal the player
-    let max_hp = full_max_hp(PLAYER, game);
+    let max_hp = full_max_hp(PLAYER, objects, game);
     // TODO: NOTE: We have to pull max_hp out because since it's taken
     // out inside the block, we'd get back zero. Maybe reconsider the `take` strategy?
-    if let Some(mut fighter) = game.objects[PLAYER].fighter.take() {
+    if let Some(mut fighter) = objects[PLAYER].fighter.take() {
         if fighter.hp == max_hp {
             game.log.add("You are already at full health.", colors::RED);
-            game.objects[PLAYER].fighter = Some(fighter);
+            objects[PLAYER].fighter = Some(fighter);
             return UseResult::Cancelled;
         }
         game.log.add("Your wounds start to feel better!", colors::LIGHT_VIOLET);
         fighter.heal(HEAL_AMOUNT);
-        game.objects[PLAYER].fighter = Some(fighter);
+        objects[PLAYER].fighter = Some(fighter);
         return UseResult::Used;
     }
     return UseResult::Cancelled;
 }
 
-fn cast_lightning(game: &mut Game, tcod: &mut TcodState) -> UseResult {
+fn cast_lightning(objects: &mut [Object], game: &mut Game, tcod: &mut TcodState) -> UseResult {
     // find closest enemy (inside a maximum range) and damage it
-    let monster_id = closest_monster(LIGHTNING_RANGE, game, tcod);
+    let monster_id = closest_monster(LIGHTNING_RANGE, objects, tcod);
     if let Some(monster_id) = monster_id {
         // zap it!
         game.log.add(format!("A lightning bolt strikes the {} with a loud thunder! \
                               The damage is {} hit points.",
-                             game.objects[monster_id].name, LIGHTNING_DAMAGE),
+                             objects[monster_id].name, LIGHTNING_DAMAGE),
                      colors::LIGHT_BLUE);
-        take_damage(monster_id, LIGHTNING_DAMAGE, game);
+        take_damage(monster_id, LIGHTNING_DAMAGE, objects, game);
         UseResult::Used
     } else {  // no enemy found within maximum range
         game.log.add("No enemy is close enough to strike.", colors::RED);
@@ -1319,11 +1319,11 @@ fn cast_lightning(game: &mut Game, tcod: &mut TcodState) -> UseResult {
     }
 }
 
-fn cast_fireball(game: &mut Game, tcod: &mut TcodState) -> UseResult {
+fn cast_fireball(objects: &mut [Object], game: &mut Game, tcod: &mut TcodState) -> UseResult {
     // ask the player for a target tile to throw a fireball at
     game.log.add("Left-click a target tile for the fireball, or right-click to cancel.",
                  colors::LIGHT_CYAN);
-    let (x, y) = match target_tile(game, tcod, None) {
+    let (x, y) = match target_tile(objects, game, tcod, None) {
         Some(tile_pos) => tile_pos,
         None => { return UseResult::Cancelled },
     };
@@ -1332,29 +1332,29 @@ fn cast_fireball(game: &mut Game, tcod: &mut TcodState) -> UseResult {
                  colors::ORANGE);
 
     // find every fighter in range, including the player
-    let burned_objects: Vec<_> = game.objects.iter()
+    let burned_objects: Vec<_> = objects.iter()
         .enumerate()
         .filter(|&(_id, obj)| obj.distance(x, y) <= FIREBALL_RADIUS as f32 && obj.fighter.is_some())
         .map(|(id, _obj)| id)
         .collect();
     for &id in &burned_objects {
         game.log.add(format!("The {} gets burned for {} hit points.",
-                             game.objects[id].name, FIREBALL_DAMAGE),
+                             objects[id].name, FIREBALL_DAMAGE),
                      colors::ORANGE);
-        take_damage(id, FIREBALL_DAMAGE, game);
+        take_damage(id, FIREBALL_DAMAGE, objects, game);
     }
     UseResult::Used
 }
 
-fn cast_confuse(game: &mut Game, tcod: &mut TcodState) -> UseResult {
+fn cast_confuse(objects: &mut [Object], game: &mut Game, tcod: &mut TcodState) -> UseResult {
     // ask the player for a target to confuse
     game.log.add("Left-click an enemy to confuse it, or right-click to cancel.",
                  colors::LIGHT_CYAN);
-    target_monster(game, tcod, Some(CONFUSE_RANGE as f32)).map_or(UseResult::Cancelled, |id| {
+    target_monster(objects, game, tcod, Some(CONFUSE_RANGE as f32)).map_or(UseResult::Cancelled, |id| {
         // replace the monster's AI with a "confused" one; after some
         // turns it will restore the old AI
         {
-            let mut monster = &mut game.objects[id];
+            let mut monster = &mut objects[id];
             let old_ai = monster.ai.take();
             let confuse_ai = MonsterAI {
                 old_ai: old_ai.map(|ai| Box::new(ai)),
@@ -1363,7 +1363,7 @@ fn cast_confuse(game: &mut Game, tcod: &mut TcodState) -> UseResult {
             monster.ai = Some(confuse_ai);
         }
         game.log.add(format!("The eyes of the {} look vacant, as he starts to stumble around!",
-                             game.objects[id].name),
+                             objects[id].name),
                      colors::GREEN);
         UseResult::Used
     })
@@ -1372,7 +1372,7 @@ fn cast_confuse(game: &mut Game, tcod: &mut TcodState) -> UseResult {
 // This is a no-op function for items that have any effect by
 // themselves. E.g. Equimpent is also an item, but its use action is
 // special-cased.
-fn cast_nothing(_game: &mut Game, _tcod: &mut TcodState) -> UseResult {
+fn cast_nothing(_objects: &mut [Object], _game: &mut Game, _tcod: &mut TcodState) -> UseResult {
     UseResult::Used
 }
 
@@ -1502,13 +1502,13 @@ struct Game {
     dungeon_level: i32,
     map: Map,
     fov_recompute: bool,
-    objects: Vec<Object>,
     log: MessageLog,
     inventory: Vec<Object>,
 }
 
 impl Game {
-    fn new(tcod: &mut TcodState) -> Self {
+    // TODO: this should not return the objects vec as well!
+    fn new(tcod: &mut TcodState) -> (Self, Vec<Object>) {
         // create object representing the player
         let mut player = Object::new(0, 0, '@', "player", colors::WHITE, true);
         player.fighter = Some(
@@ -1529,7 +1529,6 @@ impl Game {
             fov_recompute: false,
             // create the list of game messages and their colors, starts empty
             log: MessageLog::new(),
-            objects: objects,
             inventory: vec![],
         };
         game.initialize_fov(tcod);
@@ -1552,15 +1551,15 @@ impl Game {
         game.inventory.push(dagger);
         equip(dagger_id, &mut game);
 
-        game
+        (game, objects)
     }
 
-    fn next_level(&mut self, tcod: &mut TcodState) {
+    fn next_level(&mut self, objects: &mut Vec<Object>, tcod: &mut TcodState) {
         // advance to the next level
         self.log.add(
             "You take a moment to rest, and recover your strength.", colors::LIGHT_VIOLET);
-        let max_hp = full_max_hp(PLAYER, self);
-        self.objects[PLAYER].fighter.as_mut().map(|f| {
+        let max_hp = full_max_hp(PLAYER, objects, self);
+        objects[PLAYER].fighter.as_mut().map(|f| {
             let heal_hp = max_hp / 2;
             f.heal(heal_hp);
         });  // heal the player by 50%
@@ -1570,7 +1569,7 @@ impl Game {
             colors::RED);
         self.dungeon_level += 1;
         // create a fresh new level!
-        self.map = make_map(&mut self.objects, self.dungeon_level);
+        self.map = make_map(objects, self.dungeon_level);
         self.initialize_fov(tcod);
     }
 
@@ -1588,25 +1587,25 @@ impl Game {
         tcod.con.clear();  // unexplored areas start black (which is the default background color)
     }
 
-    fn save_game(&self) {
-        let json_save_state = json::encode(self).unwrap();
+    fn save_game(&self, objects: &[Object]) {
+        let json_save_state = json::encode(&(self, objects)).unwrap();
         let mut file = File::create("savegame").unwrap();
         file.write_all(json_save_state.as_bytes()).unwrap();
     }
 
-    fn load_game(tcod: &mut TcodState) -> Result<Self, Error> {
+    fn load_game(tcod: &mut TcodState) -> Result<(Self, Vec<Object>), Error> {
         use std::io::ErrorKind::InvalidData;
         let mut json_save_state = String::new();
         let mut file = try!{ File::open("savegame") };
         try!{ file.read_to_string(&mut json_save_state) };
-        let mut game = try!{
-            json::decode::<Game>(&json_save_state).map_err(|e| Error::new(InvalidData, e))
+        let (mut game, objects) = try!{
+            json::decode::<(Game, Vec<Object>)>(&json_save_state).map_err(|e| Error::new(InvalidData, e))
         };
         game.initialize_fov(tcod);
-        Ok(game)
+        Ok((game, objects))
     }
 
-    fn play_game(&mut self, tcod: &mut TcodState) {
+    fn play_game(&mut self, objects: &mut Vec<Object>, tcod: &mut TcodState) {
         let mut player_action;
         while !tcod.root.window_closed() {
             let event = input::check_for_event(input::KEY_PRESS | input::MOUSE).map(|e| e.1);
@@ -1614,22 +1613,22 @@ impl Game {
                 tcod.mouse = m;
             }
             // render the screen
-            render_all(self, tcod);
+            render_all(objects, self, tcod);
 
             tcod.root.flush();
 
             // level up if needed
-            check_level_up(self, tcod);
+            check_level_up(objects, self, tcod);
 
             // erase all objects at their old location, before they move
-            for object in &self.objects {
+            for object in objects.iter_mut() {
                 object.clear(&mut tcod.con);
             }
 
             // handle keys and exit game if needed
-            player_action = handle_keys(self, tcod, event);
+            player_action = handle_keys(objects, self, tcod, event);
             if player_action == PlayerAction::Exit {
-                self.save_game();
+                self.save_game(objects);
                 break;
             }
 
@@ -1639,11 +1638,11 @@ impl Game {
                 // TODO: this will fail if we reorder objects or remove some!!!
                 // NOTE: reversing the order lets us remove the
                 // current item. But we're no doing that, soo...
-                for id in (0..self.objects.len()).rev() {
-                    let ai = self.objects[id].ai.take();
+                for id in (0..objects.len()).rev() {
+                    let ai = objects[id].ai.take();
                     if let Some(mut old_ai) = ai {
-                        let new_ai = old_ai.take_turn(id, self, tcod);
-                        self.objects[id].ai = new_ai.or(Some(old_ai));
+                        let new_ai = old_ai.take_turn(id, objects, self, tcod);
+                        objects[id].ai = new_ai.or(Some(old_ai));
                     }
                 }
             }
@@ -1667,13 +1666,13 @@ fn main_menu(root: Root, con: Offscreen, panel: Offscreen) {
 
         match choice {
             Some(0) => {  // new game
-                let mut game = Game::new(&mut tcod);
-                return game.play_game(&mut tcod);
+                let (mut game, mut objects) = Game::new(&mut tcod);
+                return game.play_game(&mut objects, &mut tcod);
             }
             Some(1) => {  // load last game
                 match Game::load_game(&mut tcod) {
-                    Ok(mut game) => {
-                        return game.play_game(&mut tcod);
+                    Ok((mut game, mut objects)) => {
+                        return game.play_game(&mut objects, &mut tcod);
                     }
                     Err(_) => {
                         tcod.msgbox("\n No saved game to load.\n", 24);
