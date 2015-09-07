@@ -1275,19 +1275,15 @@ fn closest_monster(max_range: i32, objects: &mut [Object], tcod: &TcodState) -> 
 
 fn cast_heal(objects: &mut [Object], game: &mut Game, _tcod: &mut TcodState) -> UseResult {
     let player = &mut objects[PLAYER];
-    // heal the player
-    // TODO: NOTE: We have to pull max_hp out because since it's taken
-    // out inside the block, we'd get back zero. Maybe reconsider the `take` strategy?
     let max_hp = player.full_max_hp(game);
-    if let Some(mut fighter) = player.fighter.take() {
+    // heal the player
+    if let Some(fighter) = player.fighter.as_mut() {
         if fighter.hp == max_hp {
             game.log.add("You are already at full health.", colors::RED);
-            player.fighter = Some(fighter);
             return UseResult::Cancelled;
         }
         game.log.add("Your wounds start to feel better!", colors::LIGHT_VIOLET);
         fighter.heal(HEAL_AMOUNT);
-        player.fighter = Some(fighter);
         return UseResult::Used;
     }
     return UseResult::Cancelled;
