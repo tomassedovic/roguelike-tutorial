@@ -196,6 +196,25 @@ impl Object {
             xp
         })
     }
+
+    fn attack(&mut self, target: &mut Object, game: &mut Game) {
+        // a simple formula for attack damage
+        let damage = full_power(self, game) - full_defense(target, game);
+        if damage > 0 {
+            // make the target take some damage
+            game.log.add(format!("{} attacks {} for {} hit points.",
+                                 self.name, target.name, damage),
+                         colors::WHITE);
+            target.take_damage(damage, game).map(|xp| {
+                if self.is_player() {
+                    self.fighter.as_mut().unwrap().xp += xp;
+                }
+            });
+        } else {
+            game.log.add(format!("{} attacks {} but it has no effect!", self.name, target.name),
+                         colors::WHITE);
+        }
+    }
 }
 
 
@@ -237,25 +256,6 @@ fn mut_two<'a, T>(first_index: usize, second_index: usize, items: &'a mut [T])
         (&mut first_slice[first_index], &mut second_slice[0])
     } else {
         (&mut second_slice[0], &mut first_slice[second_index])
-    }
-}
-
-fn attack(attacker: &mut Object, target: &mut Object, game: &mut Game) {
-    // a simple formula for attack damage
-    let damage = full_power(attacker, game) - full_defense(target, game);
-    if damage > 0 {
-        // make the target take some damage
-        game.log.add(format!("{} attacks {} for {} hit points.",
-                             attacker.name, target.name, damage),
-                     colors::WHITE);
-        target.take_damage(damage, game).map(|xp| {
-            if attacker.is_player() {
-                attacker.fighter.as_mut().unwrap().xp += xp;
-            }
-        });
-    } else {
-        game.log.add(format!("{} attacks {} but it has no effect!", attacker.name, target.name),
-                     colors::WHITE);
     }
 }
 
@@ -449,7 +449,7 @@ impl MonsterAI {
                 false, |fighter| fighter.hp > 0) {
                 // close enough, attack! (if the player is still alive.)
                 let (monster, player) = mut_two(monster_id, PLAYER, objects);
-                attack(monster, player, game);
+                monster.attack(player, game);
             }
         }
         None
@@ -1026,7 +1026,7 @@ fn player_move_or_attack(dx: i32, dy: i32, objects: &mut [Object], game: &mut Ga
     match target_id {
         Some(target_id) => {
             let (player, target) = mut_two(PLAYER, target_id, objects);
-            attack(player, target, game);
+            player.attack(target, game);
         }
         None => {
             move_by(PLAYER, dx, dy, objects, game);
