@@ -175,26 +175,26 @@ impl Object {
         con.put_char(self.x, self.y, ' ', BackgroundFlag::None);
     }
 
+    pub fn take_damage(&mut self, damage: i32, game: &mut Game) -> Option<i32> {
+        let death = self.fighter.as_mut().map_or(None, |fighter| {
+            // apply damage if possible
+            if damage > 0 {
+                fighter.hp -= damage;
+            }
+            if fighter.hp <= 0 {
+                fighter.death.map(|d| (d, fighter.xp))
+            } else {
+                None
+            }
+        });
+        death.map(|(death, xp)| {
+            death.callback(self, game);
+            xp
+        })
+    }
 }
 
 
-fn take_damage(object: &mut Object, damage: i32, game: &mut Game) -> Option<i32> {
-    let death = object.fighter.as_mut().map_or(None, |fighter| {
-        // apply damage if possible
-        if damage > 0 {
-            fighter.hp -= damage;
-        }
-        if fighter.hp <= 0 {
-            fighter.death.map(|d| (d, fighter.xp))
-        } else {
-            None
-        }
-    });
-    death.map(|(death, xp)| {
-        death.callback(object, game);
-        xp
-    })
-}
 
 /// move by the given amount, if the destination is not blocked
 fn move_by(id: usize, dx: i32, dy: i32, objects: &mut [Object], game: &mut Game) {
@@ -227,7 +227,7 @@ fn attack(attacker_id: usize, target_id: usize, objects: &mut [Object], game: &m
         game.log.add(format!("{} attacks {} for {} hit points.",
                              objects[attacker_id].name, objects[target_id].name, damage),
                      colors::WHITE);
-        take_damage(&mut objects[target_id], damage, game).map(|xp| {
+        objects[target_id].take_damage(damage, game).map(|xp| {
             if attacker_id == PLAYER {
                 objects[PLAYER].fighter.as_mut().unwrap().xp += xp;
             }
@@ -1311,7 +1311,7 @@ fn cast_lightning(objects: &mut [Object], game: &mut Game, tcod: &mut TcodState)
                               The damage is {} hit points.",
                              objects[monster_id].name, LIGHTNING_DAMAGE),
                      colors::LIGHT_BLUE);
-        take_damage(&mut objects[monster_id], LIGHTNING_DAMAGE, game).map(|xp| {
+        objects[monster_id].take_damage(LIGHTNING_DAMAGE, game).map(|xp| {
             objects[PLAYER].fighter.as_mut().unwrap().xp += xp;
         });
         UseResult::Used
@@ -1343,7 +1343,7 @@ fn cast_fireball(objects: &mut [Object], game: &mut Game, tcod: &mut TcodState) 
         game.log.add(format!("The {} gets burned for {} hit points.",
                              objects[id].name, FIREBALL_DAMAGE),
                      colors::ORANGE);
-        take_damage(&mut objects[id], FIREBALL_DAMAGE, game).map(|xp| {
+        objects[id].take_damage(FIREBALL_DAMAGE, game).map(|xp| {
             if id != PLAYER {
                 objects[PLAYER].fighter.as_mut().unwrap().xp += xp;
             }
