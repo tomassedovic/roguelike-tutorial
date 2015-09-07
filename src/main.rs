@@ -338,10 +338,8 @@ fn use_item(inventory_id: usize, objects: &mut [Object], game: &mut Game, tcod: 
 }
 
 fn drop_item(inventory_id: usize, objects: &mut Vec<Object>, game: &mut Game) {
-    if game.inventory[inventory_id].equipment.is_some() {
-        dequip(inventory_id, game);
-    }
     let mut item = game.inventory.remove(inventory_id);
+    dequip(&mut item, &mut game.log);
     let (px, py) = objects[PLAYER].pos();
     item.set_pos(px, py);
     game.log.add(format!("You dropped a {}.", item.name), colors::YELLOW);
@@ -350,7 +348,7 @@ fn drop_item(inventory_id: usize, objects: &mut Vec<Object>, game: &mut Game) {
 
 fn toggle_equip(inventory_id: usize, game: &mut Game) {
     if game.inventory[inventory_id].equipment.as_ref().map_or(false, |e| e.is_equipped) {
-        dequip(inventory_id, game);
+        dequip(&mut game.inventory[inventory_id], &mut game.log);
     } else {
         equip(inventory_id, game);
     }
@@ -362,7 +360,7 @@ fn equip(inventory_id: usize, game: &mut Game) {
     // This will have to be changed if we switch to a slot enum.
     let slot = game.inventory[inventory_id].equipment.as_ref().map_or("".into(), |e| e.slot.clone());
     if let Some(old_equipment_id) = get_equipped_in_slot(&slot, &game.inventory) {
-        dequip(old_equipment_id, game);
+        dequip(&mut game.inventory[old_equipment_id], &mut game.log);
     }
     // equip object and show a message about it
     let item = &mut game.inventory[inventory_id];
@@ -373,13 +371,12 @@ fn equip(inventory_id: usize, game: &mut Game) {
     }
 }
 
-fn dequip(inventory_id: usize, game: &mut Game) {
+fn dequip(item: &mut Object, messages: &mut MessageLog) {
     // dequip object and show a message about it
-    let item = &mut game.inventory[inventory_id];
     if let Some(equipment) = item.equipment.as_mut() {
         if equipment.is_equipped {
             equipment.is_equipped = false;
-            game.log.add(format!("Dequipped {} from {}.", item.name, equipment.slot),
+            messages.add(format!("Dequipped {} from {}.", item.name, equipment.slot),
                          colors::LIGHT_YELLOW);
         }
     }
