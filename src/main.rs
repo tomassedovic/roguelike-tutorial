@@ -1346,17 +1346,15 @@ fn cast_confuse(objects: &mut [Object], game: &mut Game, tcod: &mut TcodState) -
     target_monster(objects, game, tcod, Some(CONFUSE_RANGE as f32)).map_or(UseResult::Cancelled, |id| {
         // replace the monster's AI with a "confused" one; after some
         // turns it will restore the old AI
-        {
-            let mut monster = &mut objects[id];
-            let old_ai = monster.ai.take();
-            let confuse_ai = MonsterAI {
-                old_ai: old_ai.map(|ai| Box::new(ai)),
-                ai_type: MonsterAIType::Confused{num_turns: CONFUSE_NUM_TURNS},
-            };
-            monster.ai = Some(confuse_ai);
-        }
+        let mut monster = &mut objects[id];
+        let old_ai = monster.ai.take().map(Box::new);
+        let confuse_ai = MonsterAI {
+            old_ai: old_ai,
+            ai_type: MonsterAIType::Confused{num_turns: CONFUSE_NUM_TURNS},
+        };
+        monster.ai = Some(confuse_ai);
         game.log.add(format!("The eyes of the {} look vacant, as he starts to stumble around!",
-                             objects[id].name),
+                             monster.name),
                      colors::GREEN);
         UseResult::Used
     })
