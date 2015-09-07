@@ -270,7 +270,7 @@ fn use_item(inventory_id: usize, game: &mut Game, tcod: &mut TcodState) {
         match item.use_item(game, tcod) {
             UseResult::Used => {
                 // destroy after use, unless it was cancelled for some reason
-                game.inventory.swap_remove(inventory_id);
+                game.inventory.remove(inventory_id);
             }
             UseResult::Cancelled => {
                 game.log.add("Cancelled", colors::WHITE);
@@ -285,7 +285,7 @@ fn drop_item(inventory_id: usize, game: &mut Game) {
     if game.inventory[inventory_id].equipment.is_some() {
         dequip(inventory_id, game);
     }
-    let mut item = game.inventory.swap_remove(inventory_id);
+    let mut item = game.inventory.remove(inventory_id);
     let (px, py) = game.objects[PLAYER].pos();
     item.set_pos(px, py);
     game.log.add(format!("You dropped a {}.", item.name), colors::YELLOW);
