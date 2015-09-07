@@ -375,14 +375,13 @@ fn equip(inventory_id: usize, game: &mut Game) {
 
 fn dequip(inventory_id: usize, game: &mut Game) {
     // dequip object and show a message about it
-    if let Some(mut equipment) = game.inventory[inventory_id].equipment.take() {
+    let item = &mut game.inventory[inventory_id];
+    if let Some(equipment) = item.equipment.as_mut() {
         if equipment.is_equipped {
             equipment.is_equipped = false;
-            game.log.add(format!("Dequipped {} from {}.", game.inventory[inventory_id].name, equipment.slot),
+            game.log.add(format!("Dequipped {} from {}.", item.name, equipment.slot),
                          colors::LIGHT_YELLOW);
         }
-
-        game.inventory[inventory_id].equipment = Some(equipment);
     }
 }
 
