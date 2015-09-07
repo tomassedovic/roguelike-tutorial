@@ -1628,15 +1628,11 @@ impl Game {
 
             // let monsters take their turn
             if self.state == GameState::Playing && player_action != PlayerAction::DidntTakeTurn {
-                // We have to use indexes here otherwise we get a double borrow of `objects`
-                // TODO: this will fail if we reorder objects or remove some!!!
-                // NOTE: reversing the order lets us remove the
-                // current item. But we're no doing that, soo...
-                for id in (0..objects.len()).rev() {
-                    let ai = objects[id].ai.take();
-                    if let Some(mut old_ai) = ai {
-                        let new_ai = old_ai.take_turn(id, objects, self, tcod);
-                        objects[id].ai = new_ai.or(Some(old_ai));
+                // NOTE: We have to use indices here otherwise we get a double borrow of `objects`
+                for id in 0..objects.len() {
+                    if let Some(mut ai) = objects[id].ai.take() {
+                        let new_ai = ai.take_turn(id, objects, self, tcod);
+                        objects[id].ai = new_ai.or(Some(ai));
                     }
                 }
             }
