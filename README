@@ -1,13 +1,14 @@
 Complete Roguelike Tutorial, using Rust + tcod
 
-This is a port of the infamous Python+libtcod tutorial:
+This is a port of the (in)famous Python+libtcod tutorial:
 
 http://www.roguebasin.com/index.php?title=Complete_Roguelike_Tutorial,_using_python%2Blibtcod
 
 
-Parts 1 to 11 are implemented, parts 12 and 13 remain. The code is not split
-into parts yet, that'll happen we've covered everything from the original
-tutorial.
+The code is all implemented but we plan to clean it up in a few places before
+splitting it into parts and writing the tutorial text.
 
-The tutorial text doesn't exist yet either. Again, we'll do that only after the
-code is all ready.
+The text is in the `doc` directory, you can look at [the partial index
+page](doc/index.adocdoc/index.adocdoc/index.adocdoc/index.adocdoc/index.adocdoc/index.adoc)
+
+
