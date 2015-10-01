@@ -4,7 +4,7 @@ version = "0.1.0"
 dependencies = [
  "rand 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-serialize 0.3.15 (registry+https://github.com/rust-lang/crates.io-index)",
- "tcod 0.7.0 (git+https://github.com/tomassedovic/tcod-rs)",
+ "tcod 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -48,20 +48,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "tcod"
-version = "0.7.0"
-source = "git+https://github.com/tomassedovic/tcod-rs#ae91a7f3ea9c4136d4f282dba202cb263b781807"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "bitflags 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 0.1.14 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-serialize 0.3.15 (registry+https://github.com/rust-lang/crates.io-index)",
- "tcod-sys 2.0.12 (git+https://github.com/tomassedovic/tcod-rs)",
+ "tcod-sys 3.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "tcod-sys"
-version = "2.0.12"
-source = "git+https://github.com/tomassedovic/tcod-rs#ae91a7f3ea9c4136d4f282dba202cb263b781807"
+version = "3.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "libc 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
