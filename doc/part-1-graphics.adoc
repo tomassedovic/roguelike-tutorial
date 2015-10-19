@@ -1,6 +1,9 @@
 = Graphics
+ifdef::env-github[:outfilesuffix: .adoc]
 
 == Setting it up
 
 todo
 
+
+Continue to <<part-2-object-map#,the next part>>.

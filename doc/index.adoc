@@ -2,6 +2,7 @@
 :author: Tomas Sedovic
 :email: tomas@sedovic.cz
 :origtutorial: http://www.roguebasin.com/index.php?title=Complete_Roguelike_Tutorial,_using_python%2Blibtcod
+ifdef::env-github[:outfilesuffix: .adoc]
 
 A port of the {origtutorial}[Complete Roguelike Tutorial, using python+libtcod].
 
@@ -55,11 +56,12 @@ what else are you gonna do. opengl?
 
 == Start the tutorial
 
-Follow the first link to get started!
-
 <<part-1-graphics#,Part 1: Graphics>>::
   Start your game right away by setting up the screen, printing the
   stereotypical @ character and moving it around with the arrow keys.
 
-Part 2: The object and the map
-Part 3: The dungeon
+<<part-2-object-map#,Part 2: The object and the map>>::
+  TODO
+
+Part 3: The dungeon::
+  TODO
