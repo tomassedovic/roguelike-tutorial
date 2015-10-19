@@ -1,4 +1,5 @@
-Complete Roguelike Tutorial, using Rust + tcod
+= Complete Roguelike Tutorial, using Rust + tcod
+ifdef::env-github[:outfilesuffix: .adoc]
 
 This is a port of the (in)famous Python+libtcod tutorial:
 
@@ -8,9 +9,9 @@ http://www.roguebasin.com/index.php?title=Complete_Roguelike_Tutorial,_using_pyt
 The code is all implemented but we plan to clean it up in a few places before
 splitting it into parts and writing the tutorial text.
 
-The text is in the `doc` directory, you can look at the partial index
-page:
+The text is in the `doc` directory, you can look at the <<doc/index.adoc#,partial index
+page>>.
 
-doc/index.adoc
+
 
 
