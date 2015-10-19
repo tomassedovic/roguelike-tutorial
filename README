@@ -8,7 +8,9 @@ http://www.roguebasin.com/index.php?title=Complete_Roguelike_Tutorial,_using_pyt
 The code is all implemented but we plan to clean it up in a few places before
 splitting it into parts and writing the tutorial text.
 
-The text is in the `doc` directory, you can look at [the partial index
-page](doc/index.adocdoc/index.adocdoc/index.adocdoc/index.adocdoc/index.adocdoc/index.adoc)
+The text is in the `doc` directory, you can look at the partial index
+page:
+
+doc/index.adoc
 
 

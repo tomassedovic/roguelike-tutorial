@@ -57,7 +57,7 @@ what else are you gonna do. opengl?
 
 Follow the first link to get started!
 
-link:part-1-graphics.html[Part 1: Graphics]::
+<<part-1-graphics#,Part 1: Graphics>>::
   Start your game right away by setting up the screen, printing the
   stereotypical @ character and moving it around with the arrow keys.
 
