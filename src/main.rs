@@ -303,12 +303,12 @@ fn pick_item_up(object_id: usize, objects: &mut Vec<Object>, game: &mut Game) {
         let item = objects.swap_remove(object_id);
         game.log.add(format!("You picked up a {}!", item.name), colors::GREEN);
         let inventory_id = game.inventory.len();
-        let equipment_slot = item.equipment.as_ref().map(|e| e.slot.clone());
+        let equipment_slot = item.equipment.as_ref().map(|e| e.slot);
         game.inventory.push(item);
 
         // special case: automatically equip, if the corresponding equipment slot is unused
         if let Some(equipment_slot) = equipment_slot {
-            if get_equipped_in_slot(&equipment_slot, &game.inventory).is_none() {
+            if get_equipped_in_slot(equipment_slot, &game.inventory).is_none() {
                 equip(inventory_id, game);
             }
         }
@@ -356,10 +356,9 @@ fn toggle_equip(inventory_id: usize, game: &mut Game) {
 
 fn equip(inventory_id: usize, game: &mut Game) {
     // if the slot is already being used, dequip whatever is there first
-    // TODO: treat empty String as a slot that fails to get a match.
-    // This will have to be changed if we switch to a slot enum.
-    let slot = game.inventory[inventory_id].equipment.as_ref().map_or("".into(), |e| e.slot.clone());
-    if let Some(old_equipment_id) = get_equipped_in_slot(&slot, &game.inventory) {
+    let slot = game.inventory[inventory_id].equipment.as_ref().map(|e| e.slot).expect(
+        "Inventory item is not an equipment!");
+    if let Some(old_equipment_id) = get_equipped_in_slot(slot, &game.inventory) {
         dequip(&mut game.inventory[old_equipment_id], &mut game.log);
     }
     // equip object and show a message about it
@@ -524,16 +523,32 @@ enum UseResult {
     Cancelled,
 }
 
+#[derive(Debug, PartialEq, Copy, Clone, RustcEncodable, RustcDecodable)]
+enum EquipmentSlot {
+    RightHand,
+    LeftHand,
+}
+
+impl std::fmt::Display for EquipmentSlot {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        use EquipmentSlot::*;
+        match *self {
+            RightHand => write!(f, "right hand"),
+            LeftHand => write!(f, "left hand"),
+        }
+    }
+}
+
 #[derive(Debug, PartialEq, Clone, RustcEncodable, RustcDecodable)]
 struct Equipment {
-    slot: String, // TODO: replace this with an enum?
+    slot: EquipmentSlot,
     is_equipped: bool,
     power_bonus: i32,
     defense_bonus: i32,
     max_hp_bonus: i32,
 }
 
-fn get_equipped_in_slot(slot: &str, inventory: &[Object]) -> Option<usize> {
+fn get_equipped_in_slot(slot: EquipmentSlot, inventory: &[Object]) -> Option<usize> {
     for (inventory_id, item) in inventory.iter().enumerate() {
         if item.equipment.as_ref().map_or(false, |e| e.is_equipped && e.slot == slot) {
             return Some(inventory_id)
@@ -798,7 +813,7 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>, level: i32) {
                 Item::Sword => {
                     // create a sword
                     let equipment_component = Equipment{
-                        slot: "right hand".into(),
+                        slot: EquipmentSlot::RightHand,
                         is_equipped: false,
                         power_bonus: 3,
                         defense_bonus: 0,
@@ -812,7 +827,7 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>, level: i32) {
                 Item::Shield => {
                     // create a sword
                     let equipment_component = Equipment{
-                        slot: "left hand".into(),
+                        slot: EquipmentSlot::LeftHand,
                         is_equipped: false,
                         power_bonus: 0,
                         defense_bonus: 1,
@@ -1522,7 +1537,7 @@ impl Game {
         // initial equipment: a dagger
         let mut dagger = Object::new(0, 0, '-', "dagger", colors::SKY, false);
         let equipment_component = Equipment {
-            slot: "right hand".into(),
+            slot: EquipmentSlot::RightHand,
             is_equipped: false,
             power_bonus: 2,
             defense_bonus: 0,
