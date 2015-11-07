@@ -500,7 +500,8 @@ enum Item {
     Lightning,
     Fireball,
     Confuse,
-    None,
+    Sword,
+    Shield,
 }
 
 impl Item {
@@ -511,7 +512,8 @@ impl Item {
             Lightning => cast_lightning,
             Fireball => cast_fireball,
             Confuse => cast_confuse,
-            Item::None => cast_nothing,
+            Sword => cast_nothing,
+            Shield => cast_nothing,
         };
         callback(objects, game, tcod)
     }
@@ -667,16 +669,6 @@ enum MonsterType {
     Troll,
 }
 
-#[derive(Clone, Copy)]
-enum ItemType {
-    Heal,
-    Lighting,
-    Fireball,
-    Confuse,
-    Sword,
-    Shield,
-}
-
 fn from_dungeon_level(table: &[(u32, i32)], level: i32) -> u32 {
     // returns a value that depends on level. the table specifies
     // what value occurs after each level, default is 0.
@@ -709,17 +701,17 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>, level: i32) {
     let max_items = from_dungeon_level(&[(1, 1), (2, 4)], level) as i32;
 
     // chance of each item (by default they have a chance of 0 at level 1, which then goes up)
-    let item_chances = &mut [Weighted {weight: 35, item: ItemType::Heal},
+    let item_chances = &mut [Weighted {weight: 35, item: Item::Heal},
                              Weighted {weight: from_dungeon_level(&[(25, 4)], level),
-                                       item: ItemType::Lighting},
+                                       item: Item::Lightning},
                              Weighted {weight: from_dungeon_level(&[(25, 6)], level),
-                                       item: ItemType::Fireball},
+                                       item: Item::Fireball},
                              Weighted {weight: from_dungeon_level(&[(10, 2)], level),
-                                       item: ItemType::Confuse},
+                                       item: Item::Confuse},
                              Weighted {weight: from_dungeon_level(&[(5, 4)], level),
-                                       item: ItemType::Sword},
+                                       item: Item::Sword},
                              Weighted {weight: from_dungeon_level(&[(15, 8)], level),
-                                       item: ItemType::Shield}];
+                                       item: Item::Shield}];
     let item_choice = WeightedChoice::new(item_chances);
 
     for _ in 0..num_monsters {
@@ -771,7 +763,7 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>, level: i32) {
         if !is_blocked(x, y, map, objects) {
             // create a healing potion
             let item = match item_choice.ind_sample(rng) {
-                ItemType::Heal => {
+                Item::Heal => {
                     // create a healing potion
                     let item_component = Item::Heal;
                     let mut object = Object::new(x, y, '!', "healing potion",
@@ -779,7 +771,7 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>, level: i32) {
                     object.item = Some(item_component);
                     object
                 }
-                ItemType::Lighting => {
+                Item::Lightning => {
                     // create a lightning bolt scroll
                     let item_component = Item::Lightning;
                     let mut object = Object::new(x, y, '#', "scroll of lightning bolt",
@@ -787,7 +779,7 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>, level: i32) {
                     object.item = Some(item_component);
                     object
                 }
-                ItemType::Fireball => {
+                Item::Fireball => {
                     // create a fireball scroll
                     let item_component = Item::Fireball;
                     let mut object = Object::new(x, y, '#', "scroll of fireball",
@@ -795,7 +787,7 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>, level: i32) {
                     object.item = Some(item_component);
                     object
                 }
-                ItemType::Confuse => {
+                Item::Confuse => {
                     // create a confuse scroll
                     let item_component = Item::Confuse;
                     let mut object = Object::new(x, y, '#', "scroll of confusion",
@@ -803,7 +795,7 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>, level: i32) {
                     object.item = Some(item_component);
                     object
                 }
-                ItemType::Sword => {
+                Item::Sword => {
                     // create a sword
                     let equipment_component = Equipment{
                         slot: "right hand".into(),
@@ -814,10 +806,10 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>, level: i32) {
                     };
                     let mut object = Object::new(x, y, '/', "sword", colors::SKY, false);
                     object.equipment = Some(equipment_component);
-                    object.item = Some(Item::None);
+                    object.item = Some(Item::Sword);
                     object
                 }
-                ItemType::Shield => {
+                Item::Shield => {
                     // create a sword
                     let equipment_component = Equipment{
                         slot: "left hand".into(),
@@ -828,7 +820,7 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>, level: i32) {
                     };
                     let mut object = Object::new(x, y, '[', "shield", colors::DARKER_ORANGE, false);
                     object.equipment = Some(equipment_component);
-                    object.item = Some(Item::None);
+                    object.item = Some(Item::Shield);
                     object
                 }
             };
@@ -1537,7 +1529,7 @@ impl Game {
             max_hp_bonus: 0,
         };
         dagger.equipment = Some(equipment_component);
-        dagger.item = Some(Item::None);
+        dagger.item = Some(Item::Sword);
         let dagger_id = game.inventory.len();
         game.inventory.push(dagger);
         equip(dagger_id, &mut game);
