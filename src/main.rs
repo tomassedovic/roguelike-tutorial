@@ -71,14 +71,14 @@ const PLAYER: usize = 0;
 
 type Map = Vec<Vec<Tile>>;
 
-#[derive(Copy, Clone, RustcEncodable, RustcDecodable)]
+#[derive(Clone, Copy, Debug, RustcDecodable, RustcEncodable)]
 struct Tile {
     blocked: bool,
     explored: bool,
     block_sight: bool,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Clone, Copy, Debug)]
 struct Rect {
     x1: i32,
     y1: i32,
@@ -104,7 +104,7 @@ impl Rect {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, RustcEncodable, RustcDecodable)]
+#[derive(Clone, Debug, PartialEq, RustcDecodable, RustcEncodable)]
 struct Object {
     x: i32,
     y: i32,
@@ -382,7 +382,7 @@ fn dequip(item: &mut Object, messages: &mut MessageLog) {
 }
 
 
-#[derive(Clone, Debug, PartialEq, RustcEncodable, RustcDecodable)]
+#[derive(Clone, Debug, PartialEq, RustcDecodable, RustcEncodable)]
 struct Fighter {
     base_max_hp: i32,
     hp: i32,
@@ -402,7 +402,7 @@ impl Fighter {
     }
 }
 
-#[derive(Debug, PartialEq, Copy, Clone, RustcEncodable, RustcDecodable)]
+#[derive(Clone, Copy, Debug, PartialEq, RustcDecodable, RustcEncodable)]
 enum DeathCallback {
     Monster,
     Player,
@@ -421,7 +421,7 @@ impl DeathCallback {
 
 
 
-#[derive(Copy, Clone, Debug, PartialEq, RustcEncodable, RustcDecodable)]
+#[derive(Clone, Copy, Debug, PartialEq, RustcDecodable, RustcEncodable)]
 enum MonsterAIType {
     Basic,
     Confused {
@@ -429,7 +429,7 @@ enum MonsterAIType {
     },
 }
 
-#[derive(Clone, Debug, PartialEq, RustcEncodable, RustcDecodable)]
+#[derive(Clone, Debug, PartialEq, RustcDecodable, RustcEncodable)]
 struct MonsterAI {
     old_ai: Option<Box<MonsterAI>>,
     ai_type: MonsterAIType,
@@ -493,7 +493,7 @@ impl MonsterAI {
 }
 
 
-#[derive(Debug, PartialEq, Copy, Clone, RustcEncodable, RustcDecodable)]
+#[derive(Clone, Copy, Debug, PartialEq, RustcDecodable, RustcEncodable)]
 enum Item {
     Heal,
     Lightning,
@@ -523,7 +523,7 @@ enum UseResult {
     Cancelled,
 }
 
-#[derive(Debug, PartialEq, Copy, Clone, RustcEncodable, RustcDecodable)]
+#[derive(Clone, Copy, Debug, PartialEq, RustcDecodable, RustcEncodable)]
 enum EquipmentSlot {
     RightHand,
     LeftHand,
@@ -539,7 +539,7 @@ impl std::fmt::Display for EquipmentSlot {
     }
 }
 
-#[derive(Debug, PartialEq, Clone, RustcEncodable, RustcDecodable)]
+#[derive(Clone, Debug, PartialEq, RustcDecodable, RustcEncodable)]
 struct Equipment {
     slot: EquipmentSlot,
     is_equipped: bool,
@@ -678,7 +678,7 @@ fn make_map(objects: &mut Vec<Object>,
     map
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 enum MonsterType {
     Orc,
     Troll,
@@ -1165,14 +1165,14 @@ fn check_level_up(objects: &mut [Object], game: &mut Game, tcod: &mut TcodState)
     }
 }
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 enum PlayerAction {
     None,
     DidntTakeTurn,
     Exit,
 }
 
-#[derive(Copy, Clone, PartialEq, RustcEncodable, RustcDecodable)]
+#[derive(Clone, Copy, Debug, PartialEq, RustcDecodable, RustcEncodable)]
 enum GameState {
     Playing,
     Death,
@@ -1470,7 +1470,7 @@ impl TcodState {
     }
 }
 
-#[derive(RustcEncodable, RustcDecodable)]
+#[derive(RustcDecodable, RustcEncodable)]
 struct MessageLog {
     messages: Vec<(String, Color)>,
 }
@@ -1494,7 +1494,7 @@ impl MessageLog {
     }
 }
 
-#[derive(RustcEncodable, RustcDecodable)]
+#[derive(RustcDecodable, RustcEncodable)]
 struct Game {
     state: GameState,
     dungeon_level: i32,
