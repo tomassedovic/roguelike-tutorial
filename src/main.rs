@@ -309,7 +309,7 @@ fn pick_item_up(object_id: usize, objects: &mut Vec<Object>, game: &mut Game) {
         // special case: automatically equip, if the corresponding equipment slot is unused
         if let Some(equipment_slot) = equipment_slot {
             if get_equipped_in_slot(equipment_slot, &game.inventory).is_none() {
-                equip(inventory_id, game);
+                equip(&mut game.inventory[inventory_id], &mut game.log);
             }
         }
     }
@@ -342,18 +342,11 @@ fn drop_item(inventory_id: usize, objects: &mut Vec<Object>, game: &mut Game) {
     objects.push(item);
 }
 
-fn equip(inventory_id: usize, game: &mut Game) {
-    // if the slot is already being used, dequip whatever is there first
-    let slot = game.inventory[inventory_id].equipment.as_ref().map(|e| e.slot).expect(
-        "Inventory item is not an equipment!");
-    if let Some(old_equipment_id) = get_equipped_in_slot(slot, &game.inventory) {
-        dequip(&mut game.inventory[old_equipment_id], &mut game.log);
-    }
+fn equip(item: &mut Object, messages: &mut MessageLog) {
     // equip object and show a message about it
-    let item = &mut game.inventory[inventory_id];
     if let Some(equipment) = item.equipment.as_mut() {
         equipment.is_equipped = true;
-        game.log.add(format!("Equipped {} on {}.", item.name, equipment.slot),
+        messages.add(format!("Equipped {} on {}.", item.name, equipment.slot),
                      colors::LIGHT_GREEN);
     }
 }
@@ -528,7 +521,7 @@ impl std::fmt::Display for EquipmentSlot {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, RustcDecodable, RustcEncodable)]
+#[derive(Clone, Copy, Debug, PartialEq, RustcDecodable, RustcEncodable)]
 struct Equipment {
     slot: EquipmentSlot,
     is_equipped: bool,
@@ -1357,10 +1350,17 @@ fn cast_confuse(_inventory_id: usize, objects: &mut [Object], game: &mut Game, t
 }
 
 fn equip_or_dequip(inventory_id: usize, _objects: &mut [Object], game: &mut Game, _tcod: &mut TcodState) -> UseResult {
-    if game.inventory[inventory_id].equipment.as_ref().map_or(false, |e| e.is_equipped) {
+    let equipment = match game.inventory[inventory_id].equipment {
+        Some(equipment) => equipment,
+        None => return UseResult::Cancelled,
+    };
+    if equipment.is_equipped {
         dequip(&mut game.inventory[inventory_id], &mut game.log);
     } else {
-        equip(inventory_id, game);
+        if let Some(old_equipment) = get_equipped_in_slot(equipment.slot, &game.inventory) {
+            dequip(&mut game.inventory[old_equipment], &mut game.log);
+        }
+        equip(&mut game.inventory[inventory_id], &mut game.log);
     }
     UseResult::UsedAndKept
 }
@@ -1529,16 +1529,14 @@ impl Game {
         let mut dagger = Object::new(0, 0, '-', "dagger", colors::SKY, false);
         let equipment_component = Equipment {
             slot: EquipmentSlot::RightHand,
-            is_equipped: false,
+            is_equipped: true,
             power_bonus: 2,
             defense_bonus: 0,
             max_hp_bonus: 0,
         };
         dagger.equipment = Some(equipment_component);
         dagger.item = Some(Item::Sword);
-        let dagger_id = game.inventory.len();
         game.inventory.push(dagger);
-        equip(dagger_id, &mut game);
 
         (game, objects)
     }
