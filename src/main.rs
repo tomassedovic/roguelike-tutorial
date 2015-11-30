@@ -250,6 +250,26 @@ impl Object {
             vec![]  // other objects have no equipment
         }
     }
+
+    fn equip(&mut self, messages: &mut MessageLog) {
+        // equip object and show a message about it
+        if let Some(equipment) = self.equipment.as_mut() {
+            equipment.is_equipped = true;
+            messages.add(format!("Equipped {} on {}.", self.name, equipment.slot),
+                         colors::LIGHT_GREEN);
+        }
+    }
+
+    fn dequip(&mut self, messages: &mut MessageLog) {
+        // dequip object and show a message about it
+        if let Some(equipment) = self.equipment.as_mut() {
+            if equipment.is_equipped {
+                equipment.is_equipped = false;
+                messages.add(format!("Dequipped {} from {}.", self.name, equipment.slot),
+                             colors::LIGHT_YELLOW);
+            }
+        }
+    }
 }
 
 
@@ -309,7 +329,7 @@ fn pick_item_up(object_id: usize, objects: &mut Vec<Object>, game: &mut Game) {
         // special case: automatically equip, if the corresponding equipment slot is unused
         if let Some(equipment_slot) = equipment_slot {
             if get_equipped_in_slot(equipment_slot, &game.inventory).is_none() {
-                equip(&mut game.inventory[inventory_id], &mut game.log);
+                game.inventory[inventory_id].equip(&mut game.log);
             }
         }
     }
@@ -335,31 +355,11 @@ fn use_item(inventory_id: usize, objects: &mut [Object], game: &mut Game, tcod: 
 
 fn drop_item(inventory_id: usize, objects: &mut Vec<Object>, game: &mut Game) {
     let mut item = game.inventory.remove(inventory_id);
-    dequip(&mut item, &mut game.log);
+    item.dequip(&mut game.log);
     let (px, py) = objects[PLAYER].pos();
     item.set_pos(px, py);
     game.log.add(format!("You dropped a {}.", item.name), colors::YELLOW);
     objects.push(item);
-}
-
-fn equip(item: &mut Object, messages: &mut MessageLog) {
-    // equip object and show a message about it
-    if let Some(equipment) = item.equipment.as_mut() {
-        equipment.is_equipped = true;
-        messages.add(format!("Equipped {} on {}.", item.name, equipment.slot),
-                     colors::LIGHT_GREEN);
-    }
-}
-
-fn dequip(item: &mut Object, messages: &mut MessageLog) {
-    // dequip object and show a message about it
-    if let Some(equipment) = item.equipment.as_mut() {
-        if equipment.is_equipped {
-            equipment.is_equipped = false;
-            messages.add(format!("Dequipped {} from {}.", item.name, equipment.slot),
-                         colors::LIGHT_YELLOW);
-        }
-    }
 }
 
 
@@ -1355,12 +1355,12 @@ fn equip_or_dequip(inventory_id: usize, _objects: &mut [Object], game: &mut Game
         None => return UseResult::Cancelled,
     };
     if equipment.is_equipped {
-        dequip(&mut game.inventory[inventory_id], &mut game.log);
+        game.inventory[inventory_id].dequip(&mut game.log);
     } else {
         if let Some(old_equipment) = get_equipped_in_slot(equipment.slot, &game.inventory) {
-            dequip(&mut game.inventory[old_equipment], &mut game.log);
+            game.inventory[old_equipment].dequip(&mut game.log);
         }
-        equip(&mut game.inventory[inventory_id], &mut game.log);
+        game.inventory[inventory_id].equip(&mut game.log);
     }
     UseResult::UsedAndKept
 }
