@@ -316,18 +316,14 @@ fn pick_item_up(object_id: usize, objects: &mut Vec<Object>, game: &mut Game) {
 }
 
 fn use_item(inventory_id: usize, objects: &mut [Object], game: &mut Game, tcod: &mut TcodState) {
-    // special case: if the object has the Equipment component, the "use" action is to equip/dequip
-    if game.inventory[inventory_id].item.is_some() && game.inventory[inventory_id].equipment.is_some() {
-        toggle_equip(inventory_id, game);
-        return
-    }
     // just call the "use_item" if it is defined
     if let Some(item) = game.inventory[inventory_id].item {
-        match item.use_item(objects, game, tcod) {
-            UseResult::Used => {
+        match item.use_item(inventory_id, objects, game, tcod) {
+            UseResult::UsedUp => {
                 // destroy after use, unless it was cancelled for some reason
                 game.inventory.remove(inventory_id);
             }
+            UseResult::UsedAndKept => {},  // This item can be used multiple times, don't remove it
             UseResult::Cancelled => {
                 game.log.add("Cancelled", colors::WHITE);
             }
@@ -344,14 +340,6 @@ fn drop_item(inventory_id: usize, objects: &mut Vec<Object>, game: &mut Game) {
     item.set_pos(px, py);
     game.log.add(format!("You dropped a {}.", item.name), colors::YELLOW);
     objects.push(item);
-}
-
-fn toggle_equip(inventory_id: usize, game: &mut Game) {
-    if game.inventory[inventory_id].equipment.as_ref().map_or(false, |e| e.is_equipped) {
-        dequip(&mut game.inventory[inventory_id], &mut game.log);
-    } else {
-        equip(inventory_id, game);
-    }
 }
 
 fn equip(inventory_id: usize, game: &mut Game) {
@@ -504,22 +492,23 @@ enum Item {
 }
 
 impl Item {
-    fn use_item(&self, objects: &mut [Object], game: &mut Game, tcod: &mut TcodState) -> UseResult {
+    fn use_item(&self, inventory_id: usize, objects: &mut [Object], game: &mut Game, tcod: &mut TcodState) -> UseResult {
         use Item::*;
-        let callback: fn(&mut [Object], &mut Game, &mut TcodState) -> UseResult = match *self {
+        let callback: fn(usize, &mut [Object], &mut Game, &mut TcodState) -> UseResult = match *self {
             Heal => cast_heal,
             Lightning => cast_lightning,
             Fireball => cast_fireball,
             Confuse => cast_confuse,
-            Sword => cast_nothing,
-            Shield => cast_nothing,
+            Sword => equip_or_dequip,
+            Shield => equip_or_dequip,
         };
-        callback(objects, game, tcod)
+        callback(inventory_id, objects, game, tcod)
     }
 }
 
 enum UseResult {
-    Used,
+    UsedUp,
+    UsedAndKept,
     Cancelled,
 }
 
@@ -1280,7 +1269,7 @@ fn closest_monster(max_range: i32, objects: &mut [Object], tcod: &TcodState) -> 
     closest_enemy
 }
 
-fn cast_heal(objects: &mut [Object], game: &mut Game, _tcod: &mut TcodState) -> UseResult {
+fn cast_heal(_inventory_id: usize, objects: &mut [Object], game: &mut Game, _tcod: &mut TcodState) -> UseResult {
     let player = &mut objects[PLAYER];
     let max_hp = player.full_max_hp(game);
     // heal the player
@@ -1291,12 +1280,12 @@ fn cast_heal(objects: &mut [Object], game: &mut Game, _tcod: &mut TcodState) -> 
         }
         game.log.add("Your wounds start to feel better!", colors::LIGHT_VIOLET);
         fighter.heal(HEAL_AMOUNT);
-        return UseResult::Used;
+        return UseResult::UsedUp;
     }
     return UseResult::Cancelled;
 }
 
-fn cast_lightning(objects: &mut [Object], game: &mut Game, tcod: &mut TcodState) -> UseResult {
+fn cast_lightning(_inventory_id: usize, objects: &mut [Object], game: &mut Game, tcod: &mut TcodState) -> UseResult {
     // find closest enemy (inside a maximum range) and damage it
     let monster_id = closest_monster(LIGHTNING_RANGE, objects, tcod);
     if let Some(monster_id) = monster_id {
@@ -1308,14 +1297,14 @@ fn cast_lightning(objects: &mut [Object], game: &mut Game, tcod: &mut TcodState)
         objects[monster_id].take_damage(LIGHTNING_DAMAGE, game).map(|xp| {
             objects[PLAYER].fighter.as_mut().unwrap().xp += xp;
         });
-        UseResult::Used
+        UseResult::UsedUp
     } else {  // no enemy found within maximum range
         game.log.add("No enemy is close enough to strike.", colors::RED);
         UseResult::Cancelled
     }
 }
 
-fn cast_fireball(objects: &mut [Object], game: &mut Game, tcod: &mut TcodState) -> UseResult {
+fn cast_fireball(_inventory_id: usize, objects: &mut [Object], game: &mut Game, tcod: &mut TcodState) -> UseResult {
     // ask the player for a target tile to throw a fireball at
     game.log.add("Left-click a target tile for the fireball, or right-click to cancel.",
                  colors::LIGHT_CYAN);
@@ -1343,10 +1332,10 @@ fn cast_fireball(objects: &mut [Object], game: &mut Game, tcod: &mut TcodState) 
             }
         });
     }
-    UseResult::Used
+    UseResult::UsedUp
 }
 
-fn cast_confuse(objects: &mut [Object], game: &mut Game, tcod: &mut TcodState) -> UseResult {
+fn cast_confuse(_inventory_id: usize, objects: &mut [Object], game: &mut Game, tcod: &mut TcodState) -> UseResult {
     // ask the player for a target to confuse
     game.log.add("Left-click an enemy to confuse it, or right-click to cancel.",
                  colors::LIGHT_CYAN);
@@ -1363,15 +1352,17 @@ fn cast_confuse(objects: &mut [Object], game: &mut Game, tcod: &mut TcodState) -
         game.log.add(format!("The eyes of the {} look vacant, as he starts to stumble around!",
                              monster.name),
                      colors::GREEN);
-        UseResult::Used
+        UseResult::UsedUp
     })
 }
 
-// This is a no-op function for items that have any effect by
-// themselves. E.g. Equimpent is also an item, but its use action is
-// special-cased.
-fn cast_nothing(_objects: &mut [Object], _game: &mut Game, _tcod: &mut TcodState) -> UseResult {
-    UseResult::Used
+fn equip_or_dequip(inventory_id: usize, _objects: &mut [Object], game: &mut Game, _tcod: &mut TcodState) -> UseResult {
+    if game.inventory[inventory_id].equipment.as_ref().map_or(false, |e| e.is_equipped) {
+        dequip(&mut game.inventory[inventory_id], &mut game.log);
+    } else {
+        equip(inventory_id, game);
+    }
+    UseResult::UsedAndKept
 }
 
 
