@@ -1,8 +1,14 @@
 = Roguelike Tutorial in Rust + tcod
 :author: Tomas Sedovic
 :email: tomas@sedovic.cz
-:origtutorial: http://www.roguebasin.com/index.php?title=Complete_Roguelike_Tutorial,_using_python%2Blibtcod
 ifdef::env-github[:outfilesuffix: .adoc]
+:plusplus: ++
+
+:origtutorial: http://www.roguebasin.com/index.php?title=Complete_Roguelike_Tutorial,_using_python%2Blibtcod
+:rustlang: https://www.rust-lang.org/
+:libtcod: http://roguecentral.org/doryen/libtcod/
+:book: http://doc.rust-lang.org/book/
+:rustbyexample: http://rustbyexample.com/
 
 A port of the {origtutorial}[Complete Roguelike Tutorial, using python+libtcod].
 
@@ -14,45 +20,113 @@ soldiers.
 
 === Welcome!
 
-hey there
+Hello! This tutorial will show you how to write a roguelike in the
+{rustlang}[Rust programming language] and the {libtcod}[libtcod
+library].
+
+It is based on the {origtutorial}[Python libtcod tutorial]. Getting
+familiar with Rust is not necessarily as easy as with Python so if
+you've never programmed before, you may want to check out the original
+instead. That said, Rust is a fine language to start with.
+
+This tutorial does assume some prior programming knowledge and at
+least basic familiarity with Rust. However, we do talk about
+potentially foreign concepts when we introduce them, so you should
+still be able to follow along even if you don't have a lot of
+programming experience.
+
+There are two great resources to get started with Rust: {book}[The
+Rust Programming Language book] and {rustbyexample}[Rust by Example].
 
 === Why Rust?
 
-it's awesome
+Rust is a systems programming language targeting roughly the same
+space as C{plusplus}. That means it's fast and is generally used for things
+where you need a fair bit of control over how are things structured in
+the memory, etc. Rust is a good candidate for writing a browser,
+database, operating system, web server and... games.
 
-fast
+What attracted me personally to Rust was the fact that it was
+reasonably low-level (i.e. I could use it for things where I'd
+normally go for C or C{plusplus}), with a good support for calling into
+libraries written in C/C{plusplus} but feeling much more modern.
 
-no null pointers
+It has a real module system, closures, powerful macros and it protects
+you from segfaults.
 
-no segfaults
+As a *wonderful* cherry on top, it doesn't have null pointers or references.
+
 
 === Why libtcod?
 
-what else are you gonna do. opengl?
+`libtcod` is a library specifically designed for writing roguelikes.
+It deals with rendering ASCII characters in a grid, mouse and keyboard
+input and provides useful utilities for path finding, field of view,
+noise toolkit and a name generator.
+
+In other words, it provides a good chunk of what a typical roguelike would need.
+
+Among the alternatives to libtcod are T-Engine (the engine ToME is
+written in) and rot.js (a JavaScript engine inspired by libtcod for
+targeting the web).
 
 == Some notes about this port
 
-* No globals
-* Python has rc pointers everywhere, doing the same thing in Rust is
-  possible-ish but really verbose and unpleasant. And you still can't
-  really get the backref owner concept going because the mutability
-  rules are stricter than in python (only one mutable borrow).
-* The Python tutorial is in one file. Clearly that's not something you
-  wanna do for a huge game, but this is small enough and it makes
-  following the tutorial easier.
-* This isn't trying to show the best architecture for roguelikes. It's
-  *an* architecture that works. It's not the most performant or
-  extensible one. But it's easy enough to follow and use to make more
-  stuff.
-* The original Python tutorial is a bit infamous because games that
-  people do after going through it all look samey. That's not a reason
-  to shun the tutorial, though. Just don't get caught in the game
-  desighn of it. The purpose of this is to teach you how to write a
-  game using libtcod. There's little of game design here. What I'd
-  recommend is: go through this, absorb the concepts but then start
-  from scratch when actually writing your game. And think about how to
-  make it unique.
-*
+Python and Rust are very different languages. That means what is
+sometimes straightforward in one may not be as easy in the other. The
+tutorial follows the structure of the original, but changes things
+around where it makes sense.
+
+No global variables::
+
+Changing a global variable in Rust is not safe and it's rather
+cumbersome, too. We do use global constants for things like the world
+size, but instead of global variables we just pass values as function
+parameters.
+
+No garbage collection and backreferences::
+
+Every value in Python is behind a reference-counted pointer. The
+original tutorial contains a list of objects that are then moved
+around at will (e.g. by adding them into the inventory) without
+affecting the original array. They contain other objects (components)
+with backreferences that can manipulate the original object.
+
++
+Such a thing is in general not safe in Rust and while you can use
+mutable reference-counted pointers, the code becomes cumbersome and
+even then has limitations the Python version doesn't.
+
++
+To deal with this, we are using a contiguous block of memory (`Vec`)
+which holds the game objects directly and we use references into that
+vector where necessary.
+
+All in one file::
+
+The original Python tutorial is all one file. That's not something you
+want to end up with -- especially when you're collaborating on the
+project -- but the final result is still not _that_ big and it's makes
+writing and following the tutorial easier when you don't have to worry
+about where each code snippet goes.
+
+Architecture::
+
+This isn't trying to show the best architecture for roguelikes. It's
+*an* architecture that works. It's not the most performant or
+extensible one. But it's easy enough to follow and use to make more
+stuff.
+
+Sameness::
+
+The original Python tutorial is a bit infamous because games that
+people do after going through it all look samey. That's not a reason
+to shun the tutorial, though. Just don't get caught in the game
+desighn of it. The purpose of this is to teach you how to write a game
+using libtcod. There's little of game design here. What I'd recommend
+is: go through this, absorb the concepts but then start from scratch
+when actually writing your game. And think about how to make it
+unique.
 
 == Start the tutorial
 
