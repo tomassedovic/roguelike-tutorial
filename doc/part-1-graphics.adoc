@@ -1,9 +1,94 @@
 = Graphics
+:icons: font
 ifdef::env-github[:outfilesuffix: .adoc]
+
+:rust: https://www.rust-lang.org/
+:tcod-rs: https://github.com/tomassedovic/tcod-rs
+:console: http://tomassedovic.github.io/tcod-rs/tcod/console/index.html
+:colors: http://tomassedovic.github.io/tcod-rs/tcod/colors/index.html
 
 == Setting it up
 
-todo
+To install Rust, go to the {rust}[Rust homepage] and click the `Install` button.
 
+TODO: create a cargo project.
+
+You must then install the dependencies for {tcod-rs}[tcod-rs] -- the
+Rust bindings for libtcod.
+
+Go to the following link and follow the instructions for your platform (Windows, Linux or Mac OS X):
+
+https://github.com/tomassedovic/tcod-rs#how-to-use-this
+
+== Showing the @ on screen
+
+Let's start with a minimal program structure. Create a file called
+`main.rs` under the `src` directory of your project and put the
+following in:
+
+[source,rust]
+----
+fn main() {
+}
+----
+
+You can now type `cargo run` and it will compile and run the file. You
+should see something like this:
+
+....
+$ cargo run
+   Compiling roguelike-tutorial v0.1.0 (file:///home/thomas/code/roguelike-tutorial)
+     Running `target/debug/part-1-graphics`
+....
+
+Now let's put some basic tcod stuff in:
+
+[source,rust]
+----
+extern crate tcod;  // <1>
+
+use tcod::console::*;  // <2>
+use tcod::colors;  // <3>
+
+const SCREEN_WIDTH: i32 = 80;  // <4>
+const SCREEN_HEIGHT: i32 = 50;
+const LIMIT_FPS: i32 = 20;
+
+fn main() {
+    let mut root = Root::initializer()
+        .font("arial10x10.png", FontLayout::Tcod)
+        .font_type(FontType::Greyscale)
+        .size(SCREEN_WIDTH, SCREEN_HEIGHT)
+        .title("Rust/libtcod tutorial")
+        .init();
+    tcod::system::set_fps(LIMIT_FPS);
+    while !root.window_closed() {
+        root.set_default_background(colors::WHITE);
+        root.put_char(1, 1, '@', BackgroundFlag::None);
+        root.flush();
+    }
+}
+----
+<1> Load the `tcod` library a.k.a. "crate"
+<2> Bring everything in under the `tcod::console` module into scope.
+<3> Import the `tcod::colors` module.
+<4> Create the global constants for screen width & height and the maximum frames per second to render.
+
+
+That lets us use any types and functions described under the
+{console}[console module] without specifying their full path. Examples used in this code are `Root`, `FontLayout` and `BackgroundFlag`.
+
+
+This lets us type `colors::WHITE` instead of the full path
+`tcod::colors::WHITE`. The {colors}[colors module] contains the
+`Color` struct as well as a lot of predefined values.
+
+
+
+== Moving around
+
+
+
+TODO: link to the code so far.
 
 Continue to <<part-2-object-map#,the next part>>.
