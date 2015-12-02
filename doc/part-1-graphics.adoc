@@ -9,9 +9,67 @@ ifdef::env-github[:outfilesuffix: .adoc]
 
 == Setting it up
 
+=== Installing Rust
+
 To install Rust, go to the {rust}[Rust homepage] and click the `Install` button.
 
-TODO: create a cargo project.
+
+=== Creating the roguelike project
+
+Next we need to create the Rust project that will be our roguelike:
+
+----
+$ cargo new --bin roguelike
+$ cd roguelike/
+----
+
+It will create two files: `Cargo.toml` and `main.rs` in the `src`
+directory. `Cargo.toml` contains metadata for the project and any
+dependencies you're going to need (such as libtcod).
+
+`main.rs` is the file that contains your program. In it must be a
+function called `main` which will be executed when you run your
+program.
+
+Cargo has automatically put a hello world program in your `main.rs` file.
+It looks like this:
+
+[source,rust]
+----
+fn main() {
+    println!("Hello, world!");
+}
+----
+
+You can run it by typing:
+
+----
+cargo run --release
+----
+
+You will see something like this:
+
+....
+   Compiling roguelike v0.1.0 (file:///home/thomas/tmp/roguelike)
+     Running `target/release/roguelike`
+Hello, world!
+....
+
+Rust will first compile `main.rs` and any other files it needs (there
+are none yet). The resulting binary program will called `roguelike`
+and placed in the `target/release` directory.
+
+Cargo will then run the program which will print `Hello, world!`.
+
+NOTE: Rust (and Cargo) can compile programs in two modes: _with
+optimisations_ and _without_. Code compiled without opmimisations is
+*really slow*, but it's easier to work with under a debugger. We will
+be using the optimised mode in the tutorial (with the `--release`
+option), to make sure no one is making speed claims without
+optimisations. If you do need the debug build for something, just drop
+the `--release` flag.
+
+=== Adding libtcod
 
 You must then install the dependencies for {tcod-rs}[tcod-rs] -- the
 Rust bindings for libtcod.
@@ -19,6 +77,7 @@ Rust bindings for libtcod.
 Go to the following link and follow the instructions for your platform (Windows, Linux or Mac OS X):
 
 https://github.com/tomassedovic/tcod-rs#how-to-use-this
+
 
 == Showing the @ on screen
 
@@ -74,19 +133,55 @@ fn main() {
 <3> Import the `tcod::colors` module.
 <4> Create the global constants for screen width & height and the maximum frames per second to render.
 
+To use any external library (i.e. code outside of your project), you
+will need to have it in `Cargo.toml` under `[dependencies]` and use
+`extern crate` in your Rust file. Rust libraries are called crates.
 
-That lets us use any types and functions described under the
-{console}[console module] without specifying their full path. Examples used in this code are `Root`, `FontLayout` and `BackgroundFlag`.
+The `use` statement helps us reduce typing when using things from
+modules (namespaces) outside of the current one.
+
+Saying `use tcod::colors` lets us type `colors::WHITE` instead of the
+full path `tcod::colors::WHITE`. The {colors}[colors module] contains
+the `Color` struct as well as a lot of predefined colours.
+
+The `use tcod::console::*` statement is a wildcard use -- it will
+bring in everything directly under the {console}[`tcod::console`].
+Types used in this code are `Root`, `FontLayout` and `BackgroundFlag`.
+
+Next we specify some constants. Constants are declared using the
+`const` keyword and are uppercase by convention. After the name must
+follow the colon `:` character and the type of the constant value.
+
+Rust is able to infer most of types so you don't have to explicitly
+specify everything like in C or Java, but there are some exceptions
+and constants are one of them.
+
+These constants are accessible from anywhere in your program and will
+never change.
 
 
-This lets us type `colors::WHITE` instead of the full path
-`tcod::colors::WHITE`. The {colors}[colors module] contains the
-`Color` struct as well as a lot of predefined values.
+Lastly, we have the `main` function with the actual calls to libtcod!
+
+First we define the libtcod window and the _root_ console -- that's
+the place we'll end up drawing everything.
+
+The `Root::initializer() ... .init()` bit is called the _Builder
+pattern_. It's a way to specify optional arguments (Rust's functions
+don't have named default parameters and this is a common way to
+achieve the same thing).
+
+You could just type `let mut root = Root::initializer().init()` with
+nothing in-between and things would still work. Everything (the window
+size, title, font, etc.) would just use the default values.
 
 
+
+
+
+
+Here's link:part-1a-render.rs[the complete code so far].
 
 == Moving around
-
 
 
 TODO: link to the code so far.
