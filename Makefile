@@ -2,6 +2,7 @@ all: clean docs
 
 docs:
 	@mkdir -p target/tutorial
+	cp src/bin/*.rs target/tutorial
 	bundle exec asciidoctor --doctype article --destination-dir target/tutorial doc/*.adoc
 
 preview: docs
