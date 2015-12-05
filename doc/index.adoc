@@ -131,11 +131,71 @@ unique.
 == Start the tutorial
 
 <<part-1-graphics#,Part 1: Graphics>>::
-  Start your game right away by setting up the screen, printing the
+
+Start your game right away by setting up the screen, printing the
   stereotypical @ character and moving it around with the arrow keys.
 
 <<part-2-object-map#,Part 2: The object and the map>>::
-  TODO
+
+  This introduces two new concepts: the generic object system that
+  will be the basis for the whole game, and a general map object that
+  you'll use to hold your dungeon.
 
 Part 3: The dungeon::
-  TODO
+
+  Learn how to code up a neat little dungeon generator.
+
+Part 4: Field-of-view and exploration::
+
+  Display the player's field-of-view (FOV) and explore the dungeon
+  gradually (also known as fog-of-war).
+
+Part 5: Preparing for combat::
+
+  Place some orcs and trolls around the dungeon (they won't stay there
+  for long!). Also, deal with blocking objects and game states, which
+  are important before coding the next part.
+
+Part 6: Going Berserk!::
+
+  Stalking monsters, fights, splatter -- need we say more?
+
+Part 7: The GUI::
+
+  A juicy Graphical User Interface with status bars and a colored
+  message log for maximum eye-candy. Also, the infamous "look"
+  command, with a twist: you can use the mouse.
+
+Part 8: Items and Inventory::
+
+  The player gets to collect ("borrow") items from the dungeon and use
+  them, with a neat inventory screen. More items added in the next
+  part.
+
+Part 9: Spells and ranged combat::
+
+  The player's strategic choices increase exponentially as we add a
+  few magic scrolls to the mix. Covers damage and mind spells, as well
+  as ranged combat.
+
+Part 10: Main menu and saving::
+
+  A main menu complete with a background image and the ability to save
+  and load the game.
+
+Part 11: Dungeon levels and character progression::
+
+  Let the player venture deeper into the dungeon and grow stronger,
+  including experience gain, levels and raising stats!
+
+Part 12: Monster and item progression::
+
+  Deeper dungeon levels become increasingly more difficult! Here we
+  create tools for dealing with chances and making them vary with
+  level.
+
+Part 13: Adventure gear::
+
+  Swords, shields and other equipment can now help the player by
+  granting hefty bonuses. The bonus system can also be used for all
+  kinds of magics and buffs!
