@@ -116,6 +116,14 @@ fn create_v_tunnel(y1: i32, y2: i32, x: i32, map: &mut Map) {
 }
 ----
 
+CAUTION: We are using `Tile::empty` to "carve out" the empty tiles in
+the map. That means we're replacing the existing tile with a new,
+empty one instead of just modifying its `blocked` and `block_sight`
+fields. This is easier to read and write, but it wouldn't work if the
+tiles already had some fields you care about set. Say if you ran the
+dungeon generation in layers and an earlier function already set some
+properties you'd like to keep.
+
 Now we can connect both rooms with a horizontal tunnel. In `make_map`:
 
 [source,rust]
