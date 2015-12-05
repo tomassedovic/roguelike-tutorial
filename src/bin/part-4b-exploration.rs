@@ -38,16 +38,17 @@ type Map = Vec<Vec<Tile>>;
 #[derive(Clone, Copy, Debug)]
 struct Tile {
     blocked: bool,
+    explored: bool,
     block_sight: bool,
 }
 
 impl Tile {
     pub fn empty() -> Self {
-        Tile{blocked: false, block_sight: false}
+        Tile{blocked: false, explored: false, block_sight: false}
     }
 
     pub fn wall() -> Self {
-        Tile{blocked: true, block_sight: true}
+        Tile{blocked: true, explored: false, block_sight: true}
     }
 }
 
@@ -201,7 +202,7 @@ fn make_map() -> (Map, (i32, i32)) {
     (map, starting_position)
 }
 
-fn render_all(root: &mut Root, con: &mut Offscreen, objects: &[Object], map: &Map,
+fn render_all(root: &mut Root, con: &mut Offscreen, objects: &[Object], map: &mut Map,
               fov_map: &mut FovMap, fov_recompute: bool) {
     if fov_recompute {
         // recompute FOV if needed (the player moved or something)
@@ -221,7 +222,16 @@ fn render_all(root: &mut Root, con: &mut Offscreen, objects: &[Object], map: &Ma
                     (true, true) => COLOR_LIGHT_WALL,
                     (true, false) => COLOR_LIGHT_GROUND,
                 };
-                con.set_char_background(x, y, color, BackgroundFlag::Set);
+
+                let explored = &mut map[x as usize][y as usize].explored;
+                if visible {
+                    // since it's visible, explore it
+                    *explored = true;
+                }
+                if *explored {
+                    // show explored tiles only (any visible tile is explored already)
+                    con.set_char_background(x, y, color, BackgroundFlag::Set);
+                }
             }
         }
     }
@@ -273,7 +283,7 @@ fn main() {
     let mut con = Offscreen::new(SCREEN_WIDTH, SCREEN_HEIGHT);
 
     // generate map (at this point it's not drawn to the screen)
-    let (map, (player_x, player_y)) = make_map();
+    let (mut map, (player_x, player_y)) = make_map();
 
     // create object representing the player
     // place the player inside the first room
@@ -301,7 +311,7 @@ fn main() {
     while !root.window_closed() {
         // render the screen
         let fov_recompute = previous_player_position != (objects[0].x, objects[0].y);
-        render_all(&mut root, &mut con, &objects, &map, &mut fov_map, fov_recompute);
+        render_all(&mut root, &mut con, &objects, &mut map, &mut fov_map, fov_recompute);
 
         root.flush();
 

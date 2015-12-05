@@ -172,6 +172,64 @@ link:part-4a-fov.rs[The whole code for this section is here].
 
 == Exploration
 
+The last detail after FOV is exploration, a.k.a Fog of War. You made
+it this far, so this will be a piece of cake! What, you may say, fog
+of war can't possibly be the easiest thing to code in a roguelike!
+Well, it is. Wait and see.
+
+First, all tiles will store whether they're explored or not. They
+start unexplored. Put this in the definition of the `Tile` struct:
+
+[source,rust]
+----
+explored: bool,
+----
+
+And you need to update the `Tile::empty` and `Tile::wall` bodies:
+
+[source,rust]
+----
+pub fn empty() -> Self {
+    Tile{blocked: false, explored: false, block_sight: false}
+}
+
+pub fn wall() -> Self {
+    Tile{blocked: true, explored: false, block_sight: true}
+}
+----
+
+Now, in the `render_all` function, after the `(visible, wall)` match
+make sure the visible tiles are explored and only render those that
+are:
+
+[source,rust]
+----
+let explored = &mut map[x as usize][y as usize].explored;
+if visible {
+    // since it's visible, explore it
+    *explored = true;
+}
+if *explored {
+    // show explored tiles only (any visible tile is explored already)
+    con.set_char_background(x, y, color, BackgroundFlag::Set);
+}
+----
+
+(we take a mutable reference to the `explored` field so we don't have
+to write the full `map[x as usize][y as usize].explored` bit twice)
+
+And finally, since we're now actually modifying the `map`, we'll need
+to pass a _mutable_ reference to `render_all`.
+
+And that's that! If you run the game now, you start in mostly black
+space except for your immediate surroundings and the map fills in as
+you explore.
+
+NOTE: One might argue that that `render_all` should not actually
+modify anything and that the FOV/exploration code belongs somewhere
+else. They wouldn't necessarily be wrong. But let's just roll with it
+for now.
+
 Here's link:part-4b-exploration.rs[the complete code so far].
 
 Continue to <<part-5-combat#,the next part>>.
