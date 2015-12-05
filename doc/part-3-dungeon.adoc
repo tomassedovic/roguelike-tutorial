@@ -1,0 +1,16 @@
+= The Dungeon
+:source-highlighter: pygments
+ifdef::env-github[:outfilesuffix: .adoc]
+
+<<index#,Back to the index.>>
+
+== Dungeon building blocks
+
+
+Here's link:part-3a-building-blocks.rs[the code for this part].
+
+== Dungeon generator
+
+Here's link:part-3b-dungeon-generator.rs[the complete code so far].
+
+Continue to <<part-4-fov-exploration#,the next part>>.

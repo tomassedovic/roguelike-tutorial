@@ -265,7 +265,7 @@ map[30][22] = Tile::wall();
 map[50][22] = Tile::wall();
 ----
 
-(you can also access the tile's properties directly like so:
+(you can also access the tile's properties directly like sof:
 `map[30][22].blocked = true`)
 
 

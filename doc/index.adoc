@@ -141,7 +141,7 @@ Start your game right away by setting up the screen, printing the
   will be the basis for the whole game, and a general map object that
   you'll use to hold your dungeon.
 
-Part 3: The dungeon::
+<<part-3-dungeon#,Part 3: The dungeon>>::
 
   Learn how to code up a neat little dungeon generator.
 
