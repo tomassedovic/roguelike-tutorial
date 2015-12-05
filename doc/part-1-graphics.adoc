@@ -10,6 +10,8 @@ ifdef::env-github[:outfilesuffix: .adoc]
 :match: http://doc.rust-lang.org/book/match.html
 :key: http://tomassedovic.github.io/tcod-rs/tcod/input/struct.Key.html
 
+<<index#,Back to the index.>>
+
 == Setting it up
 
 === Installing Rust

@@ -2,6 +2,8 @@
 :source-highlighter: pygments
 ifdef::env-github[:outfilesuffix: .adoc]
 
+<<index#,Back to the index.>>
+
 == Off-screen consoles
 
 Before we continue, let's talk about _consoles_. In libtocd, console
