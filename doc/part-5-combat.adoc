@@ -1,0 +1,17 @@
+= Preparing for combat
+:source-highlighter: pygments
+ifdef::env-github[:outfilesuffix: .adoc]
+
+<<index#,Back to the index.>>
+
+== Populating the dungeon
+
+== Blocking objects
+
+== Game states
+
+== Fighting orderly
+
+Here's link:part-5-combat.rs[the complete code so far].
+
+Continue to <<part-6-going-berserk#,the next part>>.

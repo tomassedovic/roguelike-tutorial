@@ -145,12 +145,12 @@ Start your game right away by setting up the screen, printing the
 
   Learn how to code up a neat little dungeon generator.
 
-Part 4: Field-of-view and exploration::
+<<part-4-fov-exploration#,Part 4: Field-of-view and exploration>>::
 
   Display the player's field-of-view (FOV) and explore the dungeon
   gradually (also known as fog-of-war).
 
-Part 5: Preparing for combat::
+<<part-5-combat#,Part 5: Preparing for combat>>::
 
   Place some orcs and trolls around the dungeon (they won't stay there
   for long!). Also, deal with blocking objects and game states, which
