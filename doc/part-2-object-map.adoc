@@ -161,9 +161,186 @@ Here's link:part-2a-generalising.rs[the code so far].
 
 == The Map
 
+Now let's build a map which will hold our dungeon! It will be a
+two-dimensional array of tiles. We'll define its size on top of the
+source file to be slightly smaller than the window size. This will
+leave some space for a panel with stats that we'll add later.
+
+[source,rust]
+----
+const MAP_WIDTH: i32 = 80;
+const MAP_HEIGHT: i32 = 45;
+----
+
+Next we'll define colours for the tiles. We'll have two tiles for now:
+_wall_ and _ground_. Let's define their _dark_ variants. When we add
+field of view, we'll have add set for when they're lit.
+
+[source,rust]
+----
+const COLOR_DARK_WALL: Color = Color { r: 0, g: 0, b: 100 };
+const COLOR_DARK_GROUND: Color = Color { r: 50, g: 50, b: 150 };
+----
+
+Since the map is going to be built from tiles, we need to define them!
+We'll start with two values: whether a tile is passable and whether it
+blocks sight.
+
+It's good to keep the values separate from the beginning as it will
+let us have see-through but impassable tiles such as chasms or
+passable tiles that block sight for secret passages. We'll create a
+`Tile` struct:
+
+[source,rust]
+----
+#[derive(Clone, Copy, Debug)]
+struct Tile {
+    blocked: bool,
+    block_sight: bool,
+}
+
+impl Tile {
+    pub fn empty() -> Self {
+        Tile{blocked: false, block_sight: false}
+    }
+
+    pub fn wall() -> Self {
+        Tile{blocked: true, block_sight: true}
+    }
+}
+----
+
+The `#[derive(...)]` bit automatically implements certain behaviours
+(Rust calls them _traits_, other languages use _interfaces_) you list
+there. `Debug` is to let us print the Tile's contents and `Clone` and
+`Copy` will let us _copy_ the values on assignment or function call
+instead of _moving_ them. So they'll behave like e.g. integers in this
+matter.
+
+We don't want the `Copy` behaviour for `Object` (we could accidentally
+modify a copy instead of the original and get our changes lost for
+example), but `Debug` is useful, so let's add `#[derive(Debug)]` to
+our `Object` as well.
+
+We've also added helper methods to build the two types of `Tiles`
+we're going to be using the most.
 
 
+And now the map! It's a two-dimensional array (`Vec`) of tiles. The
+full type is `Vec<Vec<Tile>>` (a vec composed of vecs of tiles). Since
+we're going to be passing it around a lot, let's define a shortcut:
+
+[source,rust]
+----
+type Map = Vec<Vec<Tile>>;
+----
+
+This let's use write `Map` wherever we'd have to write
+`Vec<Vec<Tile>>` and it's also easier to understand.
+
+
+Now we'll build it using nested `vec!` macros:
+
+[source,rust]
+----
+fn make_map() -> Map {
+    // fill map with "unblocked" tiles
+    let mut map = vec![vec![Tile::empty(); MAP_HEIGHT as usize]; MAP_WIDTH as usize];
+
+    map
+}
+----
+
+The `vec!` macro is a shortcut that creates a `Vec` and fills it with
+values. For example, `vec!['a'; 42]` would create a Vec containing the
+letter *'a'* 42 times. We do the same trick above to build a column of
+tiles and then build the map of those columns.
+
+We can access any tile with `map[x][y]`. Let's add two pillars
+(blocked tiles) to demonstrate that and provide a simple test:
+
+[source,rust]
+----
+map[30][22] = Tile::wall();
+map[50][22] = Tile::wall();
+----
+
+(you can also access the tile's properties directly like so:
+`map[30][22].blocked = true`)
+
+
+Next we need to draw the draw the map on our window. Since we need to
+draw both the objects and the map, let's create a new function that
+renders everything and call it from the main loop.
+
+[source,rust]
+----
+fn render_all(root: &mut Root, con: &mut Offscreen, objects: &[Object], map: &Map) {
+    // draw all objects in the list
+    for object in objects {
+        object.draw(con);
+    }
+}
+----
+
+Still in the same function, we can go through all the tiles and draw
+them to the screen:
+
+[source,rust]
+----
+for y in 0..MAP_HEIGHT {
+    for x in 0..MAP_WIDTH {
+        let wall = map[x as usize][y as usize].block_sight;
+        if wall {
+            con.set_char_background(x, y, COLOR_DARK_WALL, BackgroundFlag::Set);
+        } else {
+            con.set_char_background(x, y, COLOR_DARK_GROUND, BackgroundFlag::Set);
+        }
+    }
+}
+----
+
+Also, move the `console_blit` call at the end of `render_all` since
+it's part of the rendering code.
+
+Make sure to create the map before the rendering code:
+
+[source,rust]
+----
+let map = make_map();
+----
+
+You should be able to see two pillars and walk around the map now!
+
+But wait, there's something wrong. The pillars show up, but the player
+can walk over them. That's easy to fix though, add this check to the
+beginning of the Object's `move_by` method:
+
+[source,rust]
+----
+if !map[(self.x + dx) as usize][(self.y + dy) as usize].blocked {
+    // the move code
+}
+----
+
+We'll have to pass a reference to the map to `move_by` and
+`handle_keys` which calls it. This may look annoying now but as the
+code grows, it will be gook to know which functions can see (and
+change!) what.
 
 Here's link:part-2b-map.rs[the complete code so far].
+
+NOTE: There's a ton of different ways to create the map. One common
+alternative is one continuous Vec with `MAP_HEIGHT * MAP_WIDTH` items.
+To access a tile on `(x, y)`, you would do `map[y * MAP_WIDTH + x]`.
+The advantage is that you only do one array lookup instead of two and
+iterating over every object in the map is faster because they're all
+in the same region of memory.
+
+NOTE: Or you could treat walls and everything else in the map as just
+another `Object` and store them there. This would make the game
+structure simpler (*everything* is an `Object`) and more flexible
+(just add HP to make a wall destructible, or damage to one that's
+supposed to be covered with spikes).
 
 Continue to <<part-3-dungeon#,the next part>>.
