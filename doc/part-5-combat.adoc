@@ -6,6 +6,68 @@ ifdef::env-github[:outfilesuffix: .adoc]
 
 == Populating the dungeon
 
+We have an explorable dungeon now. Yeah! But when you actually go
+through it, it feels a bit... boring. It's just empty rooms connected
+to more empty rooms. *Let's add some monsters!*
+
+This isn't going to be as bad thanks to our object system. We create
+an object for each monster and add it to the `objects` list. So all we
+need to do is to create a few monsters in random locations for each
+room.
+
+Let's add a function that takes a room and does exactly that.
+
+[source,rust]
+----
+fn place_objects(room: Rect, objects: &mut Vec<Object>) {
+    // choose random number of monsters
+    let num_monsters = rand::thread_rng().gen_range(0, MAX_ROOM_MONSTERS + 1);
+
+    for _ in 0..num_monsters {
+        // choose random spot for this monster
+        let x = rand::thread_rng().gen_range(room.x1 + 1, room.x2);
+        let y = rand::thread_rng().gen_range(room.y1 + 1, room.y2);
+
+        let monster = if rand::random::<f32>() < 0.8 {  // 80% chance of getting an orc
+            // create an orc
+            Object::new(x, y, 'o', colors::DESATURATED_GREEN)
+        } else {
+            Object::new(x, y, 'T', colors::DARKER_GREEN)
+        };
+
+        objects.push(monster);
+    }
+}
+----
+
+We'll define the `MAX_ROOM_MONSTERS = 3` constant on top of the file
+again.
+
+Calling `rand::random::<f32>()` will produce an `f32` number between
+`0.0` and `1.0`. 80% of that is `0.8`.
+
+As you can see, we're defining _orcs_ and _trolls_ here, but you can
+do anything you want! And as we add more properties to `Object`, you
+can set them all here and create any monster (or npc or item) your
+heart desires.
+
+NOTE: later on, we'll use a choice table to make the code cleaner but
+for now you can just extend the `if random() ... else` block to add
+more variety.
+
+To actually place the monsters in each room, call this function right
+after `create_room` in `make_map`:
+
+[source,rust]
+----
+// add some content to this room, such as monsters
+place_objects(new_room, objects);
+----
+
+Let's also remove the dummy NPC from the initial objects list. We
+won't need it anymore.
+
+
 == Blocking objects
 
 == Game states
