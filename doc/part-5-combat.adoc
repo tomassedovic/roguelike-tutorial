@@ -479,17 +479,23 @@ that the player and the monsters take turns to act.
 // let monstars take their turn
 if game_state == GameState::Playing && player_action != PlayerAction::DidntTakeTurn {
     for object in &objects {
-        if object.name != "player" {
+        // only if object is not player
+        if (object as *const _) != (&objects[PLAYER] as *const _) {
             println!("The {} growls!", object.name);
         }
     }
 }
 ----
 
-That's just the debug message. You'll see it in the console where you
-write `cargo run --release` to run your game. In the next part we'll
-add an AI routine to move and attack and later on an in-game message
-log where we can print stuff to the player.
+The `as *const _` bit is there to do a pointer comparison. Rust's
+equality operators (`==` and `!=`) test for value equality, but we
+haven't implemented that for `Object` and we don't care anyway -- we
+just want to make sure to not process player here.
+
+The `println!` is just the debug message. You'll see it in the console
+where you write `cargo run --release` to run your game. In the next
+part we'll add an AI routine to move and attack and later on an
+in-game message log where we can print stuff to the player.
 
 Right now, when a player tries to move (bump) into a monster, nothing
 happens. Let's interpret that as an attack. We'll add a new function

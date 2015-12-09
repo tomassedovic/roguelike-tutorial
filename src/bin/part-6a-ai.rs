@@ -429,7 +429,8 @@ fn main() {
         // let monstars take their turn
         if game_state == GameState::Playing && player_action != PlayerAction::DidntTakeTurn {
             for object in &objects {
-                if object.name != "player" {
+                // only if object is not player
+                if (object as *const _) != (&objects[PLAYER] as *const _) {
                     println!("The {} growls!", object.name);
                 }
             }
