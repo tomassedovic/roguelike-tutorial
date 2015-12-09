@@ -156,7 +156,7 @@ Start your game right away by setting up the screen, printing the
   for long!). Also, deal with blocking objects and game states, which
   are important before coding the next part.
 
-Part 6: Going Berserk!::
+<<part-6-going-berserk#,Part 6: Going Berserk!>>::
 
   Stalking monsters, fights, splatter -- need we say more?
 

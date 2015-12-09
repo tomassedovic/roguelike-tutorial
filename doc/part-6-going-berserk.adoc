@@ -1,0 +1,22 @@
+= Going Berserk!
+:icons: font
+:source-highlighter: pygments
+:source-language: rust
+ifdef::env-github[:outfilesuffix: .adoc]
+
+<<index#,Back to the index.>>
+
+== The Components
+
+== AI
+
+The whole code is available link:part-6a-ai.rs[here].
+
+== Sword-fighting
+
+== Untimely deaths
+
+Here's link:part-6b-untimely-deaths.rs[the complete code so far].
+
+
+Continue to <<part-7-gui#,the next part>>.
