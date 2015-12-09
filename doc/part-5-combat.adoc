@@ -1,4 +1,5 @@
 = Preparing for combat
+:icons: font
 :source-highlighter: pygments
 ifdef::env-github[:outfilesuffix: .adoc]
 
@@ -68,9 +69,245 @@ Let's also remove the dummy NPC from the initial objects list. We
 won't need it anymore.
 
 
+== Getting hold of Player's position
+
+Before we move further, there are two things we can do to make working
+with the _player_ object easier and also to get and set the position
+of an object.
+
+We've already typed `objects[0]` a few times to refer to the player.
+To make it a bit clearer, we'll define a new constant `PLAYER` with
+the value `0`. Put this among the other constants:
+
+[source,rust]
+----
+// player will always be the first object
+const PLAYER: usize = 0;
+----
+
+And now we can replace every usage of `objects[0]` with
+`objects[PLAYER]`. We have a few in the `main` function and one more
+in `render_all`.
+
+It's a bit longer to type, but the intent is much clearer.
+
+Next, add these two methods to `Object`:
+
+[source,rust]
+----
+pub fn pos(&self) -> (i32, i32) {
+    (self.x, self.y)
+}
+pub fn set_pos(&mut self, x: i32, y: i32) {
+    self.x = x;
+    self.y = y;
+}
+----
+
+These give us a shorthand for getting or setting both coordinates (`x`
+and `y`) at once. This will again simplify some code in `main`, the
+`move_by` method of Object as well as setting player's initial
+position in `make_map`.
+
+
 == Blocking objects
 
+If you tried to walk up to a monster, you'd seen that the player
+walked right through! That's clearly not what we want to happen in
+general. Plus, we don't want multiple monsters standing on the same
+tile.
+
+But there are other options (scrolls, potions) that should not block
+the tile they're on.
+
+=== Does it block?
+
+Let's update `Object` with information whether it blocks the player
+or not. And give each object a name while we're at it. Put this in the
+`Object` struct definition:
+
+[source,rust]
+----
+name: String,
+blocks: bool,
+----
+
+And change the `new` method on `Object` to:
+
+[source,rust]
+----
+pub fn new(x: i32, y: i32, char: char, name: &str, color: Color, blocks: bool) -> Self {
+    Object {
+        x: x,
+        y: y,
+        char: char,
+        color: color,
+        name: name.into(),
+        blocks: blocks,
+    }
+}
+----
+
+Now we'll create a function that tests if a file is blocked -- whether
+due to a wall or an object blocking it.
+
+[source,rust]
+----
+fn is_blocked(x: i32, y: i32, map: &Map, objects: &[Object]) -> bool {
+    // first test the map tile
+    if map[x as usize][y as usize].blocked {
+        return true;
+    }
+    // now check for any blocking objects
+    objects.iter().any(|object| {
+        object.blocks && object.pos() == (x, y)
+    })
+}
+----
+
+It takes the coordinates we want to check and we must also pass in the
+map and objects.
+
+=== Ownership woes
+
+Now we'd like to use `is_blocked` in the `move_by` method to make sure
+an object never moves onto a blocked tile.
+
+If we just put the `!is_blocked(self.x + dx, self.y + dy, map,
+objects)` check into the method and add `objects` as a function
+parameter, Rust will not let us use it.
+
+The method will compile just fine, but if you try calling it in
+`handle_keys`, it will not compile:
+
+[source,rust]
+----
+objects[PLAYER].move_by(1, 0, &map, &objects);
+----
+
+Rust will complain that it cannot have a mutable and an immutable
+borrow at once.
+
+To guarantee memory safety and no data races, Rust's references (`&`
+and `&mut`) have a few rules. One of them is that when you have a
+mutable borrow, you can't have any other mutable or immutable borrows
+into the same data.
+
+And that is exactly what's happening here. The signature of the
+`move_by` method is:
+
+[source,rust]
+----
+fn move_by(&mut self, dx: i32, dy: i32, map: &Map, objects: &[Object])
+----
+
+We need `&Map` and `&[Object]` because they both need to be passed to
+`is_blocked`. But, we also need the `&mut self` at the beginning to be
+able to modify the position of the object we're moving.
+
+And therein lies the problem, since all objects (including the one
+we're calling `move_by` on) are in the `objects` vec, as soon as we
+mutably borrow one part of it, Rust locks the entire vec. The line
+above is essentially equivalent to this:
+
+[source,rust]
+----
+let player = &mut objects[PLAYER];  // <1> <2>
+let borrowed_objects = &objects;  // <3>
+player.move_by(1, 0, &map, objects)  <4>
+----
+<1> Get a mutable borrow of the player object
+<2> That will treat the whole `objects` vec as mutably borrowed
+<3> Try to immutably borrow objects -- fails because it's already borrowed
+<4> We don't even get here because of the double borrow issue
+
+There's multiple ways to solve this, but the easiest is to turn the
+method into a plain function and pass in the object index instead of a
+reference:
+
+[source,rust]
+----
+/// move by the given amount, if the destination is not blocked
+fn move_by(id: usize, dx: i32, dy: i32, map: &Map, objects: &mut [Object]) {
+    let (x, y) = objects[id].pos();
+    if !is_blocked(x + dx, y + dy, map, objects) {
+        objects[id].set_pos(x + dx, y + dy);
+    }
+}
+----
+
+Now we no longer have the problem, because we first call get the
+object's position (immutable borrow that ends immediately), then call
+`is_blocked` with `objects` (again, immutable borrow that ends right
+after the call) and finally, with no borrows to burden us, we set the
+position.
+
+This is what Rust people sometimes refer to as "fighting the borrow
+checker". When you start with the language, you'll likely encounter a
+lot of these situations. As you get more experienced though, you'll
+learn which patterns will cause trouble and structure your code
+differently.
+
+Most of the time, Rust will catch things that could result in memory
+or threading issues in other languages. But sometimes (such as in our
+case here), it can't tell whether the operation is okay or not and so
+it rather errs on the side of safety.
+
+You can read more in the Rust book's chapters on ownership and borrowing:
+
+http://doc.rust-lang.org/book/ownership.html
+
+http://doc.rust-lang.org/book/references-and-borrowing.html
+
+
+=== All's well
+
+So after this interlude, the objects (including the player) can no
+longer move into a tile occupied by another blocking object.
+
+Next, make sure we don't place two blocking objects onto the same
+tile. In `place_objects`, we'll check whether the tile is free before
+placing a new monster:
+
+[source,rust]
+----
+// only place it if the tile is not blocked
+if !is_blocked(x, y, map, objects) {
+    // generate the monster
+}
+----
+
+And since objects have two new properties, we need to pass them along
+to any code that creates one. Update the player creation to:
+
+[source,rust]
+----
+let player = Object::new(0, 0, '@', "player", colors::WHITE, true);
+----
+
+And update the code that creates the monsters:
+
+[source,rust]
+----
+// create an orc
+Object::new(x, y, 'o', "orc", colors::DESATURATED_GREEN, true)
+
+// create a troll
+Object::new(x, y, 'T', "troll", colors::DARKER_GREEN, true)
+----
+
+And in `handle_keys`, we'll change the movement code from
+`player.move_by(0, -1, map)` to:
+
+[source,rust]
+----
+move_by(PLAYER, 0, -1, map, objects)
+----
+
+
 == Game states
+
+
 
 == Fighting orderly
 
