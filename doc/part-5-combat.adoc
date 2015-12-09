@@ -470,10 +470,89 @@ disable it if you want, but most of the time, it's _really_ helpful.
 
 == Fighting orderly
 
+This part is already running long, so we won't actually implement
+combat here (that will happen in the next part), but we'll make sure
+that the player and the monsters take turns to act.
 
+[source]
+----
+// let monstars take their turn
+if game_state == GameState::Playing && player_action != PlayerAction::DidntTakeTurn {
+    for object in &objects {
+        if object.name != "player" {
+            println!("The {} growls!", object.name);
+        }
+    }
+}
+----
 
+That's just the debug message. You'll see it in the console where you
+write `cargo run --release` to run your game. In the next part we'll
+add an AI routine to move and attack and later on an in-game message
+log where we can print stuff to the player.
 
+Right now, when a player tries to move (bump) into a monster, nothing
+happens. Let's interpret that as an attack. We'll add a new function
+called `player_move_or_attack` and use it instead of `move_by` in
+`handle_keys`.
+
+Replace all calls to:
+
+[source]
+----
+move_by(0, -1, map, objects);
+----
+
+With:
+
+[source]
+----
+player_move_or_attack(PLAYER, 1, 0, map, objects)
+----
+
+Now let's write the function itself:
+
+[source]
+----
+fn player_move_or_attack(dx: i32, dy: i32, map: &Map, objects: &mut [Object]) {
+    // the coordinates the player is moving to/attacking
+    let x = objects[PLAYER].x + dx;
+    let y = objects[PLAYER].y + dy;
+
+    // try to find an attackable object there
+    let target_id = objects.iter().position(|object| {
+        object.pos() == (x, y)
+    });
+
+    // attack if target found, move otherwise
+    match target_id {
+        Some(target_id) => {
+            println!("The {} laughs at your puny efforts to attack him!", objects[target_id].name);
+        }
+        None => {
+            move_by(PLAYER, dx, dy, map, objects);
+        }
+    }
+}
+----
+
+The `position` method on an iterator runs a test on each object and as
+soon as it finds one, it returns its index in the collection (in our
+case a vec of `Object`).
+
+It's possible no match will be found, so it actually returns
+`Option<usize>` here.
+
+We then test whether we have found a target at that position (in which case
+we know it's index) and print out a message or whether we can just
+move into that place.
+
+And that's it! You test it out. No one's dealing any damage, but the
+game now detects when you're trying to attack a monster. And you can
+see the monsters taking their turns after you.
 
 Here's link:part-5-combat.rs[the complete code so far].
+
+Guess what's next?
 
 Continue to <<part-6-going-berserk#,the next part>>.
