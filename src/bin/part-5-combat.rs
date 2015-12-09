@@ -300,29 +300,56 @@ fn render_all(root: &mut Root, con: &mut Offscreen, objects: &[Object], map: &mu
     blit(con, (0, 0), (SCREEN_WIDTH, SCREEN_HEIGHT), root, (0, 0), 1.0, 1.0);
 }
 
-fn handle_keys(root: &mut Root, map: &Map, objects: &mut [Object]) -> bool {
+fn handle_keys(root: &mut Root, map: &Map, objects: &mut [Object],
+               game_state: GameState) -> PlayerAction {
     use tcod::input::Key;
     use tcod::input::KeyCode::*;
+    use PlayerAction::*;
+    use GameState::*;
 
     let key = root.wait_for_keypress(true);
-    match key {
-        Key { code: Enter, alt: true, .. } => {
+    match (key, game_state) {
+        (Key { code: Enter, alt: true, .. }, _) => {
             // Alt+Enter: toggle fullscreen
             let fullscreen = root.is_fullscreen();
             root.set_fullscreen(!fullscreen);
+            return DidntTakeTurn;
         }
-        Key { code: Escape, .. } => return true,  // exit game
+        (Key { code: Escape, .. }, _) => return Exit,  // exit game
 
         // movement keys
-        Key { code: Up, .. } => move_by(PLAYER, 0, -1, map, objects),
-        Key { code: Down, .. } => move_by(PLAYER, 0, 1, map, objects),
-        Key { code: Left, .. } => move_by(PLAYER, -1, 0, map, objects),
-        Key { code: Right, .. } => move_by(PLAYER, 1, 0, map, objects),
+        (Key { code: Up, .. }, Playing) => {
+            move_by(PLAYER, 0, -1, map, objects);
+            return TookTurn;
+        }
+        (Key { code: Down, .. }, Playing) => {
+            move_by(PLAYER, 0, 1, map, objects);
+            return TookTurn;
+        }
+        (Key { code: Left, .. }, Playing) => {
+            move_by(PLAYER, -1, 0, map, objects);
+            return TookTurn;
+        }
+        (Key { code: Right, .. }, Playing) => {
+            move_by(PLAYER, 1, 0, map, objects);
+            return TookTurn;
+        }
 
-        _ => {},
+        _ => return DidntTakeTurn,
     }
+}
 
-    false
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum PlayerAction {
+    TookTurn,
+    DidntTakeTurn,
+    Exit,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum GameState {
+    Playing,
+    Death,
 }
 
 fn main() {
@@ -357,6 +384,8 @@ fn main() {
     // force FOV "recompute" first time through the game loop
     let mut previous_player_position = (-1, -1);
 
+    let mut game_state = GameState::Playing;
+
     while !root.window_closed() {
         // render the screen
         let fov_recompute = previous_player_position != (objects[PLAYER].pos());
@@ -371,8 +400,8 @@ fn main() {
 
         // handle keys and exit game if needed
         previous_player_position = objects[PLAYER].pos();
-        let exit = handle_keys(&mut root, &map, &mut objects);
-        if exit {
+        let player_action = handle_keys(&mut root, &map, &mut objects, game_state);
+        if player_action == PlayerAction::Exit {
             break
         }
     }

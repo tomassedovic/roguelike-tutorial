@@ -1,6 +1,7 @@
 = Preparing for combat
 :icons: font
 :source-highlighter: pygments
+:source-language: rust
 ifdef::env-github[:outfilesuffix: .adoc]
 
 <<index#,Back to the index.>>
@@ -307,9 +308,171 @@ move_by(PLAYER, 0, -1, map, objects)
 
 == Game states
 
+Last stop before we get to the actual combat system! Our input system
+has a fatal flaw: player actions (movement, combat) and other keys
+(fullscreen, other options) are handled the same way. We need to
+separate them. This way, if the player pauses or dies he can't move or
+fight, but can press other keys. We also want to know if the player's
+input means he finished his turn or not; changing to fullscreen
+shouldn't count as a turn. I know they're just simple details - but
+the game would be incredibly annoying without them!
 
+Let's create enums for the different things that can control the
+game loop:
+
+[source]
+----
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum PlayerAction {
+    TookTurn,
+    DidntTakeTurn,
+    Exit,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum GameState {
+    Playing,
+    Death,
+}
+----
+
+(deriving `PartialEq` lets us use `==` and `!=` to compare the enums together)
+
+Change `handle_keys` to return `PlayerAction` instead of `bool`. We'll
+also need to pass `GameState` in as an argument
+
+[source]
+----
+fn handle_keys(root: &mut Root, map: &Map, objects: &mut [Object],
+               game_state: GameState) -> PlayerAction
+----
+
+We're going to be using the enum values heavily in `handle_keys`, so
+let's import them on top of the function:
+
+[source]
+----
+use PlayerAction::*;
+use GameState::*;
+----
+
+And then, in the code for fullscreen, return `DidntTakeTurn`:
+
+[source]
+----
+Key { code: Enter, alt: true, .. } => {
+    // Alt+Enter: toggle fullscreen
+    let fullscreen = root.is_fullscreen();
+    root.set_fullscreen(!fullscreen);
+    return DidntTakeTurn;
+}
+----
+
+Have the `Escape` code path return `Exit`:
+
+[source]
+----
+Key { code: Escape, .. } => return Exit
+----
+
+And `PlayerAction::TookTurn` to all the movement actions and
+`PlayerAction::DidntTakeTurn` to the catch-all at the end.
+
+[source]
+----
+Key { code: Up, .. } => {
+    move_by(PLAYER, 0, -1, map, objects);
+    return TookTurn;
+}
+
+// and so on for Down, Left and Right
+
+_ => return DidntTakeTurn,
+----
+
+This will ensure that pressing an unknown key will not do anything and
+as we'll add other actions, such as picking up items, accessing
+inventory, etc. we'll have an easy way of saying whether they take a
+turn or not -- or even being more dynamic than that -- just opening an
+inventory may not cost anything but using an item from it could.
+
+And now let's only allow things like movement when the game is still
+going on. You wouldn't want the player's corpse to walk around after
+death (or maybe you would! There's a game idea.), but you may still
+allow things like full screen, exiting the game or even a read-only
+view into the inventory.
+
+Let's update our match to include the `game_state`, too:
+
+[source]
+----
+match (key, game_state) {
+    // key handling
+}
+----
+
+Now instead of just matching on keys, we have to take the game state
+into consideration as well. Fullscreen and exit on Escape should work
+whether the player is alive or dead, so change them to:
+
+[source]
+----
+(Key { code: Enter, alt: true, .. }, _) =>   // exit
+(Key { code: Escape, .. }, _) =>  // fullscreen
+----
+
+We're taking two values in a tuple `(key, game_state)` now and
+ignoring the latter.
+
+For movement, we only want it to work when the player is alive so:
+
+[source]
+----
+(Key { code: Up, .. }, Playing) =>  // move player
+----
+
+and so on.
+
+NOTE: There are other ways to handle this. We could use use the `if`
+syntax in the match arm (so e.g. `Key { code: Down, .. } if game_state
+== Playing => // move player`) or even get rid of `match` entirely and
+use if/else statements just like in Python. However, I find this
+easier to read and it makes sure we never forget to handle the game
+state when we add a new key.
+
+
+And now we need to go back to the main loop though and handle
+`PlayerAction` and `GameState` there.
+
+First, let's set the `game_state` before the main loop:
+
+[source]
+----
+let mut game_state = GameState::Playing;
+----
+
+And then change the end of the loop to:
+
+[source]
+----
+let player_action = handle_keys(&mut root, &map, &mut objects, game_state);
+if player_action == PlayerAction::Exit {
+    break
+}
+----
+
+NOTE: You may have noticed that we're not actually modifying the `game_state`
+anywhere. That's because there's no code that could kill the playing
+yet! Don't worry, we'll add it soon enough.
+
+TIP: Rust will actually warn you about any unused code. You can
+disable it if you want, but most of the time, it's _really_ helpful.
 
 == Fighting orderly
+
+
+
+
 
 Here's link:part-5-combat.rs[the complete code so far].
 
