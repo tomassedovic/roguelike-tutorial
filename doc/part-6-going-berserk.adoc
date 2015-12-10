@@ -170,6 +170,97 @@ The whole code is available link:part-6a-ai.rs[here].
 
 == Sword-fighting
 
+The quest for some epic medieval combat is coming to an end! We will
+now write the actual functions to attack and take damage, and replace
+those silly placeholders with the meaty stuff. The "meaty stuff" is
+deliberately simple. This is so you can easily change it with your own
+damage system, whatever it may be.
+
+[source]
+----
+pub fn take_damage(&mut self, damage: i32) {
+    // apply damage if possible
+    if let Some(fighter) = self.fighter.as_mut() {
+        if damage > 0 {
+            fighter.hp -= damage;
+        }
+    }
+}
+----
+
+In the next section we'll modify it to also handle deaths. Then
+there's the method to attack another object:
+
+[source]
+----
+pub fn attack(&mut self, target: &mut Object) {
+    // a simple formula for attack damage
+    let damage = self.fighter.map_or(0, |f| f.power) - target.fighter.map_or(0, |f| f.defense);
+    if damage > 0 {
+        // make the target take some damage
+        println!("{} attacks {} for {} hit points.", self.name, target.name, damage);
+        target.take_damage(damage);
+    } else {
+        println!("{} attacks {} but it has no effect!", self.name, target.name);
+    }
+}
+----
+
+It calls the previous method in order to handle taking damage. We
+separated "attacks" and "damage" because you might want an event, like
+poison or a trap, to directly damage an object by some amount, without
+going through the attack damage formula.
+
+Let's replace the dummy attack message in `ai_take_turn` with a call
+to the `attack` monster.
+
+Alas, the ownership rears its head again! If you just tried the
+straightforward bit:
+
+[source]
+----
+let monster = &mut objects[monster_id];
+monster.attack(&mut objects[PLAYER]);
+----
+
+You would get another error about a double mutable borrow. While
+taking two mutable pointers into the `objects` list is safe when
+they're pointing at *different objects*, it would be a problem if they
+borrowed the same one (remember, you can only have one mutable borrow
+to an object at a time).
+
+Unfortunately, Rust can't just figure out that the monster and player
+are different items in the list.
+
+However, we can let it know! There's a method on slices called
+`split_at_mut` which takes an index and returns two mutable slices
+split by the index. And we can use that to return a mutable borrow to
+our object from both:
+
+[source]
+----
+/// Mutably borrow two *separate* elements from the given slice.
+/// Panics when the indexes are equal or out of bounds.
+fn mut_two<T>(first_index: usize, second_index: usize, items: &mut [T]) -> (&mut T, &mut T) {
+    assert!(first_index != second_index);
+    let split_at_index = cmp::max(first_index, second_index);
+    let (first_slice, second_slice) = items.split_at_mut(split_at_index);
+    if first_index < second_index {
+        (&mut first_slice[first_index], &mut second_slice[0])
+    } else {
+        (&mut second_slice[0], &mut first_slice[second_index])
+    }
+}
+----
+
+And now monster's attack looks like this:
+
+[source]
+----
+// close enough, attack! (if the player is still alive.)
+let (monster, player) = mut_two(monster_id, PLAYER, objects);
+monster.attack(player);
+----
 
 
 == Untimely deaths
