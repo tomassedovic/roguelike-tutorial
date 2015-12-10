@@ -262,6 +262,26 @@ let (monster, player) = mut_two(monster_id, PLAYER, objects);
 monster.attack(player);
 ----
 
+And do the same to the player's dummy attack code in `player_move_or_attack`:
+
+[source]
+----
+let (player, target) = mut_two(PLAYER, target_id, objects);
+player.attack(target);
+----
+
+
+That's it, the player and the monsters can beat each other silly, but
+no-one will die. We'll take this opportunity to print the player's HP
+so you can see it plummeting to negative values as the monsters
+attack you. This is how you make a simple GUI! At the end of the
+`render_all` function:
+
+[source]
+----
+
+----
+
 
 == Untimely deaths
 

@@ -406,7 +406,8 @@ fn player_move_or_attack(dx: i32, dy: i32, map: &Map, objects: &mut [Object]) {
     // attack if target found, move otherwise
     match target_id {
         Some(target_id) => {
-            println!("The {} laughs at your puny efforts to attack him!", objects[target_id].name);
+            let (player, target) = mut_two(PLAYER, target_id, objects);
+            player.attack(target);
         }
         None => {
             move_by(PLAYER, dx, dy, map, objects);
