@@ -279,8 +279,18 @@ attack you. This is how you make a simple GUI! At the end of the
 
 [source]
 ----
-
+// show the player's stats
+if let Some(fighter) = objects[PLAYER].fighter {
+    con.print_ex(1, SCREEN_HEIGHT - 2, BackgroundFlag::None, TextAlignment::Left,
+                 format!("HP: {}/{} ", fighter.hp, fighter.max_hp));
+}
 ----
+
+NOTE: We render the hitpoints only when the _player_ has the `Fighter`
+component. We could use `objects[PLAYER].fighter.unwrap()` instead of
+`if let` here, but that would crash the game if the player ever
+stopped being a fighter, which would be a shame. What if they're under
+a sanctuary spell or some such?
 
 
 == Untimely deaths

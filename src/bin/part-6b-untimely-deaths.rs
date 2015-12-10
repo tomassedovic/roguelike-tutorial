@@ -389,6 +389,13 @@ fn render_all(root: &mut Root, con: &mut Offscreen, objects: &[Object], map: &mu
         }
     }
 
+    // show the player's stats
+    con.set_default_foreground(colors::WHITE);
+    if let Some(fighter) = objects[PLAYER].fighter {
+        con.print_ex(1, SCREEN_HEIGHT - 2, BackgroundFlag::None, TextAlignment::Left,
+                     format!("HP: {}/{} ", fighter.hp, fighter.max_hp));
+    }
+
     // blit the contents of "con" to the root console
     blit(con, (0, 0), (SCREEN_WIDTH, SCREEN_HEIGHT), root, (0, 0), 1.0, 1.0);
 }
