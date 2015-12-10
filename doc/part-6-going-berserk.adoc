@@ -170,7 +170,11 @@ The whole code is available link:part-6a-ai.rs[here].
 
 == Sword-fighting
 
+
+
 == Untimely deaths
+
+
 
 Here's link:part-6b-untimely-deaths.rs[the complete code so far].
 
