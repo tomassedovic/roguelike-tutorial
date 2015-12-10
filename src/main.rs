@@ -421,7 +421,7 @@ impl MonsterAI {
         use MonsterAIType::*;
         match self.ai_type {
             Basic => self.monster_basic_ai(monster_id, objects, game, tcod),
-            Confused{..} => self.monster_confused_ai(monster_id, objects, game, tcod),
+            Confused{mut num_turns} => self.monster_confused_ai(monster_id, &mut num_turns, objects, game, tcod),
         }
     }
 
@@ -448,27 +448,21 @@ impl MonsterAI {
         None
     }
 
-    fn monster_confused_ai(&mut self, monster_id: usize, objects: &mut [Object], game: &mut Game, _tcod: &mut TcodState) -> Option<MonsterAI> {
-        use MonsterAIType::*;
-        match self.ai_type {
-            Confused{num_turns} => {
-                if num_turns > 0 {  // still confused...
-                    // move in a random direction, and decrease the number of turns confused
-                    move_by(monster_id,
-                            rand::thread_rng().gen_range(-1, 2),
-                            rand::thread_rng().gen_range(-1, 2),
-                            objects,
-                            game);
-                    self.ai_type = Confused{num_turns: num_turns - 1};
-                    None
-                } else {  // restore the previous AI (this one will be deleted)
-                    game.log.add(format!("The {} is no longer confused!",
-                                         objects[monster_id].name),
-                                 colors::RED);
-                    self.old_ai.take().map(|ai| *ai)
-                }
-            }
-            _ => unreachable!(),
+    fn monster_confused_ai(&mut self, monster_id: usize, num_turns: &mut i32, objects: &mut [Object], game: &mut Game, _tcod: &mut TcodState) -> Option<MonsterAI> {
+        if *num_turns > 0 {  // still confused...
+            // move in a random direction, and decrease the number of turns confused
+            move_by(monster_id,
+                    rand::thread_rng().gen_range(-1, 2),
+                    rand::thread_rng().gen_range(-1, 2),
+                    objects,
+                    game);
+            *num_turns -= 1;
+            None
+        } else {  // restore the previous AI (this one will be deleted)
+            game.log.add(format!("The {} is no longer confused!",
+                                 objects[monster_id].name),
+                         colors::RED);
+            self.old_ai.take().map(|ai| *ai)
         }
     }
 }
