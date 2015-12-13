@@ -30,7 +30,7 @@ fn place_objects(room: Rect, objects: &mut Vec<Object>) {
         let x = rand::thread_rng().gen_range(room.x1 + 1, room.x2);
         let y = rand::thread_rng().gen_range(room.y1 + 1, room.y2);
 
-        let monster = if rand::random::<f32>() < 0.8 {  // 80% chance of getting an orc
+        let mut monster = if rand::random::<f32>() < 0.8 {  // 80% chance of getting an orc
             // create an orc
             Object::new(x, y, 'o', colors::DESATURATED_GREEN)
         } else {
@@ -131,6 +131,7 @@ or not. And give each object a name while we're at it. Put this in the
 ----
 name: String,
 blocks: bool,
+alive: bool,
 ----
 
 And change the `new` method on `Object` to:
@@ -145,9 +146,15 @@ pub fn new(x: i32, y: i32, char: char, name: &str, color: Color, blocks: bool) -
         color: color,
         name: name.into(),
         blocks: blocks,
+        alive: false,
     }
 }
 ----
+
+NOTE: All our objects are alive at the moment, but soon we'll add
+items, scrolls, stairs, etc. and the balance will shift. Better set
+things alive explicitly than turn it off. It's easy to see when you've
+missed setting `alive = true` but hard to do the opposite.
 
 Now we'll create a function that tests if a file is blocked -- whether
 due to a wall or an object blocking it.
@@ -283,7 +290,8 @@ to any code that creates one. Update the player creation to:
 
 [source,rust]
 ----
-let player = Object::new(0, 0, '@', "player", colors::WHITE, true);
+let mut player = Object::new(0, 0, '@', "player", colors::WHITE, true);
+player.alive = true;
 ----
 
 And update the code that creates the monsters:
@@ -297,6 +305,13 @@ Object::new(x, y, 'o', "orc", colors::DESATURATED_GREEN, true)
 Object::new(x, y, 'T', "troll", colors::DARKER_GREEN, true)
 ----
 
+Let's make the monsters alive as well. Right before `objects.push(monster)`:
+
+[source]
+----
+monster.alive = true;
+----
+
 And in `handle_keys`, we'll change the movement code from
 `player.move_by(0, -1, map)` to:
 
@@ -306,7 +321,7 @@ move_by(PLAYER, 0, -1, map, objects)
 ----
 
 
-== Game states
+== Player actions
 
 Last stop before we get to the actual combat system! Our input system
 has a fatal flaw: player actions (movement, combat) and other keys
@@ -317,8 +332,8 @@ input means he finished his turn or not; changing to fullscreen
 shouldn't count as a turn. I know they're just simple details - but
 the game would be incredibly annoying without them!
 
-Let's create enums for the different things that can control the
-game loop:
+Let's define high-level actions from the player that we can control
+the game loop with:
 
 [source]
 ----
@@ -328,23 +343,15 @@ enum PlayerAction {
     DidntTakeTurn,
     Exit,
 }
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-enum GameState {
-    Playing,
-    Death,
-}
 ----
 
 (deriving `PartialEq` lets us use `==` and `!=` to compare the enums together)
 
-Change `handle_keys` to return `PlayerAction` instead of `bool`. We'll
-also need to pass `GameState` in as an argument
+Change `handle_keys` to return `PlayerAction` instead of `bool`.
 
 [source]
 ----
-fn handle_keys(root: &mut Root, map: &Map, objects: &mut [Object],
-               game_state: GameState) -> PlayerAction
+fn handle_keys(root: &mut Root, map: &Map, objects: &mut [Object]) -> PlayerAction
 ----
 
 We're going to be using the enum values heavily in `handle_keys`, so
@@ -353,7 +360,6 @@ let's import them on top of the function:
 [source]
 ----
 use PlayerAction::*;
-use GameState::*;
 ----
 
 And then, in the code for fullscreen, return `DidntTakeTurn`:
@@ -406,7 +412,9 @@ Let's update our match to include the `game_state`, too:
 
 [source]
 ----
-match (key, game_state) {
+
+let player_alive = objects[PLAYER].alive;
+match (key, player_alive) {
     // key handling
 }
 ----
@@ -421,7 +429,7 @@ whether the player is alive or dead, so change them to:
 (Key { code: Escape, .. }, _) =>  // fullscreen
 ----
 
-We're taking two values in a tuple `(key, game_state)` now and
+We're taking two values in a tuple `(key, player_alive)` now and
 ignoring the latter.
 
 For movement, we only want it to work when the player is alive so:
@@ -442,31 +450,15 @@ state when we add a new key.
 
 
 And now we need to go back to the main loop though and handle
-`PlayerAction` and `GameState` there.
-
-First, let's set the `game_state` before the main loop:
+`PlayerAction` there. Change the end of the loop to:
 
 [source]
 ----
-let mut game_state = GameState::Playing;
-----
-
-And then change the end of the loop to:
-
-[source]
-----
-let player_action = handle_keys(&mut root, &map, &mut objects, game_state);
+let player_action = handle_keys(&mut root, &map, &mut objects);
 if player_action == PlayerAction::Exit {
     break
 }
 ----
-
-NOTE: You may have noticed that we're not actually modifying the `game_state`
-anywhere. That's because there's no code that could kill the playing
-yet! Don't worry, we'll add it soon enough.
-
-TIP: Rust will actually warn you about any unused code. You can
-disable it if you want, but most of the time, it's _really_ helpful.
 
 == Fighting orderly
 
@@ -477,7 +469,7 @@ that the player and the monsters take turns to act.
 [source]
 ----
 // let monstars take their turn
-if game_state == GameState::Playing && player_action != PlayerAction::DidntTakeTurn {
+if objects[PLAYER].alive && player_action != PlayerAction::DidntTakeTurn {
     for object in &objects {
         // only if object is not player
         if (object as *const _) != (&objects[PLAYER] as *const _) {

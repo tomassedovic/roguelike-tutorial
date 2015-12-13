@@ -93,6 +93,7 @@ struct Object {
     color: Color,
     name: String,
     blocks: bool,
+    alive: bool,
     fighter: Option<Fighter>,
     ai: Option<Ai>,
 }
@@ -106,6 +107,7 @@ impl Object {
             color: color,
             name: name.into(),
             blocks: blocks,
+            alive: false,
             fighter: None,
             ai: None,
         }
@@ -295,7 +297,7 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>) {
 
         // only place it if the tile is not blocked
         if !is_blocked(x, y, map, objects) {
-            let monster = if rand::random::<f32>() < 0.8 {  // 80% chance of getting an orc
+            let mut monster = if rand::random::<f32>() < 0.8 {  // 80% chance of getting an orc
                 // create an orc
                 let mut orc = Object::new(x, y, 'o', "orc", colors::DESATURATED_GREEN, true);
                 orc.fighter = Some(Fighter{max_hp: 10, hp: 10, defense: 0, power: 3});
@@ -308,7 +310,7 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>) {
                 troll.ai = Some(Ai);
                 troll
             };
-
+            monster.alive = true;
             objects.push(monster);
         }
     }
@@ -380,15 +382,14 @@ fn player_move_or_attack(dx: i32, dy: i32, map: &Map, objects: &mut [Object]) {
     }
 }
 
-fn handle_keys(root: &mut Root, map: &Map, objects: &mut [Object],
-               game_state: GameState) -> PlayerAction {
+fn handle_keys(root: &mut Root, map: &Map, objects: &mut [Object]) -> PlayerAction {
     use tcod::input::Key;
     use tcod::input::KeyCode::*;
     use PlayerAction::*;
-    use GameState::*;
 
     let key = root.wait_for_keypress(true);
-    match (key, game_state) {
+    let player_alive = objects[PLAYER].alive;
+    match (key, player_alive) {
         (Key { code: Enter, alt: true, .. }, _) => {
             // Alt+Enter: toggle fullscreen
             let fullscreen = root.is_fullscreen();
@@ -398,19 +399,19 @@ fn handle_keys(root: &mut Root, map: &Map, objects: &mut [Object],
         (Key { code: Escape, .. }, _) => return Exit,  // exit game
 
         // movement keys
-        (Key { code: Up, .. }, Playing) => {
+        (Key { code: Up, .. }, true) => {
             player_move_or_attack(0, -1, map, objects);
             return TookTurn;
         }
-        (Key { code: Down, .. }, Playing) => {
+        (Key { code: Down, .. }, true) => {
             player_move_or_attack(0, 1, map, objects);
             return TookTurn;
         }
-        (Key { code: Left, .. }, Playing) => {
+        (Key { code: Left, .. }, true) => {
             player_move_or_attack(-1, 0, map, objects);
             return TookTurn;
         }
-        (Key { code: Right, .. }, Playing) => {
+        (Key { code: Right, .. }, true) => {
             player_move_or_attack(1, 0, map, objects);
             return TookTurn;
         }
@@ -426,12 +427,6 @@ enum PlayerAction {
     Exit,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-enum GameState {
-    Playing,
-    Death,
-}
-
 fn main() {
     let mut root = Root::initializer()
         .font("arial10x10.png", FontLayout::Tcod)
@@ -444,6 +439,7 @@ fn main() {
 
     // create object representing the player
     let mut player = Object::new(0, 0, '@', "player", colors::WHITE, true);
+    player.alive = true;
     player.fighter = Some(Fighter{max_hp: 30, hp: 30, defense: 2, power: 5});
 
     // the list of objects with just the player
@@ -465,8 +461,6 @@ fn main() {
     // force FOV "recompute" first time through the game loop
     let mut previous_player_position = (-1, -1);
 
-    let mut game_state = GameState::Playing;
-
     while !root.window_closed() {
         // render the screen
         let fov_recompute = previous_player_position != (objects[PLAYER].pos());
@@ -481,13 +475,13 @@ fn main() {
 
         // handle keys and exit game if needed
         previous_player_position = objects[PLAYER].pos();
-        let player_action = handle_keys(&mut root, &map, &mut objects, game_state);
+        let player_action = handle_keys(&mut root, &map, &mut objects);
         if player_action == PlayerAction::Exit {
             break
         }
 
         // let monstars take their turn
-        if game_state == GameState::Playing && player_action != PlayerAction::DidntTakeTurn {
+        if objects[PLAYER].alive && player_action != PlayerAction::DidntTakeTurn {
             for id in 0..objects.len() {
                 if objects[id].ai.is_some() {
                     ai_take_turn(id, &map, &mut objects, &fov_map);
