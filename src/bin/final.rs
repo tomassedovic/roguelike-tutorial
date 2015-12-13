@@ -112,6 +112,7 @@ struct Object {
     name: String,
     color: Color,
     blocks: bool,
+    alive: bool,
     always_visible: bool,
     level: i32,
     fighter: Option<Fighter>,
@@ -129,6 +130,7 @@ impl Object {
             name: name.to_owned(),
             color: color,
             blocks: blocks,
+            alive: false,
             always_visible: false,
             level: 0,
             fighter: None,
@@ -719,6 +721,7 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>, level: i32) {
                     orc.fighter = Some(
                         Fighter{hp: 20, base_max_hp: 20, base_defense: 0, base_power: 4, xp: 35,
                                 death: Some(DeathCallback::Monster)});
+                    orc.alive = true;
                     orc.ai = Some(MonsterAI{
                         old_ai: None,
                         ai_type: MonsterAIType::Basic,
@@ -731,6 +734,7 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>, level: i32) {
                     troll.fighter = Some(
                         Fighter{hp: 30, base_max_hp: 30, base_defense: 2, base_power: 8, xp: 100,
                                 death: Some(DeathCallback::Monster)});
+                    troll.alive = true;
                     troll.ai = Some(MonsterAI{
                         old_ai: None,
                         ai_type: MonsterAIType::Basic,
@@ -1007,7 +1011,7 @@ fn handle_keys(objects: &mut Vec<Object>, game: &mut Game, tcod: &mut TcodState,
     } else if key.code == Escape {
         return PlayerAction::Exit;  // exit game
     }
-    if game.state == GameState::Playing {
+    if objects[PLAYER].alive {
         match key {
             // movement keys
             Key { code: Up, .. } | Key { code: NumPad8, .. } => {
@@ -1148,20 +1152,14 @@ enum PlayerAction {
     Exit,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, RustcDecodable, RustcEncodable)]
-enum GameState {
-    Playing,
-    Death,
-}
-
 fn player_death(player: &mut Object, game: &mut Game) {
     // the game ended!
     game.log.add("You died!", colors::RED);
-    game.state = GameState::Death;
 
     // for added effect, transform the player into a corpse!
     player.char = '%';
     player.color = colors::DARK_RED;
+    player.alive = false;
 }
 
 fn monster_death(monster: &mut Object, game: &mut Game) {
@@ -1176,6 +1174,7 @@ fn monster_death(monster: &mut Object, game: &mut Game) {
     monster.blocks = false;
     monster.fighter = None;
     monster.ai = None;
+    monster.alive = false;
     monster.name = format!("remains of {}", monster.name);
 }
 
@@ -1481,7 +1480,6 @@ impl MessageLog {
 
 #[derive(RustcDecodable, RustcEncodable)]
 struct Game {
-    state: GameState,
     dungeon_level: i32,
     map: Map,
     fov_recompute: bool,
@@ -1494,6 +1492,7 @@ impl Game {
     fn new(tcod: &mut TcodState) -> (Self, Vec<Object>) {
         // create object representing the player
         let mut player = Object::new(0, 0, '@', "player", colors::WHITE, true);
+        player.alive = true;
         player.fighter = Some(
             Fighter{
                 hp: 100, base_max_hp: 100, base_defense: 1, base_power: 2, xp: 0,
@@ -1505,7 +1504,6 @@ impl Game {
 
         // Generate map (at this point it's not drawn to the screen)
         let mut game = Game {
-            state: GameState::Playing,
             dungeon_level: dungeon_level,
             map: make_map(&mut objects,
                           dungeon_level),
@@ -1617,7 +1615,7 @@ impl Game {
             }
 
             // let monsters take their turn
-            if self.state == GameState::Playing && player_action != PlayerAction::DidntTakeTurn {
+            if objects[PLAYER].alive && player_action != PlayerAction::DidntTakeTurn {
                 // NOTE: We have to use indices here otherwise we get a double borrow of `objects`
                 for id in 0..objects.len() {
                     if let Some(mut ai) = objects[id].ai.take() {
