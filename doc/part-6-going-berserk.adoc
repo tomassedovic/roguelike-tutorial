@@ -295,12 +295,210 @@ a sanctuary spell or some such?
 
 == Untimely deaths
 
+Of course, nobody can lose HP indefinitely. We'll now code the
+inevitable demise of both the monsters and the player! This is handled
+by the `Fighter` component. Since different objects have different
+behaviors when killed, the `Fighter` struct must know what function to
+call when the object dies. This is so that monsters leave corpses
+behind, the player loses the game, the end-level boss reveals the
+stairs to the next level, etc. This `on_death` callback is passed as a
+parameter when creating a `Fighter` instance.
+
+[source]
+----
+struct Fighter {
+   // ...
+   on_death: DeathCallback,
+}
 
 
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum DeathCallback {
+    Player,
+    Monster,
+}
+----
 
+We're adding another field to `Fighter` of a new enum `DeathCallback`.
+It will represent the different "on death" functions we'll have
+available.
+
+Next, we'll add a method that will let us call the callback:
+
+[source]
+----
+impl DeathCallback {
+    fn callback(self, object: &mut Object) {
+        use DeathCallback::*;
+        let callback: fn(&mut Object) = match self {
+            Player => player_death,
+            Monster => monster_death,
+        };
+        callback(object);
+    }
+}
+----
+
+It checks to see which callback it represents and invokes the right
+function (`player_death` or `monster_death`). The callback functions
+take one parameter -- the mutable reference to the dying object. This
+is so we can change its properties on death.
+
+Before we get to writing those, lets make sure our callbacks actually
+get triggered when an object dies!
+
+We'll do that in `take_damage` rather than `attack`, because an object
+may die from causes other than combat, such as a trap, hunger or
+poison.
+
+Put this at the end of the `take_damage` method:
+
+[source]
+----
+// apply damage if possible
+if let Some(fighter) = self.fighter.as_mut() {
+    // ...
+}
+// check for death, call the death function
+if let Some(fighter) = self.fighter {
+    if fighter.hp <= 0 {
+        self.alive = false;
+        fighter.on_death.callback(self);
+    }
+}
+----
+
+The first `if let` check looks almost identical to the one that's already
+there for taking the hit points down. There is a difference, however.
+
+It boils down to ownership again. The first `if let` takes a mutable
+reference of `self.fighter`. That means, for the duration of that
+block, we can't take a mutable reference to `self`, because it's part
+(`fighter`) is already borrowed.
+
+But we do need a mutable reference to pass it to the `on_death`
+callback.
+
+So while it may seem like we could just fold the callback code into
+the first `if let`, we can't because it would result in the
+simultaneous borrowing of `&mut Object` and `&mut Fighter`.
+
+We do not have the same problem in the second `if let` because we _are
+not borrowing `Fighter` there_. Using `self.fighter` instead of
+`self.fighter.as_mut()` means we just _copy_ the `fighter` value, but
+nothing is borrowed at that time. This would also mean that if we made
+any changes to `fighter` in the second `if let` block, they would not
+appear on the `self` Object.
+
+As mentioned before, the ownership rules are generally a good thing
+but sometimes they are a bit onerous.
+
+Anyway, let's go implement our `player_death` and `monster_death`
+callbacks!
+
+[source]
+----
+fn player_death(player: &mut Object) {
+    // the game ended!
+    println!("You died!");
+
+    // for added effect, transform the player into a corpse!
+    player.char = '%';
+    player.color = colors::DARK_RED;
+}
+
+fn monster_death(monster: &mut Object) {
+    // transform it into a nasty corpse! it doesn't block, can't be
+    // attacked and doesn't move
+    println!("{} is dead!", monster.name);
+    monster.char = '%';
+    monster.color = colors::DARK_RED;
+    monster.blocks = false;
+    monster.fighter = None;
+    monster.ai = None;
+    monster.name = format!("remains of {}", monster.name);
+}
+----
+
+Notice that the monster's components were disabled, so it doesn't run
+any AI functions and can no longer be attacked.
+
+To enable these behaviours, pass the `on_death` field into the
+`Fighter` components wherever you've defined them. Rust will complain
+if you don't so let the compiler guide you.
+
+You can test play around with it now and you'll see that the player
+and monsters stop moving when they die. There are some glitches we
+need to fix, however.
+
+First, we only want to attack an object if it has a `Fighter`
+component. In `player_move_or_attack`, change the target check to the
+following:
+
+[source]
+----
+// try to find an attackable object there
+let target_id = objects.iter().position(|object| {
+    object.fighter.is_some() && object.pos() == (x, y)
+});
+----
+
+`is_some` is a method on `Option` that will tell you whether it's
+value is `Some(...)` without bothering you with the insides.
+
+There's also the issue that when the player walks over a corpse, it's
+sometimes drawn over the player. And the same issue happens when a
+monster steps on a corpse.
+
+We can fix both by sorting the list of objects by their `blocks`
+property:
+
+[source]
+----
+let mut to_draw: Vec<_> = objects.iter().collect();
+// sort so that non-blocknig objects come first
+to_draw.sort_by(|o1, o2| { o1.blocks.cmp(&o2.blocks) });
+// draw the objects in the list
+for object in &to_draw {
+    if fov_map.is_in_fov(object.x, object.y) {
+        object.draw(con);
+    }
+}
+----
+
+Instead of going through the `objects` list and we clone it into a
+mutable vector (`render_all` is taking `&[Object]` so it can't change
+the list directly -- nor should it). Then we sort the vector such that
+all non-blocking objects come before all the blocking ones. Since we can't
+have two blocking objects on the same tile, this will make sure that
+our player and monsters won't get overwritten by corpses.
+
+And we can always make the logic more intricate by changing the
+closure passed to `sort_by`.
+
+One more thing, since we're only ever rendering objects that are in
+the _field of view_, let's filter them out _before_ the sort. That way
+we'll only sort items that we actually want to draw.
+
+[source]
+----
+let mut to_draw: Vec<_> = objects.iter().filter(|o| fov_map.is_in_fov(o.x, o.y)).collect();
+// sort so that non-blocknig objects come first
+to_draw.sort_by(|o1, o2| { o1.blocks.cmp(&o2.blocks) });
+// draw the objects in the list
+for object in &to_draw {
+    object.draw(con);
+}
+----
+
+It's finally ready to play, and it actually feels like a game! It was
+a long journey since we first printed the `@` character, but we've got
+random dungeons, FOV, exploration, enemies, AI, and a true combat
+system. You can now beat those pesky monsters into a pulp and walk
+over them! (_Ugh!_) See if you can finish off all of them before they do
+the same to you.
 
 
 Here's link:part-6b-untimely-deaths.rs[the complete code so far].
-
 
 Continue to <<part-7-gui#,the next part>>.
