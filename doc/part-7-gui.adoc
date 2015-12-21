@@ -1,0 +1,18 @@
+= The GUI
+:icons: font
+:source-highlighter: pygments
+:source-language: rust
+ifdef::env-github[:outfilesuffix: .adoc]
+
+<<index#,Back to the index.>>
+
+== Status bars
+
+== The message log
+
+== Mouse-look
+
+
+Here's link:part-7-gui.rs[the complete code so far].
+
+Continue to <<part-8-items#,the next part>>.

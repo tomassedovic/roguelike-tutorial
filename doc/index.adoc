@@ -160,7 +160,7 @@ Start your game right away by setting up the screen, printing the
 
   Stalking monsters, fights, splatter -- need we say more?
 
-Part 7: The GUI::
+<<part-7-gui#,Part 7: The GUI>>::
 
   A juicy Graphical User Interface with status bars and a colored
   message log for maximum eye-candy. Also, the infamous "look"
