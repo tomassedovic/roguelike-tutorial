@@ -300,7 +300,7 @@ for y in 0..MAP_HEIGHT {
 }
 ----
 
-Also, move the `console_blit` call at the end of `render_all` since
+Also, move the `blit` call at the end of `render_all` since
 it's part of the rendering code.
 
 Make sure to create the map before the rendering code:
@@ -327,6 +327,23 @@ We'll have to pass a reference to the map to `move_by` and
 `handle_keys` which calls it. This may look annoying now but as the
 code grows, it will be gook to know which functions can see (and
 change!) what.
+
+Finally, since the `con` console is for objects and the map only, we
+update its size to that of the map:
+
+[source]
+----
+let mut con = Offscreen::new(MAP_WIDTH, MAP_HEIGHT);
+----
+
+And update the `blit` call, too:
+
+[source]
+----
+blit(con, (0, 0), (MAP_WIDTH, MAP_HEIGHT), root, (0, 0), 1.0, 1.0);
+----
+
+Now we have some space at the bottom for the message log, status bar, etc.
 
 Here's link:part-2b-map.rs[the complete code so far].
 

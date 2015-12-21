@@ -462,7 +462,7 @@ fn render_all(root: &mut Root, con: &mut Offscreen, panel: &mut Offscreen,
     }
 
     // blit the contents of "con" to the root console
-    blit(con, (0, 0), (SCREEN_WIDTH, SCREEN_HEIGHT), root, (0, 0), 1.0, 1.0);
+    blit(con, (0, 0), (MAP_WIDTH, MAP_HEIGHT), root, (0, 0), 1.0, 1.0);
 
     // prepare to render the GUI panel
     panel.set_default_background(colors::BLACK);
@@ -573,7 +573,7 @@ fn main() {
         .title("Rust/libtcod tutorial")
         .init();
     tcod::system::set_fps(LIMIT_FPS);
-    let mut con = Offscreen::new(SCREEN_WIDTH, SCREEN_HEIGHT);
+    let mut con = Offscreen::new(MAP_WIDTH, MAP_HEIGHT);
     let mut panel = Offscreen::new(SCREEN_WIDTH, PANEL_HEIGHT);
 
     // create object representing the player

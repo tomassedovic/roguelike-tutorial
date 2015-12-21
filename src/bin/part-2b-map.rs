@@ -105,7 +105,7 @@ fn render_all(root: &mut Root, con: &mut Offscreen, objects: &[Object], map: &Ma
     }
 
     // blit the contents of "con" to the root console
-    blit(con, (0, 0), (SCREEN_WIDTH, SCREEN_HEIGHT), root, (0, 0), 1.0, 1.0);
+    blit(con, (0, 0), (MAP_WIDTH, MAP_HEIGHT), root, (0, 0), 1.0, 1.0);
 }
 
 fn handle_keys(root: &mut Root, player: &mut Object, map: &Map) -> bool {
@@ -141,7 +141,7 @@ fn main() {
         .title("Rust/libtcod tutorial")
         .init();
     tcod::system::set_fps(LIMIT_FPS);
-    let mut con = Offscreen::new(SCREEN_WIDTH, SCREEN_HEIGHT);
+    let mut con = Offscreen::new(MAP_WIDTH, MAP_HEIGHT);
 
     // create object representing the player
     let player = Object::new(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, '@', colors::WHITE);
