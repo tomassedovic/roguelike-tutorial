@@ -8,6 +8,117 @@ ifdef::env-github[:outfilesuffix: .adoc]
 
 == Status bars
 
+Lots of stuff happens under the hood of a game that players don't
+really appreciate, like the combat mechanics detailed in the last
+couple of sections. We'll now work on something much more flashy --
+the Graphical User Interface! Using the full power of libtcod's
+true-color consoles, and a bit of creativity, you can make some truly
+amazing graphics. You may argue that the limitations of a console
+actually make it easier to create a polished game, rather than if you
+had the freedom to position per-pixel graphics like most other games.
+
+We'll start by creating a GUI panel at the bottom of the screen. Of
+course, you're welcome to change this to suit your taste. For now, it
+will hold the player's health bar and a colored message log.
+
+It's easier to manage GUI windows and panels with an off-screen
+console for each one, created before the main loop:
+
+[source]
+----
+let mut panel = Offscreen::new(SCREEN_WIDTH, PANEL_HEIGHT);
+----
+
+The constant PANEL_HEIGHT is defined later, along with others. Let's
+jump right to the "status bar" rendering code! This is fully generic
+and can be used for experience bars, mana bars, recharge times,
+dungeon level, you name it.
+
+The bar has two parts, one rectangle that changes size according to
+the proportion between the value and the maximum value, and a
+background rectangle. It just takes a simple formula to calculate that
+size, and a few calls to tcod's `rect` method for the rectangles.
+
+[source]
+----
+fn render_bar(panel: &mut Offscreen,
+              x: i32,
+              y: i32,
+              total_width: i32,
+              name: &str,
+              value: i32,
+              maximum: i32,
+              bar_color: Color,
+              back_color: Color)
+{
+    // render a bar (HP, experience, etc). First calculate the width of the bar
+    let bar_width = (value as f32 / maximum as f32 * total_width as f32) as i32;
+
+    // render the background first
+    panel.set_default_background(back_color);
+    panel.rect(x, y, total_width, 1, false, BackgroundFlag::Screen);
+
+    // now render the bar on top
+    panel.set_default_background(bar_color);
+    if bar_width > 0 {
+        panel.rect(x, y, bar_width, 1, false, BackgroundFlag::Screen);
+    }
+}
+----
+
+For extra clarity, the actual value and maximum are displayed as text
+over the bar, along with a caption ('Health', 'Mana', etc). Put this
+at the very end of `render_bar`:
+
+[source]
+----
+// finally, some centered text with the values
+panel.set_default_foreground(colors::WHITE);
+panel.print_ex(x + total_width / 2, y, BackgroundFlag::None, TextAlignment::Center,
+               &format!("{}: {}/{}", name, value, maximum));
+----
+
+Now we'll modify the main rendering function to use this. First,
+define a few constants: the height of the panel, its position on the
+screen (it's a bottom panel so only the Y is needed) and the size of
+the health bar.
+
+[source]
+----
+// sizes and coordinates relevant for the GUI
+const BAR_WIDTH: i32 = 20;
+const PANEL_HEIGHT: i32 = 7;
+const PANEL_Y: i32 = SCREEN_HEIGHT - PANEL_HEIGHT;
+----
+
+We also changed `MAP_HEIGHT` to `43` to give the panel more room.
+
+At the end of `render_all`, replace the code that shows the player's
+stats as text with the following code. It re-initializes the panel to
+black, calls our `render_bar` function to display the player's health,
+then shows the panel on the root console.
+
+[source]
+----
+// prepare to render the GUI panel
+panel.set_default_background(colors::BLACK);
+panel.clear();
+
+// show the player's stats
+let hp = objects[PLAYER].fighter.map_or(0, |f| f.hp);
+let max_hp = objects[PLAYER].fighter.map_or(0, |f| f.max_hp);
+render_bar(panel, 1, 1, BAR_WIDTH, "HP", hp, max_hp, colors::LIGHT_RED, colors::DARKER_RED);
+
+// blit the contents of `panel` to the root console
+blit(panel, (0, 0), (SCREEN_WIDTH, PANEL_HEIGHT), root, (0, PANEL_Y), 1.0, 1.0);
+----
+
+And we'll have to add `panel` to the `render_all` arguments and pass
+it in from `main`.
+
+
+
+
 == The message log
 
 == Mouse-look
