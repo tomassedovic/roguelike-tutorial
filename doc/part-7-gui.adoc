@@ -116,10 +116,151 @@ blit(panel, (0, 0), (SCREEN_WIDTH, PANEL_HEIGHT), root, (0, PANEL_Y), 1.0, 1.0);
 And we'll have to add `panel` to the `render_all` arguments and pass
 it in from `main`.
 
-
-
-
 == The message log
+
+Until now the combat messages were dumped in the standard console --
+not very user-friendly. We'll make a nice scrolling message log
+embedded in the GUI panel, and use colored messages so the player can
+know what happened with a single glance. It will also feature
+word-wrap!
+
+The constants that define the message bar's position and size are:
+
+[source]
+----
+const MSG_X: i32 = BAR_WIDTH + 2;
+const MSG_WIDTH: i32 = SCREEN_WIDTH - BAR_WIDTH - 2;
+const MSG_HEIGHT: usize = PANEL_HEIGHT as usize - 1;
+----
+
+This is so it appears to the right of the health bar, and fills up the
+rest of the space. The messages will be stored in a vector so they can
+be easily manipulated. Each message is a tuple with 2 fields: the
+message string, and its color.
+
+[source]
+----
+// create the list of game messages and their colors, starts empty
+let mut messages = vec![];
+----
+
+A simple-to-use function will handle adding messages to the list.
+
+[source]
+----
+fn message<T: Into<String>>(messages: &mut Vec<(String, Color)>, message: T, color: Color) {
+    // if the buffer is full, remove the first message to make room for the new one
+    if messages.len() == MSG_HEIGHT {
+        messages.remove(0);
+    }
+    // add the new line as a tuple, with the text and the color
+    messages.push((message.into(), color));
+}
+----
+
+As new messages come in, we remove the old ones to make sure we always
+fit into `MSG_HEIGHT`.
+
+The `<T: Into<String>>` bit makes this function _generic_. Instead of
+accepting a parameter of a specified type, it can work with anything
+that implements the `Into` trait for `String`, i.e. anything that can
+be converted to `String`. This lets us pass both `&str` (and therefore
+string literals) and `String` (an output of the `format!` macro among
+other things).
+
+NOTE: The original tutorial uses the `textwrap` module in
+Python's standard library to split the text into multiple lines based
+on the maximum length. Rust's standard library doesn't have such a
+function, but we can use libtcod's `get_height_rect` and
+`print_rect` to do the wrapping for us.
+
+To show the messages, we go through them one by one, get the height of
+each (potentially line-wrapped) and draw them onto the panel using the
+`print_rect` method.
+
+[source]
+----
+// print the game messages, one line at a time
+let mut y = MSG_HEIGHT as i32;
+for &(ref msg, color) in messages.iter().rev() {
+    let msg_height = panel.get_height_rect(MSG_X, y, MSG_WIDTH, 0, msg);
+    y -= msg_height;
+    if y < 0 {
+        break;
+    }
+    panel.set_default_foreground(color);
+    panel.print_rect(MSG_X, y, MSG_WIDTH, 0, msg);
+}
+----
+
+We're going through the messages backwards (starting with the last
+message), because we don't know if we get to print all. So we first
+calculate the height of the message (in case it gets wrapped), we draw
+it at the corresponding `y` position by subtracting the height and
+then repeat.
+
+When we have `y` lower than zero, it would mean we'd draw *above* the
+panel. Libtcod wouldn't let us, but since that means we've ran out of
+space, why we may as well break out of the loop.
+
+Again, we need to pass the messages argument to `render_all`. It's
+signature is now:
+
+[source]
+----
+fn render_all(root: &mut Root, con: &mut Offscreen, panel: &mut Offscreen,
+              objects: &[Object], map: &mut Map, messages: &[(String, Color)],
+              fov_map: &mut FovMap, fov_recompute: bool)
+----
+
+
+And in the `main` loop:
+
+[source]
+----
+render_all(&mut root, &mut con, &mut panel,
+           &objects, &mut map, &messages,
+           &mut fov_map, fov_recompute);
+----
+
+But now we're ready to test it! Let's print a friendly message before
+the main loop to welcome the player to our dungeon of doom:
+
+[source]
+----
+// a warm welcoming message!
+message(&mut messages, "Welcome stranger! Prepare to perish in the Tombs of the Ancient Kings.",
+        colors::RED);
+----
+
+Yay! You can now replace all the `println!` macro uses with calls to
+our own `message` function (all four of them). The player death
+message is red (`colors::RED`), monster death is orange
+(`colors::ORANGE`) and the rest is `colors::WHITE`.
+
+Unfortunately, to display messages, we have to pass the `messages:
+&mut Vec<(String, Color)>` vector everywhere we want to print a
+message (which is pretty much everywhere).
+
+To make this slightly more palatable, let's create an alias for the
+`Vec<(String, Color)>` type:
+
+[source]
+----
+type Messages = Vec<(String, Color)>;
+----
+
+This will let us use the `messages: &mut Messages` function argument
+wherever it needs to go. As usual, just replace the `println!(...)`
+calls with `message(...)` and let the compiler guide you.
+
+NOTE: This is quite annoying and you may think about using global
+variables or the _singleton_ pattern to ease the pain. If you want to
+go that route, you may want to check out the
+{https://crates.io/crates/lazy_static/}[lazy_static crate]. But if you
+persist a while longer, we'll collapse all these separate variables
+into three structs that are much easier to pass around.
+
 
 == Mouse-look
 
