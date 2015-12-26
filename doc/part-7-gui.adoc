@@ -144,11 +144,20 @@ message string, and its color.
 let mut messages = vec![];
 ----
 
-A simple-to-use function will handle adding messages to the list.
+The type of that vector will be `Vec<(String, Color)>`. We'll be
+passing it to a lot of our functions, so let's make an alias for it:
 
 [source]
 ----
-fn message<T: Into<String>>(messages: &mut Vec<(String, Color)>, message: T, color: Color) {
+type Messages = Vec<(String, Color)>;
+----
+
+
+Now we add a function to add messages to the list:
+
+[source]
+----
+fn message<T: Into<String>>(messages: &mut Messages, message: T, color: Color) {
     // if the buffer is full, remove the first message to make room for the new one
     if messages.len() == MSG_HEIGHT {
         messages.remove(0);
@@ -209,7 +218,7 @@ signature is now:
 [source]
 ----
 fn render_all(root: &mut Root, con: &mut Offscreen, panel: &mut Offscreen,
-              objects: &[Object], map: &mut Map, messages: &[(String, Color)],
+              objects: &[Object], map: &mut Map, messages: &Messages,
               fov_map: &mut FovMap, fov_recompute: bool)
 ----
 
@@ -239,27 +248,20 @@ message is red (`colors::RED`), monster death is orange
 (`colors::ORANGE`) and the rest is `colors::WHITE`.
 
 Unfortunately, to display messages, we have to pass the `messages:
-&mut Vec<(String, Color)>` vector everywhere we want to print a
-message (which is pretty much everywhere).
+&mut Messages` vector everywhere we want to print a message (which is
+pretty much everywhere).
 
-To make this slightly more palatable, let's create an alias for the
-`Vec<(String, Color)>` type:
+As usual, just replace the `println!(...)` calls with `message(...)`
+and let the compiler guide you.
 
-[source]
-----
-type Messages = Vec<(String, Color)>;
-----
-
-This will let us use the `messages: &mut Messages` function argument
-wherever it needs to go. As usual, just replace the `println!(...)`
-calls with `message(...)` and let the compiler guide you.
+:lazy_static: https://crates.io/crates/lazy_static/
 
 NOTE: This is quite annoying and you may think about using global
 variables or the _singleton_ pattern to ease the pain. If you want to
-go that route, you may want to check out the
-{https://crates.io/crates/lazy_static/}[lazy_static crate]. But if you
-persist a while longer, we'll collapse all these separate variables
-into three structs that are much easier to pass around.
+go that route, you may want to check out the {lazy_static}[lazy_static
+crate]. But if you persist a while longer, we'll collapse all these
+separate variables into three structs that are much easier to pass
+around.
 
 
 == Mouse-look

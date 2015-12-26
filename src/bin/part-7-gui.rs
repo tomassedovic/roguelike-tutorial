@@ -247,7 +247,7 @@ enum DeathCallback {
 impl DeathCallback {
     fn callback(self, object: &mut Object, messages: &mut Messages) {
         use DeathCallback::*;
-        let callback: fn(&mut Object, &mut Vec<(String, Color)>) = match self {
+        let callback: fn(&mut Object, &mut Messages) = match self {
             Player => player_death,
             Monster => monster_death,
         };
@@ -421,7 +421,7 @@ fn render_bar(panel: &mut Offscreen,
 }
 
 fn render_all(root: &mut Root, con: &mut Offscreen, panel: &mut Offscreen,
-              objects: &[Object], map: &mut Map, messages: &[(String, Color)],
+              objects: &[Object], map: &mut Map, messages: &Messages,
               fov_map: &mut FovMap, fov_recompute: bool) {
     if fov_recompute {
         // recompute FOV if needed (the player moved or something)
