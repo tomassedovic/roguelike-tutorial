@@ -266,6 +266,138 @@ around.
 
 == Mouse-look
 
+We'll now work some interactivity into our GUI. Roguelikes have a long
+tradition of using strict keyboard interfaces, and that's nice; but
+for a couple of tasks, like selecting a tile, a mouse interface is
+much easier. So we'll implement something like a "look" command, by
+automatically showing the name of any object the player hovers the
+mouse with! You could also use it for selecting targets of spells and
+ranged combat. Of course this is only a tutorial, showing you what you
+can do, and you may decide to replace this with a traditional "look"
+command!
+
+:keyboard: http://tomassedovic.github.io/tcod-rs/tcod/input/struct.Key.html
+:mouse: http://tomassedovic.github.io/tcod-rs/tcod/input/struct.Mouse.html
+
+Using libtcod it's very easy to know the position of the mouse, and if
+there were any clicks: the `input::check_for_event` function returns
+information on both keyboard and mouse activity.
+
+{input} http://tomassedovic.github.io/tcod-rs/tcod/input/index.html
+
+First, let's import new types from the {input}[input module]:
+
+[source]
+----
+use tcod::input::{self, Event, Mouse};
+----
+
+Now before the `main` loop, create new variables for keeping track of
+the keyboard and mouse states.
+
+[source]
+----
+let mut mouse = Default::default();
+let mut key = Default::default();
+----
+
+:default: http://doc.rust-lang.org/std/default/trait.Default.html
+
+The `Default::default()` value is whatever the type considers a
+default value. It's {default}[implemented for a lot of primitives] and
+you derive it for your own types.
+
+We use it to initialise our values to known states so we don't have to
+wrap them in an `Option` when nothing happens.
+
+And to fill them up, we use `check_for_event` at the beginning of the
+main loop, right before the call to `render_all`:
+
+[source]
+----
+match input::check_for_event(input::MOUSE | input::KEY_PRESS) {
+    Some((_, Event::Mouse(m))) => mouse = m,
+    Some((_, Event::Key(k))) => key = k,
+    _ => key = Default::default(),
+}
+----
+
+We clear the `key` back to its default state when we don't get a
+keyboard event back because our `handle_keys` system would treat it as
+a new keypress otherwise. We don't have to clear the mouse, because
+"no mouse event" means it's right where it was last time.
+
+Now pass the key to `handle_keys` and remove the call to
+`wait_for_keypress`:
+
+[source]
+----
+fn handle_keys(key: Key, root: &mut Root, map: &Map, objects: &mut [Object],
+               messages: &mut Messages) -> PlayerAction {
+    ...
+}
+----
+
+Next we'll write a function that lists names of all objects at the
+current mouse position. We'll use the `cx` and `cy` fields of the
+`Mouse` struct, which are the coordinates of the tile (or cell) that the
+mouse is over.
+
+[source]
+----
+/// return a string with the names of all objects under the mouse
+fn get_names_under_mouse(mouse: Mouse, objects: &[Object], fov_map: &FovMap) -> String {
+    let (x, y) = (mouse.cx as i32, mouse.cy as i32);
+
+    // create a list with the names of all objects at the mouse's coordinates and in FOV
+    let names = objects
+        .iter()
+        .filter(|obj| {obj.pos() == (x, y) && fov_map.is_in_fov(obj.x, obj.y)})
+        .map(|obj| obj.name.clone())
+        .collect::<Vec<_>>();
+
+    names.join(", ")  // join the names, separated by commas
+}
+----
+
+We go through objects under the mouse, gather their names into a vector and then
+use `join` to put them into a string separated by a coma.
+
+The `render_all` function can call this to get the string that depends
+on the mouse's position, after rendering the health bar:
+
+[source]
+----
+// display names of objects under the mouse
+panel.set_default_foreground(colors::LIGHT_GREY);
+panel.print_ex(1, 0, BackgroundFlag::None, TextAlignment::Left,
+               get_names_under_mouse(mouse, objects, fov_map));
+----
+
+(we need to pass the `mouse: Mouse` argument to `render_all`)
+
+But wait! If you recall, in a turn-based game, the rendering is done
+only once per turn; the rest of the time, the game is blocked on
+`wait_for_keypress`. During this time (which is most of the time) the
+code we wrote above would simply not be processed! We switched to
+real-time rendering by replacing the `wait_for_keypress` call in
+`handle_keys` with the `check_for_event` in the main loop.
+
+Won't our game stop being turn-based then? It's funny, but
+surprisingly it won't! Before you question logic itself, let me tell
+you that we did some changes earlier that had the side-effect of
+enabling this.
+
+When the player doesn't take a turn (doesn't press a movement/attack
+key), `handle_keys` returns a specific `PlayerAction`
+value(`DidntTakeTurn`). You'll notice that the main loop only allows
+enemies to take their turns if the value returned from `handle_keys`
+is not `DidntTakeTurn`! The main loop goes on, but the monsters don't
+move. The only real distinction between a real-time game and a
+turn-based game is that, in a turn-based game, the monsters wait until
+the player moves to make their move. Makes sense!
+
+
 
 Here's link:part-7-gui.rs[the complete code so far].
 
