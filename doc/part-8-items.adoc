@@ -1,0 +1,20 @@
+= Items and inventory
+:icons: font
+:source-highlighter: pygments
+:source-language: rust
+ifdef::env-github[:outfilesuffix: .adoc]
+
+<<index#,Back to the index.>>
+
+
+== Placing items
+
+== The inventory screen
+
+== Using items
+
+
+
+Here's link:part-8-items.rs[the complete code so far].
+
+Continue to <<part-9-spells#,the next part>>.

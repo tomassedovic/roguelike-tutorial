@@ -166,7 +166,7 @@ Start your game right away by setting up the screen, printing the
   message log for maximum eye-candy. Also, the infamous "look"
   command, with a twist: you can use the mouse.
 
-Part 8: Items and Inventory::
+<<part-8-items#,Part 8: Items and Inventory>>::
 
   The player gets to collect ("borrow") items from the dungeon and use
   them, with a neat inventory screen. More items added in the next
