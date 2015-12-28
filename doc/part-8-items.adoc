@@ -9,6 +9,169 @@ ifdef::env-github[:outfilesuffix: .adoc]
 
 == Placing items
 
+Now that our GUI is all spiffed up, let's put in some more core
+Roguelike functionality: the inventory! This has been a staple of
+Roguelikes and RPGs for literally decades. It's a way of gating the
+player's access to some abilities, and presents an incentive for
+exploration. Also, why else would you explore a dungeon if not to haul
+out as much precious items as you can?
+
+We can place some items in each room in pretty much the same way we
+place monsters, at the end of the `place_objects` function:
+
+[source]
+----
+// choose random number of items
+let num_items = rand::thread_rng().gen_range(0, MAX_ROOM_ITEMS + 1);
+
+for _ in 0..num_items {
+    // choose random spot for this item
+    let x = rand::thread_rng().gen_range(room.x1 + 1, room.x2);
+    let y = rand::thread_rng().gen_range(room.y1 + 1, room.y2);
+
+    // only place it if the tile is not blocked
+    if !is_blocked(x, y, map, objects) {
+        // create a healing potion
+        let mut object = Object::new(x, y, '!', "healing potion", colors::VIOLET);
+        objects.push(object);
+    }
+}
+----
+
+For this to work, we must define the new constant `MAX_ROOM_ITEMS =
+2`. Later we'll expand this with a few magic scrolls in addition to
+the healing potions; this is the spot to add any items you want in
+your game. The healing potions don't have any special components for
+now; we'll get to that in a second.
+
+Next, let's define the inventory! This goes before the main loop:
+
+[source]
+----
+let mut inventory = vec![];
+----
+
+Simple enough: the inventory is a list of items, and it starts empty.
+Now the `Item` component -- it will hold all data that makes an object
+behave like an item. For now that will be just the item type.
+
+[source]
+----
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum Item {
+    Heal,
+}
+----
+
+To have the item find its way to player's inventory, we'll add a
+`pick_item_up` function.
+
+[source]
+----
+/// add to the player's inventory and remove from the map
+fn pick_item_up(object_id: usize, objects: &mut Vec<Object>, inventory: &mut Vec<Object>,
+                messages: &mut Messages) {
+    if inventory.len() >= 26 {
+        message(messages,
+                format!("Your inventory is full, cannot pick up {}.", objects[object_id].name),
+                colors::RED);
+    } else {
+        let item = objects.swap_remove(object_id);
+        message(messages, format!("You picked up a {}!", item.name), colors::GREEN);
+        inventory.push(item);
+    }
+}
+----
+
+We limit the inventory to 26 items because later, in the inventory
+screen, items will be selected by pressing a key from A to Z, and
+there are 26 letters. You could overcome this restriction by
+implementing "pages" in the inventory, or a fancier interface with
+scrollbars. That would be a bit harder, so we'll stick to this
+for now. You could also assign weights to the items and limit the
+total weight here, as some games do.
+
+:remove: http://doc.rust-lang.org/std/vec/struct.Vec.html#method.remove
+:swap_remove: http://doc.rust-lang.org/std/vec/struct.Vec.html#method.swap_remove
+
+We're using the {swap_remove}[swap_remove method] to take an item out
+of the vector. We could use the {remove}[remove method] instead, but
+it usually copies more memory and can be a bit slower.
+
+CAUTION: Until now, the _ID_ (index) of each `Object` remained the
+same throughout the game. This is no longer true -- when we move an
+item into the inventory, it's removed from the `objects` vector and
+some indices (IDs) will change. As a consequence, we cannot store an
+ID somewhere and expect it to not change. We need to keep that in mind
+as we write our game.
+
+NOTE: This may not be a trade-off you're willing to make. Having
+unique unchanging IDs to objects is useful: you can store the ID as a
+monster's target and it will keep following it. If the ID persists
+even in death, you can have things like spells or missiles homing in
+on a corpse. There are several ways of dealing with this.
+
+TIP: Your inventory may store an objects index/ID instead of the object
+itself (but you'll have to make sure picked up items don't show up on
+the map -- perhaps by having a `Renderable` component or by making the
+position optional).
+
+TIP: You can also use a hash table of ID -> Object. That way even when
+you do remove objects, you can still look them up by their IDs.
+
+
+We now add `Item` as another component the `Object` can have:
+
+[source]
+----
+struct Object {
+    ...
+    item: Option<Item>,
+}
+----
+
+And add `item: None,` to `Object`'s `new` method.
+
+Now that we have an `Item` component, you can add it to the healing
+potion in `place_objects`:
+
+[source]
+----
+object.item = Some(Item::Heal);
+----
+
+How does the player pick up an item? It's very easy: just test for
+another key in the handle_keys function. If it's pressed, look for an
+item under the player and pick it up. The new code goes below the
+arrow-handling and the final `return DidntTakeTurn` line:
+
+
+[source]
+----
+(Key { printable: 'g', .. }, true) => {
+    // pick up an item
+    let item_id = objects.iter().position(|object| {
+        object.pos() == objects[PLAYER].pos() && object.item.is_some()
+    });
+    if let Some(item_id) = item_id {
+        pick_item_up(item_id, objects, inventory, messages);
+    }
+    return TookTurn;
+}
+----
+
+And we need to pass inventory to `handle_keys`. And we'll _also_ have
+to change the `&mut [Object]` argument to `&mut Vec<Object>`, because
+that's what `pick_item_up` expects. The difference is that the former
+is a mutable reference to an `array` -- we can change it's items but
+not its _size_. The latter is a full vector, which means we can also
+grow or shrink it.
+
+You can test it out now! There will be a few potions scattered around,
+and you'll get a message when you pick them up by pressing `G`. The
+inventory is still invisible though.
+
+
 == The inventory screen
 
 == Using items
