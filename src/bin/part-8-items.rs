@@ -601,26 +601,26 @@ fn handle_keys(key: Key, root: &mut Root, map: &Map, objects: &mut Vec<Object>,
             // Alt+Enter: toggle fullscreen
             let fullscreen = root.is_fullscreen();
             root.set_fullscreen(!fullscreen);
-            return DidntTakeTurn;
+            DidntTakeTurn
         }
-        (Key { code: Escape, .. }, _) => return Exit,  // exit game
+        (Key { code: Escape, .. }, _) => Exit,  // exit game
 
         // movement keys
         (Key { code: Up, .. }, true) => {
             player_move_or_attack(0, -1, map, objects, messages);
-            return TookTurn;
+            TookTurn
         }
         (Key { code: Down, .. }, true) => {
             player_move_or_attack(0, 1, map, objects, messages);
-            return TookTurn;
+            TookTurn
         }
         (Key { code: Left, .. }, true) => {
             player_move_or_attack(-1, 0, map, objects, messages);
-            return TookTurn;
+            TookTurn
         }
         (Key { code: Right, .. }, true) => {
             player_move_or_attack(1, 0, map, objects, messages);
-            return TookTurn;
+            TookTurn
         }
 
         (Key { printable: 'g', .. }, true) => {
@@ -631,10 +631,10 @@ fn handle_keys(key: Key, root: &mut Root, map: &Map, objects: &mut Vec<Object>,
             if let Some(item_id) = item_id {
                 pick_item_up(item_id, objects, inventory, messages);
             }
-            return TookTurn;
+            TookTurn
         }
 
-        _ => return DidntTakeTurn,
+        _ => DidntTakeTurn,
     }
 }
 

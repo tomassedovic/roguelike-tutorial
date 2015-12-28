@@ -464,29 +464,29 @@ fn handle_keys(root: &mut Root, map: &Map, objects: &mut [Object]) -> PlayerActi
             // Alt+Enter: toggle fullscreen
             let fullscreen = root.is_fullscreen();
             root.set_fullscreen(!fullscreen);
-            return DidntTakeTurn;
+            DidntTakeTurn
         }
-        (Key { code: Escape, .. }, _) => return Exit,  // exit game
+        (Key { code: Escape, .. }, _) => Exit,  // exit game
 
         // movement keys
         (Key { code: Up, .. }, true) => {
             player_move_or_attack(0, -1, map, objects);
-            return TookTurn;
+            TookTurn
         }
         (Key { code: Down, .. }, true) => {
             player_move_or_attack(0, 1, map, objects);
-            return TookTurn;
+            TookTurn
         }
         (Key { code: Left, .. }, true) => {
             player_move_or_attack(-1, 0, map, objects);
-            return TookTurn;
+            TookTurn
         }
         (Key { code: Right, .. }, true) => {
             player_move_or_attack(1, 0, map, objects);
-            return TookTurn;
+            TookTurn
         }
 
-        _ => return DidntTakeTurn,
+        _ => DidntTakeTurn,
     }
 }
 

@@ -370,7 +370,7 @@ Key { code: Enter, alt: true, .. } => {
     // Alt+Enter: toggle fullscreen
     let fullscreen = root.is_fullscreen();
     root.set_fullscreen(!fullscreen);
-    return DidntTakeTurn;
+    DidntTakeTurn
 }
 ----
 
@@ -378,7 +378,7 @@ Have the `Escape` code path return `Exit`:
 
 [source]
 ----
-Key { code: Escape, .. } => return Exit
+Key { code: Escape, .. } => Exit,  // exit game
 ----
 
 And `PlayerAction::TookTurn` to all the movement actions and
@@ -388,12 +388,12 @@ And `PlayerAction::TookTurn` to all the movement actions and
 ----
 Key { code: Up, .. } => {
     move_by(PLAYER, 0, -1, map, objects);
-    return TookTurn;
+    TookTurn
 }
 
 // and so on for Down, Left and Right
 
-_ => return DidntTakeTurn,
+_ => DidntTakeTurn,
 ----
 
 This will ensure that pressing an unknown key will not do anything and
