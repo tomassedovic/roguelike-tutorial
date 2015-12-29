@@ -34,6 +34,8 @@ const MAX_ROOMS: i32 = 30;
 const MAX_ROOM_MONSTERS: i32 = 3;
 const MAX_ROOM_ITEMS: i32 = 2;
 
+const HEAL_AMOUNT: i32 = 4;
+
 const FOV_ALGO: FovAlgorithm = FovAlgorithm::Basic;  // default FOV algorithm
 const FOV_LIGHT_WALLS: bool = true;  // light walls or not
 const TORCH_RADIUS: i32 = 10;
@@ -258,6 +260,16 @@ struct Fighter {
     on_death: DeathCallback,
 }
 
+impl Fighter {
+    fn heal(&mut self, amount: i32) {
+        // heal by the given amount, without going over the maximum
+        self.hp += amount;
+        if self.hp > self.max_hp {
+            self.hp = self.max_hp;
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 enum DeathCallback {
     Player,
@@ -298,6 +310,49 @@ fn ai_take_turn(monster_id: usize, map: &Map, objects: &mut [Object],
 #[derive(Clone, Copy, Debug, PartialEq)]
 enum Item {
     Heal,
+}
+
+enum UseResult {
+    UsedUp,
+    Cancelled,
+}
+
+fn use_item(inventory_id: usize, inventory: &mut Vec<Object>, objects: &mut [Object],
+            messages: &mut Messages) {
+    use Item::*;
+    // just call the "use_function" if it is defined
+    if let Some(item) = inventory[inventory_id].item {
+        let on_use = match item {
+            Heal => cast_heal,
+        };
+        match on_use(inventory_id, objects, messages) {
+            UseResult::UsedUp => {
+                // destroy after use, unless it was cancelled for some reason
+                inventory.remove(inventory_id);
+            }
+            UseResult::Cancelled => {
+                message(messages, "Cancelled", colors::WHITE);
+            }
+        }
+    } else {
+        message(messages,
+                format!("The {} cannot be used.", inventory[inventory_id].name),
+                colors::WHITE);
+    }
+}
+
+fn cast_heal(_inventory_id: usize, objects: &mut [Object], messages: &mut Messages) -> UseResult {
+    // heal the player
+    if let Some(fighter) = objects[PLAYER].fighter.as_mut() {
+        if fighter.hp == fighter.max_hp {
+            message(messages, "You are already at full health.", colors::RED);
+            return UseResult::Cancelled;
+        }
+        message(messages, "Your wounds start to fill better!", colors::LIGHT_VIOLET);
+        fighter.heal(HEAL_AMOUNT);
+        return UseResult::UsedUp;
+    }
+    UseResult::Cancelled
 }
 
 fn create_room(room: Rect, map: &mut Map) {
@@ -695,16 +750,24 @@ fn handle_keys(key: Key, root: &mut Root, map: &Map, objects: &mut Vec<Object>,
             });
             if let Some(item_id) = item_id {
                 pick_item_up(item_id, objects, inventory, messages);
+                TookTurn
+            } else {
+                DidntTakeTurn
             }
-            TookTurn
         }
+
         (Key { printable: 'i', .. }, true) => {
-            // show the inventory
-            inventory_menu(
+            // show the inventory: if an item is selected, use it
+            let inventory_index = inventory_menu(
                 inventory,
                 "Press the key next to an item to use it, or any other to cancel.\n",
                 root);
-            TookTurn
+            if let Some(inventory_index) = inventory_index {
+                use_item(inventory_index, inventory, objects, messages);
+                TookTurn
+            } else {
+                DidntTakeTurn
+            }
         }
 
         _ => DidntTakeTurn,

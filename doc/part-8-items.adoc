@@ -155,8 +155,10 @@ arrow-handling and the final `return DidntTakeTurn` line:
     });
     if let Some(item_id) = item_id {
         pick_item_up(item_id, objects, inventory, messages);
+        TookTurn
+    } else {
+        DidntTakeTurn
     }
-    return TookTurn;
 }
 ----
 
@@ -375,7 +377,126 @@ in the next section.
 
 == Using items
 
+What happens when you use an item? Well, it depends on which item
+you're talking about. They're all different, so the "use" behavior of
+each item must be defined as a different function.
 
+First, a function that tries to use an item from the inventory and
+handles things like removing it after use and printing a message when
+the player changes their mind.
+
+[source]
+----
+fn use_item(inventory_id: usize, inventory: &mut Vec<Object>, objects: &mut [Object],
+            messages: &mut Messages) {
+    use Item::*;
+    // just call the "use_function" if it is defined
+    if let Some(item) = inventory[inventory_id].item {
+        let on_use = match item {
+            Heal => cast_heal,
+        };
+        match on_use(inventory_id, objects, messages) {
+            UseResult::UsedUp => {
+                // destroy after use, unless it was cancelled for some reason
+                inventory.remove(inventory_id);
+            }
+            UseResult::Cancelled => {
+                message(messages, "Cancelled", colors::WHITE);
+            }
+        }
+    } else {
+        message(messages,
+                format!("The {} cannot be used.", inventory[inventory_id].name),
+                colors::WHITE);
+    }
+}
+----
+
+If we do actually have an item, we match on its type (that's just
+`Heal` for now but we'll soon have more), find the right function to
+call for the specific on_use effect and call it.
+
+Then based on the result we either remove the item (if it was used up)
+or print a message if it were cancelled.
+
+So all our `on_use` functions will return `UseResult`. Let's define it:
+
+[source]
+----
+enum UseResult {
+    UsedUp,
+    Cancelled,
+}
+----
+
+An item can either be used up (so we delete it) or the action can be
+canceled. We'll add a third variant, soon.
+
+Now let's add `cast_heal` for our potions to have effect!
+
+[source]
+----
+fn cast_heal(_inventory_id: usize, objects: &mut [Object], messages: &mut Messages) -> UseResult {
+    // heal the player
+    if let Some(fighter) = objects[PLAYER].fighter.as_mut() {
+        if fighter.hp == fighter.max_hp {
+            message(messages, "You are already at full health.", colors::RED);
+            return UseResult::Cancelled;
+        }
+        message(messages, "Your wounds start to fill better!", colors::LIGHT_VIOLET);
+        fighter.heal(HEAL_AMOUNT);
+        return UseResult::UsedUp;
+    }
+    UseResult::Cancelled
+}
+----
+
+The `heal` method is very simple too; still, it's handy to keep it
+since it will probably be used multiple times. The constant
+`HEAL_AMOUNT = 4` is defined at the top.
+
+[source]
+----
+impl Fighter {
+    fn heal(&mut self, amount: i32) {
+        // heal by the given amount, without going over the maximum
+        self.hp += amount;
+        if self.hp > self.base_max_hp {
+            self.hp = self.base_max_hp;
+        }
+    }
+}
+----
+
+That's it for creating usable items! You can make other items easily
+by just defining their use function. This could also work for wielding
+weapons or wearing armor, zapping wands, rubbing a magic lamp and all
+that stuff we know and love.
+
+Finally, we can now change the code in handle_keys to use the selected
+item:
+
+[source]
+----
+(Key { printable: 'i', .. }, true) => {
+    // show the inventory: if an item is selected, use it
+    let inventory_index = inventory_menu(
+        inventory,
+        "Press the key next to an item to use it, or any other to cancel.\n",
+        root);
+    if let Some(inventory_index) = inventory_index {
+        use_item(inventory_index, inventory, objects, messages);
+        TookTurn
+    } else {
+        DidntTakeTurn
+    }
+}
+----
+
+There you go, the inventory code is complete! Well, minus dropping
+items. That's fairly easy with the `inventory_menu`, but to keep this
+from getting long we'll leave it to the next part: magic scrolls! That
+will really make the most of this inventory system.
 
 Here's link:part-8-items.rs[the complete code so far].
 
