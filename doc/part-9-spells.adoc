@@ -1,0 +1,23 @@
+= Spells and ranged combat
+:icons: font
+:source-highlighter: pygments
+:source-language: rust
+ifdef::env-github[:outfilesuffix: .adoc]
+
+<<index#,Back to the index.>>
+
+== Magic scrolls: the Lightning Bolt
+
+== Spells that manipulate monsters: Confusion
+
+== Targeting: the Fireball
+
+== Targeting single monsters
+
+== Dropping items
+
+
+
+Here's link:part-9-spells.rs[the complete code so far].
+
+Continue to <<part-10-menu-saving#,the next part>>.

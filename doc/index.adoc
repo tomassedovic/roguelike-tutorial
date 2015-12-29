@@ -172,7 +172,7 @@ Start your game right away by setting up the screen, printing the
   them, with a neat inventory screen. More items added in the next
   part.
 
-Part 9: Spells and ranged combat::
+<<part-9-spells#,Part 9: Spells and ranged combat>>::
 
   The player's strategic choices increase exponentially as we add a
   few magic scrolls to the mix. Covers damage and mind spells, as well
