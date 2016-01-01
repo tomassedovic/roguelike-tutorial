@@ -35,6 +35,8 @@ const MAX_ROOM_MONSTERS: i32 = 3;
 const MAX_ROOM_ITEMS: i32 = 2;
 
 const HEAL_AMOUNT: i32 = 4;
+const LIGHTNING_DAMAGE: i32 = 40;
+const LIGHTNING_RANGE: i32 = 5;
 
 const FOV_ALGO: FovAlgorithm = FovAlgorithm::Basic;  // default FOV algorithm
 const FOV_LIGHT_WALLS: bool = true;  // light walls or not
@@ -310,6 +312,7 @@ fn ai_take_turn(monster_id: usize, map: &Map, objects: &mut [Object],
 #[derive(Clone, Copy, Debug, PartialEq)]
 enum Item {
     Heal,
+    Lightning,
 }
 
 enum UseResult {
@@ -322,9 +325,9 @@ fn use_item(inventory_id: usize, inventory: &mut Vec<Object>, objects: &mut [Obj
     use Item::*;
     // just call the "use_function" if it is defined
     if let Some(item) = inventory[inventory_id].item {
-        let on_use = match item {
+        let on_use: fn(usize, &mut [Object], &mut Messages, &mut Tcod) -> UseResult = match item {
             Heal => cast_heal,
-//            Lightning => cast_lightning,
+            Lightning => cast_lightning,
         };
         match on_use(inventory_id, objects, messages, tcod) {
             UseResult::UsedUp => {
@@ -342,25 +345,23 @@ fn use_item(inventory_id: usize, inventory: &mut Vec<Object>, objects: &mut [Obj
     }
 }
 
-// fn closest_monster(max_range: i32, objects: &mut [Object], tcod: &TcodState) -> Option<usize> {
-//     // find closest enemy, up to a maximum range, and in the player's FOV
-//     let mut closest_enemy = None;
-//     let mut closest_dist = (max_range + 1) as f32;  // start with (slightly more than) maximum range
+/// find closest enemy, up to a maximum range, and in the player's FOV
+fn closest_monster(max_range: i32, objects: &mut [Object], tcod: &Tcod) -> Option<usize> {
+    let mut closest_enemy = None;
+    let mut closest_dist = (max_range + 1) as f32;  // start with (slightly more than) maximum range
 
-//     // TODO: this could be done more succinctly with Iter::min_by but that's unstable now.
-//     for (id, object) in objects.iter().enumerate() {
-//         if !object.is_player() && object.fighter.is_some() &&
-//            tcod.fov_map.is_in_fov(object.x, object.y) {
-//             // calculate distance between this object and the player
-//             let dist = objects[PLAYER].distance_to(object);
-//             if dist < closest_dist {  // it's closer, so remember it
-//                 closest_enemy = Some(id);
-//                 closest_dist = dist;
-//             }
-//         }
-//     }
-//     closest_enemy
-// }
+    for (id, object) in objects.iter().enumerate() {
+        if (id != PLAYER) && object.fighter.is_some() && tcod.fov.is_in_fov(object.x, object.y) {
+            // calculate distance between this object and the player
+            let dist = objects[PLAYER].distance_to(object);
+            if dist < closest_dist {  // it's closer, so remember it
+                closest_enemy = Some(id);
+                closest_dist = dist;
+            }
+        }
+    }
+    closest_enemy
+}
 
 fn cast_heal(_inventory_id: usize, objects: &mut [Object], messages: &mut Messages, _tcod: &mut Tcod)
              -> UseResult
@@ -376,6 +377,26 @@ fn cast_heal(_inventory_id: usize, objects: &mut [Object], messages: &mut Messag
         return UseResult::UsedUp;
     }
     UseResult::Cancelled
+}
+
+fn cast_lightning(_inventory_id: usize, objects: &mut [Object], messages: &mut Messages, tcod: &mut Tcod)
+                  -> UseResult
+{
+    // find closest enemy (inside a maximum range and damage it)
+    let monster_id = closest_monster(LIGHTNING_RANGE, objects, tcod);
+    if let Some(monster_id) = monster_id {
+        // zap it!
+        message(messages,
+                format!("A lightning bolt strikes the {} with a loud thunder! \
+                         The damage is {} hit points.",
+                        objects[monster_id].name, LIGHTNING_DAMAGE),
+                colors::LIGHT_BLUE);
+        objects[monster_id].take_damage(LIGHTNING_DAMAGE, messages);
+        UseResult::UsedUp
+    } else {  // no enemy found within maximum range
+        message(messages, "No enemy is close enough to strike.", colors::RED);
+        UseResult::Cancelled
+    }
 }
 
 fn create_room(room: Rect, map: &mut Map) {
@@ -503,10 +524,20 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>) {
 
         // only place it if the tile is not blocked
         if !is_blocked(x, y, map, objects) {
-            // create a healing potion
-            let mut object = Object::new(x, y, '!', "healing potion", colors::VIOLET, false);
-            object.item = Some(Item::Heal);
-            objects.push(object);
+            let dice = rand::random::<f32>();
+            let item = if dice < 0.7 {
+                // create a healing potion (70% chance)
+                let mut object = Object::new(x, y, '!', "healing potion", colors::VIOLET, false);
+                object.item = Some(Item::Heal);
+                object
+            } else {
+                // create a lightning bolt scroll (30% chance)
+                let mut object = Object::new(x, y, '#', "scroll of lightning bolt",
+                                             colors::LIGHT_YELLOW, false);
+                object.item = Some(Item::Lightning);
+                object
+            };
+            objects.push(item);
         }
     }
 }
@@ -833,7 +864,7 @@ struct Tcod {
 }
 
 fn main() {
-    let mut root = Root::initializer()
+    let root = Root::initializer()
         .font("arial10x10.png", FontLayout::Tcod)
         .font_type(FontType::Greyscale)
         .size(SCREEN_WIDTH, SCREEN_HEIGHT)
