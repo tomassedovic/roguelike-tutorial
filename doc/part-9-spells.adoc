@@ -6,6 +6,133 @@ ifdef::env-github[:outfilesuffix: .adoc]
 
 <<index#,Back to the index.>>
 
+
+The inventory we implemented has lots of untapped potential; I
+encourage you to explore it fully and create as many different items
+as possible! (Though the special category of items that can be
+equipped, like swords and armor, will be done in a later section.) To
+get the ball rolling, we'll start with some magic scrolls the player
+can use to cast spells. We'll sample a few different spell types; I'm
+sure you can then create tons of variants from these little examples.
+
+== Compression Interlude
+
+Before we begin, however, we'll do something that will make our lives
+a little easier: we pull all the libtcod bits (the root, con and panel
+consoles, the field-of-view map and the mouse position) into a single
+struct that we can pass around at once.
+
+As you've noticed before, some of our function arguments are getting a
+bit tedious as we pass in 9 different things and the same would be
+true for our item cast functions. One spell will want to select a
+monster in the FOV, another needs mouse targeting, etc.
+
+So let's put it all into a `Tcod` struct we can pass around:
+
+[source]
+----
+struct Tcod {
+    root: Root,
+    con: Offscreen,
+    panel: Offscreen,
+    fov: FovMap,
+    mouse: Mouse,
+}
+----
+
+Next, we'll initialise it in our `main` function. Right after the
+`set_fps` call, replace:
+
+[source]
+----
+let mut con = Offscreen::new(MAP_WIDTH, MAP_HEIGHT);
+let mut panel = Offscreen::new(SCREEN_WIDTH, PANEL_HEIGHT);
+----
+
+With:
+
+[source]
+----
+let mut tcod = Tcod {
+    root: root,
+    con: Offscreen::new(MAP_WIDTH, MAP_HEIGHT),
+    panel: Offscreen::new(SCREEN_WIDTH, PANEL_HEIGHT),
+    fov: FovMap::new(MAP_WIDTH, MAP_HEIGHT),
+    mouse: Default::default(),
+};
+----
+
+(and remove the `fov_map` and `mouse` initialisation code, too since
+it's in here)
+
+And next, let the compiler guide us.
+
+We have to replace a bunch of stuff in the main function: `mouse` with
+`tcod.mouse`, `root` with `tcod.root`, `fov_map` with `tcod.fov`, etc.
+
+That gets us to a compiling state, but it doesn't seem like much of a
+win yet. Let's make proper use of it, then!
+
+First, calling `render_all` from `main` can now be just:
+
+[source]
+----
+render_all(&mut tcod, &objects, &mut map, &messages, fov_recompute);
+----
+
+The new `render_all` function header is:
+
+[source]
+----
+fn render_all(tcod: &mut Tcod, objects: &[Object], map: &mut Map,
+              messages: &Messages, fov_recompute: bool) {
+    // ...
+}
+----
+
+And we do the same set of transformations inside.
+
+Next, we'll do the same to `handle_keys`. That one only takes `root`
+now, but it calls the `use_item` and we'll want to pass the whole
+shebang there, soon.
+
+Main loop:
+
+[source]
+----
+let player_action = handle_keys(key, &mut tcod, &map, &mut objects,
+                                &mut inventory, &mut messages);
+----
+
+Function definition:
+
+[source]
+----
+fn handle_keys(key: Key, tcod: &mut Tcod, map: &Map, objects: &mut Vec<Object>,
+               inventory: &mut Vec<Object>, messages: &mut Messages) -> PlayerAction {
+    // ...
+}
+----
+
+And finally, pass `&mut Tcod` to `use_item` and `cast_heal` even
+though it's of little use there yet.
+
+Make sure that it compiles and we can move on adding more spells!
+
+TIP: There's much more we can do here, such as moving the `menu`,
+`inventory_menu`, `render_bar`, etc. as methods of `Tcod` or passing
+`Tcod` everywhere we've been passing *any* of it's members now. That
+largely depends on your style and how tightly you want things to be
+coupled. In general, there's a ton of code that just need one or two
+bits of `Tcod` but some code that basically wants all of it. The good
+thing is that this struct lets us support both cases and anything in
+between.
+
+NOTE: Later on, we'll do a similar packing of the game-related stuff
+such as the message log, the level map, the inventory, etc. But this
+has been enough refactoring for one section!
+
+
 == Magic scrolls: the Lightning Bolt
 
 == Spells that manipulate monsters: Confusion
