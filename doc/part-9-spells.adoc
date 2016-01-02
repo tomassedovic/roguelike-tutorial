@@ -277,7 +277,9 @@ fn closest_monster(max_range: i32, objects: &mut [Object], tcod: &Tcod) -> Optio
     let mut closest_dist = (max_range + 1) as f32;  // start with (slightly more than) maximum range
 
     for (id, object) in objects.iter().enumerate() {
-        if (id != PLAYER) && object.fighter.is_some() && tcod.fov.is_in_fov(object.x, object.y) {
+        if (id != PLAYER) && object.fighter.is_some() && object.ai.is_some() &&
+            tcod.fov.is_in_fov(object.x, object.y)
+        {
             // calculate distance between this object and the player
             let dist = objects[PLAYER].distance_to(object);
             if dist < closest_dist {  // it's closer, so remember it
@@ -302,11 +304,259 @@ take down a Troll with a single hit, sparing you from a lot of damage.
 
 == Spells that manipulate monsters: Confusion
 
+There are many direct damage variants of the Lightning Bolt spell. So
+we'll move on to a different sort of spell: one that affects the
+monsters' actions. This can be done by replacing their AI with a
+different one, that makes it do something different -- run away in
+fear, stay knocked out for a few turns, even fight on the player's
+side for a while!
+
+My choice was a Confusion spell, that makes the monster move around
+randomly, and not attack the player. To do this, we'll change our
+empty `Ai` struct into an enum with two variants:
+
+[source]
+----
+enum Ai {
+    Basic,
+    Confused{previous_ai: Box<Ai>, num_turns: i32},
+}
+----
+
+The `Basic` option is the AI we've used until now -- a monster moves
+towards a player and tries to attack.
+
+The `Confused` one is what we want to implement now: it moves randomly
+for a few turns and then reverts back to the AI it had before it got
+confused.
+
+This is still an enum, but it uses a struct-like enum variant for
+`Confused`. In Rust, enums variants aren't just empty identifiers, but
+can hold data, too!
+
+We need to change the monster creation in `place_objects` a little:
+
+[source]
+----
+// create an orc
+orc.ai = Some(Ai::Basic);
+// ...
+// create a troll
+troll.ai = Some(Ai::Basic);
+----
+
+Next, let's move the code from `ai_take_turn` its own function:
+
+[source]
+----
+fn ai_take_turn(monster_id: usize, map: &Map, objects: &mut [Object],
+                fov_map: &FovMap, messages: &mut Messages) {
+    use Ai::*;
+    if let Some(ai) = objects[monster_id].ai.take() {
+        let new_ai = match ai {
+            Basic => ai_basic(monster_id, map, objects, fov_map, messages),
+            Confused{previous_ai, num_turns} => ai_confused(
+                monster_id, map, objects, messages, previous_ai, num_turns)
+        };
+        objects[monster_id].ai = Some(new_ai);
+    }
+}
+
+fn ai_basic(monster_id: usize, map: &Map, objects: &mut [Object],
+            fov_map: &FovMap, messages: &mut Messages) -> Ai {
+    // a basic monster takes its turn. If you can see it, it can see you
+    let (monster_x, monster_y) = objects[monster_id].pos();
+    if fov_map.is_in_fov(monster_x, monster_y) {
+        if objects[monster_id].distance_to(&objects[PLAYER]) >= 2.0 {
+            // move towards player if far away
+            let (player_x, player_y) = objects[PLAYER].pos();
+            move_towards(monster_id, player_x, player_y, map, objects);
+        } else if objects[PLAYER].fighter.map_or(false, |f| f.hp > 0) {
+            // close enough, attack! (if the player is still alive.)
+            let (monster, player) = mut_two(monster_id, PLAYER, objects);
+            monster.attack(player, messages);
+        }
+    }
+    Ai::Basic
+}
+----
+
+The function now does a dispatch similar to the one in `use_item`.
+Based on the AI type, it calls `ai_basic` or `ai_confused`.
+
+The `ai_basic` function now contains what was previously in
+`ai_take_turn` except that now it also returns an `Ai` value. This is
+because the `Ai` now can't be `Copy` (and *that's* because the
+`Confused` variant uses `Box<Ai>` and boxes cannot be copied).
+
+In the case of the `Basic` ai, we don't really care since we're not
+modifying any data.
+
+But in case of Confused, we'll want to decrease the number of
+remaining turns and when they run out, swap the previous AI.
+
+A simple way to do that without running into any ownership issues is
+to take the present `Ai` value (by calling `ai.take()` -- it moves it
+out, leaving `None` in its place), calling the appropriate function
+(`ai_basic` or `ai_confuse`) with all its contents (i.e. `previous_ai`
+and `num_turns` for `Confused`) and then put whatever `Ai` the
+function returned back as the monster's `ai` component.
+
+It's a bit complex if you haven't internalised the `Option` and `Box`
+types and how the ownership works, but it's actually quite
+straightforward once you do.
+
+You can try to write `ai_take_turn` yourself without moving anything
+-- just use `objects[monster_id].ai.as_mut()` to get a mutable
+reference and think through the compile errors Rust will give you.
+
+So after that mouthful, the rather anti-climactic implementation of
+`ai_confused`:
+
+[source]
+----
+fn ai_confused(monster_id: usize, map: &Map, objects: &mut [Object], messages: &mut Messages,
+               previous_ai: Box<Ai>, num_turns: i32) -> Ai {
+    if num_turns >= 0 {  // still confused ...
+        // move in a random idrection, and decrease the number of turns confused
+        move_by(monster_id,
+                rand::thread_rng().gen_range(-1, 2),
+                rand::thread_rng().gen_range(-1, 2),
+                map,
+                objects);
+        Ai::Confused{previous_ai: previous_ai, num_turns: num_turns - 1}
+    } else {  // restore the previous AI (this one will be deleted)
+        message(messages, format!("The {} is no longer confused!",
+                                  objects[monster_id].name),
+                colors::RED);
+        *previous_ai
+    }
+}
+----
+
+It takes pretty much the same parameters as `ai_basic`, but it moves
+the monster at random if it's still confused and it returns the
+previous AI otherwise.
+
+If you look at the return values, in the confused case, we're
+reconstructing the `Ai::Confused` value again, with the same
+`previous_ai` and a `num_turns` decreased by one. This is where we
+move `previous_ai` instead of mutating anything.
+
+And in the `else` case, we just return `previous_ai` on its own,
+getting rid of the `Confused` value entirely. We have to prepend it
+with an asterisk to return the boxed value -- `Ai`. If we didn't put
+the asterisk there, we'd return `Box<Ai>`, which is not what
+`ai_take_turn` expects.
+
+Now, the actual scroll that uses this AI! For it to appear in the
+dungeon it must be added to `place_objects`. Notice that the chance of
+getting a lightning bolt scroll must change:
+
+[source]
+----
+} else if dice < 0.7 + 0.15 {
+    // create a lightning bolt scroll (15% chance)
+    let mut object = Object::new(x, y, '#', "scroll of lightning bolt",
+                                 colors::LIGHT_YELLOW, false);
+    object.item = Some(Item::Lightning);
+    object
+} else {
+    // create a confuse scroll (15% chance)
+    let mut object = Object::new(x, y, '#', "scroll of confusion",
+                                 colors::LIGHT_YELLOW, false);
+    object.item = Some(Item::Confuse);
+    object
+};
+----
+
+We're making all scrolls look the same here, but in your game that's up
+to you. The `cast_confuse` function can now be defined. It hits the
+closest monster for now, like the lightning bolt; later we'll allow
+targeting.
+
+[source]
+----
+fn cast_confuse(_inventory_id: usize, objects: &mut [Object], messages: &mut Messages, tcod: &mut Tcod)
+                -> UseResult
+{
+    // find closest enemy in-range and confuse it
+    let monster_id = closest_monster(CONFUSE_RANGE, objects, tcod);
+    if let Some(monster_id) = monster_id {
+        let old_ai = objects[monster_id].ai.take().unwrap_or(Ai::Basic);
+        // replace the monster's AI with a "confused" one; after
+        // some turns it will restore the old AI
+        objects[monster_id].ai = Some(Ai::Confused {
+            previous_ai: Box::new(old_ai),
+            num_turns: CONFUSE_NUM_TURNS,
+        });
+        message(messages,
+                format!("The eyes of {} look vacant, as he starts to stumble around!",
+                        objects[monster_id].name),
+                colors::LIGHT_GREEN);
+        UseResult::UsedUp
+    } else {  // no enemy fonud within maximum range
+        message(messages, "No enemy is close enough to strike.", colors::RED);
+        UseResult::Cancelled
+    }
+}
+----
+
+We find the closest enemy again, extract its existing AI and replace
+it with the `Confused` one.
+
+:unwrap: http://doc.rust-lang.org/stable/std/option/enum.Option.html#method.unwrap
+:expect: http://doc.rust-lang.org/stable/std/option/enum.Option.html#method.expect
+:unwrap_or: http://doc.rust-lang.org/stable/std/option/enum.Option.html#method.unwrap_or
+
+`target_monster` should always return a monster that has the `Ai`
+component, but the `Object.ai` still contains `Option<Ai>` rather than
+bare `Ai` (not every Object has AI even though we expect each monster
+to have one). We could use {unwrap}[the unwrap] or {expect}[expect]
+methods to get the inner value, but this would crash the program
+(`expect` would print a custom message). Here we use
+{unwrap_or}[unwrap_or] instead which will return the `Basic` AI in
+case there is none.
+
+You may choose to panic with unwrap/expect instead (to find the bug
+early and hunt it down) or log the error and keep going or even allow
+monsters without AI and just handle that case properly!
+
+We've also introduced two new constants: `CONFUSE_RANGE = 8` and
+`CONFUSE_NUM_TURNS = 10`.
+
+
+Finally, to tie it all together, we need to add a new item type:
+`Confuse`:
+
+[source]
+----
+enum Item {
+    Heal,
+    Lightning,
+    Confuse,
+}
+----
+
+And associate it with `cast_confuse` in the `use_item` function:
+
+[source]
+----
+let on_use: fn(usize, &mut [Object], &mut Messages, &mut Tcod) -> UseResult = match item {
+    Heal => cast_heal,
+    Lightning => cast_lightning,
+    Confuse => cast_confuse,
+};
+----
+
+
+
 == Targeting: the Fireball
 
 == Targeting single monsters
 
 == Dropping items
+
 
 
 
