@@ -664,7 +664,7 @@ fn menu<T: AsRef<str>>(header: &str, options: &[T], width: i32,
 
     // print all the options
     for (index, option_text) in options.iter().enumerate() {
-        let menu_letter = ('a' as usize + index) as u8 as char;
+        let menu_letter = (b'a' + index as u8) as char;
         let text = format!("({}) {}", menu_letter, option_text.as_ref());
         window.print_ex(0, header_height + index as i32,
                         BackgroundFlag::None, TextAlignment::Left, text);

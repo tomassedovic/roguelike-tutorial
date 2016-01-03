@@ -256,7 +256,7 @@ coordinate and the option letter to display next to it.
 ----
 // print all the options
 for (index, option_text) in options.iter().enumerate() {
-    let menu_letter = ('a' as usize + index) as u8 as char;
+    let menu_letter = (b'a' + index as u8) as char;
     let text = format!("({}) {}", menu_letter, option_text.as_ref());
     window.print_ex(0, header_height + index as i32,
                     BackgroundFlag::None, TextAlignment::Left, text);
@@ -265,9 +265,9 @@ for (index, option_text) in options.iter().enumerate() {
 
 We need to do a bit of type casting here. Rust does not convert
 numeric types silently, so when we need to work with different types
-(say adding a `u8` and a `i16`), we have to convert the type
-explicitly. You can try to remove the casts (the `as type` code) and
-see what happens.
+(in our case adding `b'a'` which is `u8` and index which is `usize`),
+we have to convert the type explicitly. You can try to remove the
+casts (the `as type` code) and see what happens.
 
 Ok, all of the window's contents are stored in the off-screen console!
 It's a simple matter of calling `blit` function to display them on the
