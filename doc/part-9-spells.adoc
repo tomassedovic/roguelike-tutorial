@@ -553,6 +553,230 @@ let on_use: fn(usize, &mut [Object], &mut Messages, &mut Tcod) -> UseResult = ma
 
 == Targeting: the Fireball
 
+Given that we know how to make direct damage spells like Lightning
+Bolt, others like Blizzard or Fireball are just a matter of finding
+all monsters in an area and damaging them; you should have no trouble
+creating them. But it would be much more interesting if the player
+could choose the target properly, and that's a feature that will
+benefit many spells. In addition, you can use the same system for
+ranged weapons like crossbows or slings. So let's do that!
+
+We're going to build a mouse interface. It's also possible to make a
+classic keyboard interface, but it would be less intuitive and a bit
+harder to code; if you prefer that, consider it a small challenge!
+
+We already have some code for getting the coordinates of the mouse,
+and checking for left-clicks is trivial -- when it happens
+`mouse.lbutton_pressed` is `true`. So we just need to loop until the
+player clicks somewhere. By redrawing the screen with every loop, the
+names of objects under the mouse are automatically shown, and we erase
+the inventory from which the player chose the scroll (otherwise it
+would still be visible).
+
+[source]
+----
+/// return the position of a tile left-clicked in player's FOV (optionally in a
+/// range), or (None,None) if right-clicked.
+fn target_tile(tcod: &mut Tcod,
+               objects: &[Object],
+               map: &mut Map,
+               messages: &Messages,
+               max_range: Option<f32>)
+               -> Option<(i32, i32)> {
+    use tcod::input::KeyCode::Escape;
+    loop {
+        // render the screen. this erases the inventory and shows the names of
+        // objects under the mouse.
+        tcod.root.flush();
+        let event = input::check_for_event(input::KEY_PRESS | input::MOUSE).map(|e| e.1);
+        let mut key = None;
+        match event {
+            Some(Event::Mouse(m)) => tcod.mouse = m,
+            Some(Event::Key(k)) => key = Some(k),
+            None => {}
+        }
+        render_all(tcod, objects, map, messages, false);
+
+        let (x, y) = (tcod.mouse.cx as i32, tcod.mouse.cy as i32);
+
+        // ...
+    }
+}
+----
+
+We have to `flush` the console to present the changes to the player.
+
+Now we return the clicked position if it's in range and visible:
+
+[source]
+----
+    // accept the target if the player clicked in FOV, and in case a range
+    // is specified, if it's in that range
+    let in_fov = tcod.fov.is_in_fov(x, y);
+    let in_range = max_range.map_or(
+        true, |range| objects[PLAYER].distance(x, y) <= range);
+    if tcod.mouse.lbutton_pressed && in_fov && in_range {
+        return Some((x, y))
+    }
+----
+
+If the `max_range` is none, we allow any range (so we make
+`max_range.map_or` return `true`), otherwise we need to check that the
+range from the clicked position to the player is lower or equal.
+
+We also make sure that the target is within FOV to prevent firing
+through walls.
+
+Finally, we need a way of cancel the targeting UI:
+
+[source]
+----
+    let escape = key.map_or(false, |k| k.code == Escape);
+    if tcod.mouse.rbutton_pressed || escape {
+        return None  // cancel if the player right-clicked or pressed Escape
+    }
+----
+
+This returns `None` if the player pressed `Esc` or clicked the right
+mouse button. If they didn't do any of that, the loop continues.
+
+Next we add a method to `Object` for calculating a distance to a
+specific coordinate (we already have one for distance between two
+objects).
+
+[source]
+----
+/// return the distance to some coordinates
+pub fn distance(&self, x: i32, y: i32) -> f32 {
+    (((x - self.x).pow(2) + (y - self.y).pow(2)) as f32).sqrt()
+}
+----
+
+That's all for targeting a tile! We can now create a simple fireball
+spell:
+
+[source]
+----
+fn cast_fireball(_inventory_id: usize, objects: &mut [Object], messages: &mut Messages,
+                 map: &mut Map, tcod: &mut Tcod)
+                 -> UseResult
+{
+    // ask the player for a target tile to throw a fireball at
+    message(messages,
+            "Left-click a target tile for the fireball, or right-click to cancel.",
+            colors::LIGHT_CYAN);
+    let (x, y) = match target_tile(tcod, objects, map, messages, None) {
+        Some(tile_pos) => tile_pos,
+        None => return UseResult::Cancelled,
+    };
+    message(messages,
+            format!("The fireball explodes, burning everything within {} tiles!", FIREBALL_RADIUS),
+            colors::ORANGE);
+
+    for obj in objects {
+        if obj.distance(x, y) <= FIREBALL_RADIUS as f32 && obj.fighter.is_some() {
+            message(messages,
+                    format!("The {} gets burned for {} hit points.", obj.name, FIREBALL_DAMAGE),
+                    colors::ORANGE);
+            obj.take_damage(FIREBALL_DAMAGE, messages);
+
+        }
+    }
+
+    UseResult::UsedUp
+}
+----
+
+With some new constants `FIREBALL_RADIUS = 3` and `FIREBALL_DAMAGE =
+12`. This also uses the new distance method. A scroll that casts the
+Fireball spell must be added to place_objects, before the Confuse
+scroll:
+
+[source]
+----
+} else if dice < 0.7 + 0.1 + 0.1 {
+    // create a fireball scroll (10% chance)
+    let mut object = Object::new(x, y, '#', "scroll of fireball", colors::LIGHT_YELLOW, false);
+    object.item = Some(Item::Fireball);
+    object
+} else {
+    // create a confuse scroll (15% chance)
+    // ...
+}
+----
+
+And change all the "15%" and ".15" to "10%" now since there are three
+scrolls now, each with a 10% of appearing.
+
+If we try to compile it now, Rust will complain that there is no
+`Fireball` variant for `Item`. So let's add it:
+
+[source]
+----
+enum Item {
+    Heal,
+    Lightning,
+    Confuse,
+    Fireball,
+}
+----
+
+Next, the item is missing from the `match` inside `use_item`, so let's
+fix that:
+
+[source]
+----
+let on_use: fn(usize, &mut [Object], &mut Messages, &mut Tcod) -> UseResult = match item {
+    Heal => cast_heal,
+    Lightning => cast_lightning,
+    Confuse => cast_confuse,
+    Fireball => cast_fireball,
+};
+----
+
+And finally, we're expecting to pass `&mut Map` to `cast_fireball`
+(because `target_tile` requires it), but none of the other spells
+required it yet. Since they all must have the same function signature,
+we have to add it to `cast_heal`, `cast_lightning`, `cast_confuse` as
+well as `use_item`.
+
+Here's what `on_use` bit looks like now:
+
+[source]
+----
+let on_use: fn(usize, &mut [Object], &mut Messages, &mut Map, &mut Tcod) -> UseResult = match item {
+    Heal => cast_heal,
+    Lightning => cast_lightning,
+    Confuse => cast_confuse,
+    Fireball => cast_fireball,
+};
+match on_use(inventory_id, objects, messages, map, tcod) {
+    // ...
+}
+----
+
+To get this compiling will require us to pass `map` to a few more
+places along the call chain as well. Again, let the compiler
+guide you.
+
+
+And now you can now pick up Fireball scrolls; they're quite handy to
+roast large groups of Orcs! Try not to get burnt though, it also
+damages the player. I think it adds some strategic value, balancing
+the spell.
+
+If you _do_ want the player to be immune, you can add `enumerate` to
+the `for` loop and check whether the `id` is different from `PLAYER`:
+
+[source]
+----
+for (id, obj) in objects.iter_mut().enumerate() {
+    if obj.distance(x, y) <= FIREBALL_RADIUS as f32 && obj.fighter.is_some() && id != PLAYER {
+        // ...
+    }
+}
+----
+
 == Targeting single monsters
 
 == Dropping items
