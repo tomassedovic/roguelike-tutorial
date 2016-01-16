@@ -394,6 +394,16 @@ fn use_item(inventory_id: usize, inventory: &mut Vec<Object>, objects: &mut [Obj
     }
 }
 
+fn drop_item(inventory_id: usize,
+             inventory: &mut Vec<Object>,
+             objects: &mut Vec<Object>,
+             messages: &mut Messages) {
+    let mut item = inventory.remove(inventory_id);
+    item.set_pos(objects[PLAYER].x, objects[PLAYER].y);
+    message(messages, format!("You dropped a {}.", item.name), colors::YELLOW);
+    objects.push(item);
+}
+
 /// return the position of a tile left-clicked in player's FOV (optionally in a
 /// range), or (None,None) if right-clicked.
 fn target_tile(tcod: &mut Tcod,
@@ -999,6 +1009,20 @@ fn handle_keys(key: Key, tcod: &mut Tcod, map: &mut Map, objects: &mut Vec<Objec
                 &mut tcod.root);
             if let Some(inventory_index) = inventory_index {
                 use_item(inventory_index, inventory, objects, messages, map, tcod);
+                TookTurn
+            } else {
+                DidntTakeTurn
+            }
+        }
+
+        (Key { printable: 'd', .. }, true) => {
+            // show the inventory; if an item is selected, drop it
+            let inventory_index = inventory_menu(
+                inventory,
+                "Press the key next to an item to drop it, or any other to cancel.\n'",
+                &mut tcod.root);
+            if let Some(inventory_index) = inventory_index {
+                drop_item(inventory_index, inventory, objects, messages);
                 TookTurn
             } else {
                 DidntTakeTurn
