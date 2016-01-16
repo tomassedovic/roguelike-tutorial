@@ -178,7 +178,7 @@ Start your game right away by setting up the screen, printing the
   few magic scrolls to the mix. Covers damage and mind spells, as well
   as ranged combat.
 
-Part 10: Main menu and saving::
+<<part-10-menu-saving#,Part 10: Main menu and saving>>::
 
   A main menu complete with a background image and the ability to save
   and load the game.

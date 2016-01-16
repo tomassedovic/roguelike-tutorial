@@ -1,0 +1,29 @@
+= Main menu and saving
+:icons: font
+:source-highlighter: pygments
+:source-language: rust
+ifdef::env-github[:outfilesuffix: .adoc]
+
+<<index#,Back to the index.>>
+
+== Tidy initialization
+
+TODO: compress stuff to the Game struct. Either here or in a preceding section.
+
+== The main menu
+
+== Saving and loading
+
+
+
+
+
+
+
+
+
+
+
+Here's link:part-10-menu-saving.rs[the complete code so far].
+
+Continue to <<part-11-dungeon-progression#,the next part>>.
