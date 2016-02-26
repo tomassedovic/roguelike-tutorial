@@ -166,7 +166,7 @@ for id in 0..objects.len() {
 When you test it now, you can see the monsters following you around
 and trying to attack you.
 
-The whole code is available link:part-6a-ai.rs[here].
+The whole code is available link:part-6a-ai.rs.txt[here].
 
 == Sword-fighting
 
@@ -499,6 +499,6 @@ over them! (_Ugh!_) See if you can finish off all of them before they do
 the same to you.
 
 
-Here's link:part-6b-untimely-deaths.rs[the complete code so far].
+Here's link:part-6b-untimely-deaths.rs.txt[the complete code so far].
 
 Continue to <<part-7-gui#,the next part>>.

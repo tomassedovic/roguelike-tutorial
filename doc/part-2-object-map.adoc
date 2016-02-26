@@ -157,7 +157,7 @@ modify this to have all the info items, monsters and anything else
 will require.
 
 
-Here's link:part-2a-generalising.rs[the code so far].
+Here's link:part-2a-generalising.rs.txt[the code so far].
 
 == The Map
 
@@ -345,7 +345,7 @@ blit(con, (0, 0), (MAP_WIDTH, MAP_HEIGHT), root, (0, 0), 1.0, 1.0);
 
 Now we have some space at the bottom for the message log, status bar, etc.
 
-Here's link:part-2b-map.rs[the complete code so far].
+Here's link:part-2b-map.rs.txt[the complete code so far].
 
 NOTE: There's a ton of different ways to create the map. One common
 alternative is one continuous Vec with `MAP_HEIGHT * MAP_WIDTH` items.

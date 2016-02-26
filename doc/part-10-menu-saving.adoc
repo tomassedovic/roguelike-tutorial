@@ -24,6 +24,6 @@ TODO: compress stuff to the Game struct. Either here or in a preceding section.
 
 
 
-Here's link:part-10-menu-saving.rs[the complete code so far].
+Here's link:part-10-menu-saving.rs.txt[the complete code so far].
 
 Continue to <<part-11-dungeon-progression#,the next part>>.

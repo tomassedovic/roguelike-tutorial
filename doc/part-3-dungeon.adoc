@@ -131,7 +131,7 @@ Now we can connect both rooms with a horizontal tunnel. In `make_map`:
 create_h_tunnel(25, 55, 23, &mut map);
 ----
 
-Here's link:part-3a-building-blocks.rs[the code for this part].
+Here's link:part-3a-building-blocks.rs.txt[the code for this part].
 
 == Dungeon generator
 
@@ -335,6 +335,6 @@ rooms.push(new_room);
 And there we have it! A procedural dungeon generator!
 
 
-Here's link:part-3b-dungeon-generator.rs[the complete code so far].
+Here's link:part-3b-dungeon-generator.rs.txt[the complete code so far].
 
 Continue to <<part-4-fov-exploration#,the next part>>.

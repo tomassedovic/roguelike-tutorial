@@ -549,7 +549,7 @@ And that's it! You test it out. No one's dealing any damage, but the
 game now detects when you're trying to attack a monster. And you can
 see the monsters taking their turns after you.
 
-Here's link:part-5-combat.rs[the complete code so far].
+Here's link:part-5-combat.rs.txt[the complete code so far].
 
 Guess what's next?
 
