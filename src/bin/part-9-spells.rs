@@ -819,13 +819,6 @@ fn render_all(tcod: &mut Tcod, objects: &[Object], map: &mut Map,
         object.draw(&mut tcod.con);
     }
 
-    // show the player's stats
-    tcod.con.set_default_foreground(colors::WHITE);
-    if let Some(fighter) = objects[PLAYER].fighter {
-        tcod.con.print_ex(1, SCREEN_HEIGHT - 2, BackgroundFlag::None, TextAlignment::Left,
-                     format!("HP: {}/{} ", fighter.hp, fighter.max_hp));
-    }
-
     // blit the contents of "con" to the root console
     blit(&mut tcod.con, (0, 0), (MAP_WIDTH, MAP_HEIGHT), &mut tcod.root, (0, 0), 1.0, 1.0);
 
