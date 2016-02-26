@@ -6,6 +6,6 @@ license = "WTFPL"
 readme = "README"
 
 [dependencies]
-tcod = { version = "0.8", features = ["rustc-serialize"] }
+tcod = { version = "0.9", features = ["rustc-serialize"] }
 rustc-serialize = "0.3.15"
 rand = "0.3.9"
