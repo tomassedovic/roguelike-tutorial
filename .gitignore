@@ -1,3 +1,4 @@
 target
 /savegame
 /.bundle/
+.deploy
