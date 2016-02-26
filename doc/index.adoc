@@ -38,6 +38,11 @@ programming experience.
 There are two great resources to get started with Rust: {book}[The
 Rust Programming Language book] and {rustbyexample}[Rust by Example].
 
+You can find the source of this text as well as the code samples here:
+
+https://github.com/tomassedovic/roguelike-tutorial/
+
+
 === Why Rust?
 
 Rust is a systems programming language targeting roughly the same
