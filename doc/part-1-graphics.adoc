@@ -313,7 +313,7 @@ the player's position if it's one of the arrow keys:
 
 [source,rust]
 ----
-let key = match root.wait_for_keypress(true);
+let key = root.wait_for_keypress(true);
 match key {
     // movement keys
     Key { code: Up, .. } => *player_y -= 1,
@@ -329,7 +329,7 @@ Instead of chaining a ton of `if/else` expressions together, we use
 the `match` expression to specify the values we're interested in and
 what to do with them.
 
-The key returned by `check_for_keypress` is of type `tcod::input::Key`
+The key returned by `wait_for_keypress` is of type `tcod::input::Key`
 and {key}[has several fields we can look at]. Right now all we care
 about is the `code`, which tells us the key that was pressed, but
 there are others for `alt`, `ctrl`, etc.
