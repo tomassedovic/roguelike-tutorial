@@ -6,6 +6,230 @@ ifdef::env-github[:outfilesuffix: .adoc]
 
 <<index#,Back to the index.>>
 
+== The Game struct
+
+Before we get to the meat of this, we'll do something that will make
+our lives a bit easier -- we'll put some more items into a common
+`struct` that we'll pass around! We've already done that for the
+libtcod-related stuff and now let's add the rest!
+
+Create this struct:
+
+[source]
+----
+struct Game {
+    map: Map,
+    log: Messages,
+    inventory: Vec<Object>,
+}
+----
+
+So right it'll just hold the map, the message log and the inventory.
+We'll add more things later on, but let's start small.
+
+Now let's move our initialisation code under this struct. In `main`:
+
+[source]
+----
+let mut game = Game {
+    // generate map (at this point it's not drawn to the screen)
+    map: make_map(&mut objects),
+    // create the list of game messages and their colors, starts empty
+    log: vec![],
+    inventory: vec![],
+};
+----
+
+You can now remove the individual variables for `map`, `messages` and
+`inventory` and try to compile. This will of course show errors where
+we refer to the removed variables so let's use those to fix the `main`
+function.
+
+Basically, we'll replace all mentions of `map` with `game.map`, `messages`
+with `&mut game.log` and so on.
+
+For example the FoV map code now looks like this:
+
+[source]
+----
+for y in 0..MAP_HEIGHT {
+    for x in 0..MAP_WIDTH {
+        tcod.fov.set(x, y,
+                     !game.map[x as usize][y as usize].block_sight,
+                     !game.map[x as usize][y as usize].blocked);
+    }
+}
+----
+
+And the "welcoming" message:
+
+[source]
+----
+message(&mut game.log, "Welcome stranger! Prepare to perish in the Tombs of the Ancient Kings.",
+        colors::RED);
+----
+
+There's about 8 more things to fix. After that we should be compiling
+again, but it doesn't seem like really helped anything.
+
+So let's update the rest of the code to take advantage of our
+newfangled `Game` struct!
+
+For example, let's update our `render_all` call to just pass `Game` once:
+
+[source]
+----
+render_all(&mut tcod, &objects, &mut game, fov_recompute);
+----
+
+And then change the function signature:
+
+[source]
+----
+fn render_all(tcod: &mut Tcod, objects: &[Object], game: &mut Game, fov_recompute: bool) {
+    // ...
+}
+----
+
+And (you guessed it!) *let the compiler guide you*.
+
+As you'll notice, this will actually requires to change a lot more
+than just the `render_all` function. That is because some of the
+spells call `target_tile` which has it's own separate game loop. While
+that's OK in this tutorial, you can see how coupled it makes the rest
+of the code.
+
+Think about ways of solving this with a single game loop running in
+`main`, but we won't bother here because it would make the tutorial
+even longer.
+
+Since this touches a lot of it'll take a while to fix although the
+changes are mostly mechanical -- just pass `&mut Game` to functions
+that take e.g. inventory and the message log and fix the same whenever
+they're being called.
+
+For example this is what `use_item` looks like now:
+
+[source]
+----
+fn use_item(inventory_id: usize, objects: &mut [Object], game: &mut Game, tcod: &mut Tcod) {
+    use Item::*;
+    // just call the "use_function" if it is defined
+    if let Some(item) = game.inventory[inventory_id].item {
+        let on_use: fn(usize, &mut [Object], &mut Game, &mut Tcod) -> UseResult = match item {
+            Heal => cast_heal,
+            Lightning => cast_lightning,
+            Confuse => cast_confuse,
+            Fireball => cast_fireball,
+        };
+        match on_use(inventory_id, objects, game, tcod) {
+            UseResult::UsedUp => {
+                // destroy after use, unless it was cancelled for some reason
+                game.inventory.remove(inventory_id);
+            }
+            UseResult::Cancelled => {
+                message(&mut game.log, "Cancelled", colors::WHITE);
+            }
+        }
+    } else {
+        message(&mut game.log,
+                format!("The {} cannot be used.", game.inventory[inventory_id].name),
+                colors::WHITE);
+    }
+}
+----
+
+And `handle_keys` calls it like so:
+
+[source]
+----
+use_item(inventory_index, objects, game, tcod);
+----
+
+Once you get things compiling, everything should work again. If you're
+struggling, take a look at link:part-10-menu-saving.rs.txt[the
+complete code for this section].
+
+After this, you can either stop or keep going as there are a few more
+functions that could take `Game` instead: the `ai_take_turn`,
+`ak_basic` and `ai_confused` are good examples, but we might as well
+go all the way: `take_damage`, `attack`, etc.
+
+
+And once you've done all that, let's simplify the way we log our
+messages. Right now, you have to write:
+
+[source]
+----
+message(&mut game.log, "You died!", colors::RED);
+----
+
+We can simplify that to:
+
+[source]
+----
+game.log.add("You died!", colors::RED);
+----
+
+NOTE: We could just have `game.log("message", colour)` by adding a
+`log` method on the `Game` struct, but that would
+conflict with Rust's mutability rules. Consider what would happen if
+you wanted to e.g. iterate over all items in the inventory and call
+`game.log()` while in the loop. We didn't include the `objects` vec
+in `Game` for the same reason.
+
+So, to do that, we have two options: either create a new type that
+wraps the underlying `Vec<(String, Color)>` and has the `add()` method
+(_BORING_) or *we put the method the vec type directly*. I know,
+right?
+
+Rust let's you implement traits to types you don't control (e.g.
+because they come from the standard library like our `Vec`) assuming
+you control the trait.
+
+So we create a `MessageLog` trait with the `add` method:
+
+[source]
+----
+trait MessageLog {
+    fn add<T: Into<String>>(&mut self, message: T, color: Color);
+}
+----
+
+Traits are like interfaces in Java and other languages: they describe
+a group of method signatures that a type implementing the trait needs
+to have.
+
+If we implement the trait for a concrete type, it will be able to call
+those methods and we can pass it to functions that expect that trait.
+
+So:
+
+[source]
+----
+impl MessageLog for Vec<(String, Color)> {
+    fn add<T: Into<String>>(&mut self, message: T, color: Color) {
+        self.push((message.into(), color));
+    }
+}
+----
+
+This is basically the same thing as our `message` function does,
+expect it's a method (so it takes an explicit `&mut self`) and we
+don't bother with the message count check.
+
+And now, we can just add messages to the log by calling:
+
+[source]
+----
+game.log.add("some message", color::WHITE);
+----
+
+This will mean changing all the message-printing code. You know what's
+a great way to do this? Remove the `message` function and _let the
+compiler guide you_.
+
+
 == Tidy initialization
 
 TODO: compress stuff to the Game struct. Either here or in a preceding section.
