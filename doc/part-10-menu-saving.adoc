@@ -6,6 +6,12 @@ ifdef::env-github[:outfilesuffix: .adoc]
 
 <<index#,Back to the index.>>
 
+Now that our game is bursting with gameplay potential, we can think
+about those little things that die-hard fans will surely miss during
+their long playing sessions. One of the most important is, of course,
+a save/load mechanism! This way they can go to sleep and dream about
+your scary monsters between play sessions.
+
 == The Game struct
 
 Before we get to the meat of this, we'll do something that will make
@@ -112,23 +118,23 @@ For example this is what `use_item` looks like now:
 
 [source]
 ----
-fn use_item(inventory_id: usize, objects: &mut [Object], game: &mut Game, tcod: &mut Tcod) {
+fn use_item(inventory_id: usize, objects: &mut [Object], game: &mut Game, tcod: &mut Tcod) {  // <1>
     use Item::*;
     // just call the "use_function" if it is defined
-    if let Some(item) = game.inventory[inventory_id].item {
-        let on_use: fn(usize, &mut [Object], &mut Game, &mut Tcod) -> UseResult = match item {
+    if let Some(item) = game.inventory[inventory_id].item {  // <2>
+        let on_use: fn(usize, &mut [Object], &mut Game, &mut Tcod) -> UseResult = match item {  // <3>
             Heal => cast_heal,
             Lightning => cast_lightning,
             Confuse => cast_confuse,
             Fireball => cast_fireball,
         };
-        match on_use(inventory_id, objects, game, tcod) {
+        match on_use(inventory_id, objects, game, tcod) {  // <4>
             UseResult::UsedUp => {
                 // destroy after use, unless it was cancelled for some reason
                 game.inventory.remove(inventory_id);
             }
             UseResult::Cancelled => {
-                message(&mut game.log, "Cancelled", colors::WHITE);
+                message(&mut game.log, "Cancelled", colors::WHITE);  // <5>
             }
         }
     } else {
@@ -138,6 +144,11 @@ fn use_item(inventory_id: usize, objects: &mut [Object], game: &mut Game, tcod: 
     }
 }
 ----
+<1> Replace `inventory` and `messages` with `game`
+<2> `inventory` is now `game.inventory`
+<3> Replace the inventory and messages types with `&mut Game`
+<4> Pass just `game` to on_use
+<5> `messages` is now `&mut game.log`
 
 And `handle_keys` calls it like so:
 
@@ -232,7 +243,76 @@ compiler guide you_.
 
 == Tidy initialization
 
-TODO: compress stuff to the Game struct. Either here or in a preceding section.
+To choose between continuing a previous game or starting a new one we
+need a main menu. But wait: our initialization logic and game loop are
+tightly bound, so they're not really prepared for these tasks. To
+avoid code duplication, we need to break them down into meaningful
+blocks (functions). We can then put them together to change between
+the menu and the game, start new games or load them, and even go to
+new dungeon levels. It's much easier than it sounds, so fear not!
+
+Take a look at your initialization and game loop code, after all the
+functions. I can identify 4 blocks:
+
+* *System initialization* (initialising the tcod window and consoles)
+* *Setting up a new game* (everything else except for the game loop
+   and the FOV map creation)
+* *Creating the FOV map*
+* *Starting the game loop*
+
+We can use these as the building blocks to make up the higher-level
+tasks like loading the game or moving to a new level:
+
+* *Create a new game*: set up the game, create FOV map, start game
+   loop (this is what we have now).
+* *Load game*: load data (we won't deal with this block just yet),
+   create FOV map, start game loop.
+* *Advance level*: set up new level (we won't deal with this yet
+   either), create FOV map (the game loop is already running and will
+   just continue).
+
+Let's put everything from `main` except for the system initialisation
+and the main loop into a `new_game` function:
+
+[source]
+----
+fn new_game(tcod: &mut Tcod) -> (Vec<Object>, Game) {
+    // create object representing the player
+    let mut player = Object::new(0, 0, '@', "player", colors::WHITE, true);
+    player.alive = true;
+    player.fighter = Some(Fighter{max_hp: 30, hp: 30, defense: 2, power: 5,
+                                  on_death: DeathCallback::Player});
+
+    // the list of objects with just the player
+    let mut objects = vec![player];
+
+    let mut game = Game {
+        // generate map (at this point it's not drawn to the screen)
+        map: make_map(&mut objects),
+        // create the list of game messages and their colors, starts empty
+        log: vec![],
+        inventory: vec![],
+    };
+
+    // create the FOV map, according to the generated map
+    for y in 0..MAP_HEIGHT {
+        for x in 0..MAP_WIDTH {
+            tcod.fov.set(x, y,
+                         !game.map[x as usize][y as usize].block_sight,
+                         !game.map[x as usize][y as usize].blocked);
+        }
+    }
+
+    // a warm welcoming message!
+    game.log.add("Welcome stranger! Prepare to perish in the Tombs of the Ancient Kings.",
+                 colors::RED);
+
+    (objects, game)
+}
+----
+
+
+
 
 == The main menu
 

@@ -1043,23 +1043,7 @@ impl MessageLog for Vec<(String, Color)> {
     }
 }
 
-fn main() {
-    let root = Root::initializer()
-        .font("arial10x10.png", FontLayout::Tcod)
-        .font_type(FontType::Greyscale)
-        .size(SCREEN_WIDTH, SCREEN_HEIGHT)
-        .title("Rust/libtcod tutorial")
-        .init();
-    tcod::system::set_fps(LIMIT_FPS);
-
-    let mut tcod = Tcod {
-        root: root,
-        con: Offscreen::new(MAP_WIDTH, MAP_HEIGHT),
-        panel: Offscreen::new(SCREEN_WIDTH, PANEL_HEIGHT),
-        fov: FovMap::new(MAP_WIDTH, MAP_HEIGHT),
-        mouse: Default::default(),
-    };
-
+fn new_game(tcod: &mut Tcod) -> (Vec<Object>, Game) {
     // create object representing the player
     let mut player = Object::new(0, 0, '@', "player", colors::WHITE, true);
     player.alive = true;
@@ -1090,8 +1074,30 @@ fn main() {
     game.log.add("Welcome stranger! Prepare to perish in the Tombs of the Ancient Kings.",
                  colors::RED);
 
+    (objects, game)
+}
+
+fn main() {
+    let root = Root::initializer()
+        .font("arial10x10.png", FontLayout::Tcod)
+        .font_type(FontType::Greyscale)
+        .size(SCREEN_WIDTH, SCREEN_HEIGHT)
+        .title("Rust/libtcod tutorial")
+        .init();
+    tcod::system::set_fps(LIMIT_FPS);
+
+    let mut tcod = Tcod {
+        root: root,
+        con: Offscreen::new(MAP_WIDTH, MAP_HEIGHT),
+        panel: Offscreen::new(SCREEN_WIDTH, PANEL_HEIGHT),
+        fov: FovMap::new(MAP_WIDTH, MAP_HEIGHT),
+        mouse: Default::default(),
+    };
+
     // force FOV "recompute" first time through the game loop
     let mut previous_player_position = (-1, -1);
+
+    let (mut objects, mut game) = new_game(&mut tcod);
 
     let mut key = Default::default();
 
