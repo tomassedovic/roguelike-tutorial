@@ -294,14 +294,7 @@ fn new_game(tcod: &mut Tcod) -> (Vec<Object>, Game) {
         inventory: vec![],
     };
 
-    // create the FOV map, according to the generated map
-    for y in 0..MAP_HEIGHT {
-        for x in 0..MAP_WIDTH {
-            tcod.fov.set(x, y,
-                         !game.map[x as usize][y as usize].block_sight,
-                         !game.map[x as usize][y as usize].blocked);
-        }
-    }
+    initialise_fov(&game.map, &mut tcod.fov);
 
     // a warm welcoming message!
     game.log.add("Welcome stranger! Prepare to perish in the Tombs of the Ancient Kings.",
@@ -311,8 +304,112 @@ fn new_game(tcod: &mut Tcod) -> (Vec<Object>, Game) {
 }
 ----
 
+We return use a tuple to return two arguments: the vec of `Objects` and
+the `Game` struct.
+
+`new_game` is calling `initialise_fov` so we need create it and move
+the FOV-related code to it:
+
+[source]
+----
+fn initialise_fov(map: &Map, fov_map: &mut FovMap) {
+    // create the FOV map, according to the generated map
+    for y in 0..MAP_HEIGHT {
+        for x in 0..MAP_WIDTH {
+            fov_map.set(x, y,
+                        !map[x as usize][y as usize].block_sight,
+                        !map[x as usize][y as usize].blocked);
+        }
+    }
+}
+----
+
+Finally, the game loop and the few bits before it belong to their own
+function as well:
+
+[source]
+----
+fn play_game(objects: &mut Vec<Object>, game: &mut Game, tcod: &mut Tcod) {
+    // force FOV "recompute" first time through the game loop
+    let mut previous_player_position = (-1, -1);
+
+    let mut key = Default::default();
+
+    while !tcod.root.window_closed() {
+        match input::check_for_event(input::MOUSE | input::KEY_PRESS) {
+            Some((_, Event::Mouse(m))) => tcod.mouse = m,
+            Some((_, Event::Key(k))) => key = k,
+            _ => key = Default::default(),
+        }
+
+        // render the screen
+        let fov_recompute = previous_player_position != (objects[PLAYER].pos());
+        render_all(tcod, &objects, game, fov_recompute);
+
+        tcod.root.flush();
+
+        // erase all objects at their old locations, before they move
+        for object in objects.iter_mut() {
+            object.clear(&mut tcod.con)
+        }
+
+        // handle keys and exit game if needed
+        previous_player_position = objects[PLAYER].pos();
+        let player_action = handle_keys(key, tcod, objects, game);
+        if player_action == PlayerAction::Exit {
+            break
+        }
+
+        // let monstars take their turn
+        if objects[PLAYER].alive && player_action != PlayerAction::DidntTakeTurn {
+            for id in 0..objects.len() {
+                if objects[id].ai.is_some() {
+                    ai_take_turn(id, objects, game, &tcod.fov);
+                }
+            }
+        }
+    }
+}
+----
+
+And now we just call `new_game` and `play_game` from our slimmed-down
+`main` function:
+
+[source]
+----
+fn main() {
+    let root = Root::initializer()
+        .font("arial10x10.png", FontLayout::Tcod)
+        .font_type(FontType::Greyscale)
+        .size(SCREEN_WIDTH, SCREEN_HEIGHT)
+        .title("Rust/libtcod tutorial")
+        .init();
+    tcod::system::set_fps(LIMIT_FPS);
+
+    let mut tcod = Tcod {
+        root: root,
+        con: Offscreen::new(MAP_WIDTH, MAP_HEIGHT),
+        panel: Offscreen::new(SCREEN_WIDTH, PANEL_HEIGHT),
+        fov: FovMap::new(MAP_WIDTH, MAP_HEIGHT),
+        mouse: Default::default(),
+    };
+
+    let (mut objects, mut game) = new_game(&mut tcod);
+    play_game(&mut objects, &mut game, &mut tcod);
+}
+----
+
+`let (a, b) = some_tuple` is how we turn a tuple into its parts. We
+have to put `mut` in front of each one so Rust lets us change them
+later.
+
+You can think of `let (mut a, mut b)` as two separate bindings: `let
+mut a = ...` and `let mut b = ...`. Except since `new_game` returns a
+tuple, we can't really have them as separate.
 
 
+Anyway, the game should compile again and the setup code is more
+modular. Which will come in handy in the coming sections.
 
 == The main menu
 

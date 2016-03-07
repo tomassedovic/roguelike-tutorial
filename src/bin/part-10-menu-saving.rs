@@ -1061,20 +1061,66 @@ fn new_game(tcod: &mut Tcod) -> (Vec<Object>, Game) {
         inventory: vec![],
     };
 
-    // create the FOV map, according to the generated map
-    for y in 0..MAP_HEIGHT {
-        for x in 0..MAP_WIDTH {
-            tcod.fov.set(x, y,
-                         !game.map[x as usize][y as usize].block_sight,
-                         !game.map[x as usize][y as usize].blocked);
-        }
-    }
+    initialise_fov(&game.map, &mut tcod.fov);
 
     // a warm welcoming message!
     game.log.add("Welcome stranger! Prepare to perish in the Tombs of the Ancient Kings.",
                  colors::RED);
 
     (objects, game)
+}
+
+fn initialise_fov(map: &Map, fov_map: &mut FovMap) {
+    // create the FOV map, according to the generated map
+    for y in 0..MAP_HEIGHT {
+        for x in 0..MAP_WIDTH {
+            fov_map.set(x, y,
+                        !map[x as usize][y as usize].block_sight,
+                        !map[x as usize][y as usize].blocked);
+        }
+    }
+}
+
+fn play_game(objects: &mut Vec<Object>, game: &mut Game, tcod: &mut Tcod) {
+    // force FOV "recompute" first time through the game loop
+    let mut previous_player_position = (-1, -1);
+
+    let mut key = Default::default();
+
+    while !tcod.root.window_closed() {
+        match input::check_for_event(input::MOUSE | input::KEY_PRESS) {
+            Some((_, Event::Mouse(m))) => tcod.mouse = m,
+            Some((_, Event::Key(k))) => key = k,
+            _ => key = Default::default(),
+        }
+
+        // render the screen
+        let fov_recompute = previous_player_position != (objects[PLAYER].pos());
+        render_all(tcod, &objects, game, fov_recompute);
+
+        tcod.root.flush();
+
+        // erase all objects at their old locations, before they move
+        for object in objects.iter_mut() {
+            object.clear(&mut tcod.con)
+        }
+
+        // handle keys and exit game if needed
+        previous_player_position = objects[PLAYER].pos();
+        let player_action = handle_keys(key, tcod, objects, game);
+        if player_action == PlayerAction::Exit {
+            break
+        }
+
+        // let monstars take their turn
+        if objects[PLAYER].alive && player_action != PlayerAction::DidntTakeTurn {
+            for id in 0..objects.len() {
+                if objects[id].ai.is_some() {
+                    ai_take_turn(id, objects, game, &tcod.fov);
+                }
+            }
+        }
+    }
 }
 
 fn main() {
@@ -1094,45 +1140,6 @@ fn main() {
         mouse: Default::default(),
     };
 
-    // force FOV "recompute" first time through the game loop
-    let mut previous_player_position = (-1, -1);
-
     let (mut objects, mut game) = new_game(&mut tcod);
-
-    let mut key = Default::default();
-
-    while !tcod.root.window_closed() {
-        match input::check_for_event(input::MOUSE | input::KEY_PRESS) {
-            Some((_, Event::Mouse(m))) => tcod.mouse = m,
-            Some((_, Event::Key(k))) => key = k,
-            _ => key = Default::default(),
-        }
-
-        // render the screen
-        let fov_recompute = previous_player_position != (objects[PLAYER].pos());
-        render_all(&mut tcod, &objects, &mut game, fov_recompute);
-
-        tcod.root.flush();
-
-        // erase all objects at their old locations, before they move
-        for object in &objects {
-            object.clear(&mut tcod.con)
-        }
-
-        // handle keys and exit game if needed
-        previous_player_position = objects[PLAYER].pos();
-        let player_action = handle_keys(key, &mut tcod, &mut objects, &mut game);
-        if player_action == PlayerAction::Exit {
-            break
-        }
-
-        // let monstars take their turn
-        if objects[PLAYER].alive && player_action != PlayerAction::DidntTakeTurn {
-            for id in 0..objects.len() {
-                if objects[id].ai.is_some() {
-                    ai_take_turn(id, &mut objects, &mut game, &tcod.fov);
-                }
-            }
-        }
-    }
+    play_game(&mut objects, &mut game, &mut tcod);
 }
