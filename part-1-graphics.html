@@ -857,7 +857,7 @@ the player&#8217;s position if it&#8217;s one of the arrow keys:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span class="tok-kd">let</span> <span class="tok-n">key</span> <span class="tok-o">=</span> <span class="tok-k">match</span> <span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">wait_for_keypress</span><span class="tok-p">(</span><span class="tok-k">true</span><span class="tok-p">);</span>
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-kd">let</span> <span class="tok-n">key</span> <span class="tok-o">=</span> <span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">wait_for_keypress</span><span class="tok-p">(</span><span class="tok-k">true</span><span class="tok-p">);</span>
 <span class="tok-k">match</span> <span class="tok-n">key</span> <span class="tok-p">{</span>
     <span class="tok-c1">// movement keys</span>
     <span class="tok-n">Key</span> <span class="tok-p">{</span> <span class="tok-n">code</span><span class="tok-o">:</span> <span class="tok-n">Up</span><span class="tok-p">,</span> <span class="tok-p">..</span> <span class="tok-p">}</span> <span class="tok-o">=&gt;</span> <span class="tok-o">*</span><span class="tok-n">player_y</span> <span class="tok-o">-=</span> <span class="tok-mi">1</span><span class="tok-p">,</span>
@@ -875,7 +875,7 @@ the <code>match</code> expression to specify the values we&#8217;re interested i
 what to do with them.</p>
 </div>
 <div class="paragraph">
-<p>The key returned by <code>check_for_keypress</code> is of type <code>tcod::input::Key</code>
+<p>The key returned by <code>wait_for_keypress</code> is of type <code>tcod::input::Key</code>
 and <a href="http://tomassedovic.github.io/tcod-rs/tcod/input/struct.Key.html">has several fields we can look at</a>. Right now all we care
 about is the <code>code</code>, which tells us the key that was pressed, but
 there are others for <code>alt</code>, <code>ctrl</code>, etc.</p>
@@ -976,7 +976,7 @@ before the <code>let exit = handle_keys(&#8230;&#8203;)</code> call:</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2016-02-26 15:58:37 CET
+Last updated 2016-03-07 23:06:43 CET
 </div>
 </div>
 </body>
