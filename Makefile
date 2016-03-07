@@ -15,7 +15,7 @@ publish: docs
 	rm -d .deploy
 	git add -A
 	git commit -m "Updated"
-	git push
+	git push --force
 	git checkout -
 
 preview: docs
@@ -24,4 +24,4 @@ preview: docs
 clean:
 	rm -rf target/tutorial
 
-.PHONY: all docs preview clean
+.PHONY: all docs preview clean publish
