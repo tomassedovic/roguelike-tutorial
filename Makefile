@@ -10,6 +10,7 @@ publish: docs
 	rm -rf .deploy
 	cp -r target/tutorial .deploy
 	git checkout gh-pages
+	git pull
 	rm -rf *
 	mv .deploy/* .
 	rm -d .deploy
