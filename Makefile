@@ -6,7 +6,7 @@ docs:
 	bundle exec asciidoctor --doctype article --destination-dir target/tutorial doc/*.adoc
 
 publish: docs
-	git diff-index --quiet HEAD || { echo "Error: the repository is dirty."; exit 1; }
+	@git diff-index --quiet HEAD || { echo "Error: the repository is dirty."; exit 1; }
 	rm -rf .deploy
 	cp -r target/tutorial .deploy
 	git checkout gh-pages
