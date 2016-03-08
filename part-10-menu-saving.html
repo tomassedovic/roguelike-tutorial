@@ -990,7 +990,146 @@ modular. Which will come in handy in the coming sections.</p>
 <div class="sect1">
 <h2 id="_the_main_menu">The main menu</h2>
 <div class="sectionbody">
+<div class="paragraph">
+<p>To keep our main menu from appearing a bit bland, it would be pretty
+cool to show a neat background image below it. Fortunately, tcod lets
+us <a href="http://tomassedovic.github.io/tcod-rs/tcod/image/index.html">load and display images</a>!</p>
+</div>
+<div class="paragraph">
+<p>Since libtcod emulates a console, we can&#8217;t directly show arbitrary
+images, since we can&#8217;t access the console&#8217;s pixels. We can, however,
+modify the background color of every console cell to match the color
+of a pixel from the image. The downside is that the image will be in a
+very low resolution.</p>
+</div>
+<div class="paragraph">
+<p>However, libtcod can do a neat trick: by using specialized characters,
+and modifying both foreground and background colors, we can double the
+resolution! This is called subcell resolution, and <a href="http://roguecentral.org/doryen/data/libtcod/doc/1.5.1/html2/image_blit.html?c=true">this page of the
+docs</a> shows some images of the effect (at the end of the page).</p>
+</div>
+<div class="paragraph">
+<p>This means that, for our 80x50 cells console, we need a 160x100 pixels
+image. We&#8217;ll be using the <a href="https://github.com/tomassedovic/roguelike-tutorial/blob/master/menu_background.png">image from the original Python
+tutorial</a>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-k">fn</span> <span class="tok-n">main_menu</span><span class="tok-p">(</span><span class="tok-n">tcod</span><span class="tok-o">:</span> <span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">Tcod</span><span class="tok-p">)</span> <span class="tok-p">{</span>
+    <span class="tok-kd">let</span> <span class="tok-n">img</span> <span class="tok-o">=</span> <span class="tok-n">tcod</span><span class="tok-o">::</span><span class="tok-n">image</span><span class="tok-o">::</span><span class="tok-n">Image</span><span class="tok-o">::</span><span class="tok-n">from_file</span><span class="tok-p">(</span><span class="tok-s">&quot;menu_background.png&quot;</span><span class="tok-p">)</span>  <i class="conum" data-value="1"></i><b>(1)</b>
+        <span class="tok-p">.</span><span class="tok-n">ok</span><span class="tok-p">().</span><span class="tok-n">expect</span><span class="tok-p">(</span><span class="tok-s">&quot;Background image not found&quot;</span><span class="tok-p">);</span>  <i class="conum" data-value="2"></i><b>(2)</b>
 
+    <span class="tok-k">while</span> <span class="tok-o">!</span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">window_closed</span><span class="tok-p">()</span> <span class="tok-p">{</span>  <i class="conum" data-value="3"></i><b>(3)</b>
+        <span class="tok-c1">// show the background image, at twice the regular console resolution</span>
+        <span class="tok-n">tcod</span><span class="tok-o">::</span><span class="tok-n">image</span><span class="tok-o">::</span><span class="tok-n">blit_2x</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-n">img</span><span class="tok-p">,</span> <span class="tok-p">(</span><span class="tok-mi">0</span><span class="tok-p">,</span> <span class="tok-mi">0</span><span class="tok-p">),</span> <span class="tok-p">(</span><span class="tok-o">-</span><span class="tok-mi">1</span><span class="tok-p">,</span> <span class="tok-o">-</span><span class="tok-mi">1</span><span class="tok-p">),</span> <span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">root</span><span class="tok-p">,</span> <span class="tok-p">(</span><span class="tok-mi">0</span><span class="tok-p">,</span> <span class="tok-mi">0</span><span class="tok-p">));</span>
+
+        <span class="tok-c1">// show options and wait for the player&#39;s choice</span>
+        <span class="tok-kd">let</span> <span class="tok-n">choices</span> <span class="tok-o">=</span> <span class="tok-o">&amp;</span><span class="tok-p">[</span><span class="tok-s">&quot;Play a new game&quot;</span><span class="tok-p">,</span> <span class="tok-s">&quot;Continue last game&quot;</span><span class="tok-p">,</span> <span class="tok-s">&quot;Quit&quot;</span><span class="tok-p">];</span>
+        <span class="tok-kd">let</span> <span class="tok-n">choice</span> <span class="tok-o">=</span> <span class="tok-n">menu</span><span class="tok-p">(</span><span class="tok-s">&quot;&quot;</span><span class="tok-p">,</span> <span class="tok-n">choices</span><span class="tok-p">,</span> <span class="tok-mi">24</span><span class="tok-p">,</span> <span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">root</span><span class="tok-p">);</span>
+
+        <span class="tok-k">match</span> <span class="tok-n">choice</span> <span class="tok-p">{</span>  <i class="conum" data-value="4"></i><b>(4)</b>
+            <span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-mi">0</span><span class="tok-p">)</span> <span class="tok-o">=&gt;</span> <span class="tok-p">{</span>  <span class="tok-c1">// new game</span>
+                <span class="tok-kd">let</span> <span class="tok-p">(</span><span class="tok-k">mut</span> <span class="tok-n">objects</span><span class="tok-p">,</span> <span class="tok-k">mut</span> <span class="tok-n">game</span><span class="tok-p">)</span> <span class="tok-o">=</span> <span class="tok-n">new_game</span><span class="tok-p">(</span><span class="tok-n">tcod</span><span class="tok-p">);</span>
+                <span class="tok-n">play_game</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">objects</span><span class="tok-p">,</span> <span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">game</span><span class="tok-p">,</span> <span class="tok-n">tcod</span><span class="tok-p">);</span>
+            <span class="tok-p">}</span>
+            <span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-mi">2</span><span class="tok-p">)</span> <span class="tok-o">=&gt;</span> <span class="tok-p">{</span>  <span class="tok-c1">// quit</span>
+                <span class="tok-k">break</span><span class="tok-p">;</span>
+            <span class="tok-p">}</span>
+            <span class="tok-n">_</span> <span class="tok-o">=&gt;</span> <span class="tok-p">{}</span>  <i class="conum" data-value="5"></i><b>(5)</b>
+        <span class="tok-p">}</span>
+    <span class="tok-p">}</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Load the background image</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Exit if the loading failed</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>Show the main menu in a loop&#8201;&#8212;&#8201;this lets us play another game
+after the current one ends</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>Either start a new game or quit</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="5"></i><b>5</b></td>
+<td>If the player selects anything else, keep showing the menu</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Now replace the calls to <code>new_game</code> and <code>play_game</code> in <code>main</code> with:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-n">main_menu</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">tcod</span><span class="tok-p">);</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If you try it out now, you&#8217;ll see a nice menu with a dungeon-y
+backdrop!</p>
+</div>
+<div class="paragraph">
+<p>Now let&#8217;s add the game&#8217;s title and some credits. You&#8217;ll probably want
+to modify the values. Put this in the <code>main_menu</code> before calling the
+<code>menu</code> function:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">set_default_foreground</span><span class="tok-p">(</span><span class="tok-n">colors</span><span class="tok-o">::</span><span class="tok-n">LIGHT_YELLOW</span><span class="tok-p">);</span>
+<span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">print_ex</span><span class="tok-p">(</span><span class="tok-n">SCREEN_WIDTH</span><span class="tok-o">/</span><span class="tok-mi">2</span><span class="tok-p">,</span> <span class="tok-n">SCREEN_HEIGHT</span><span class="tok-o">/</span><span class="tok-mi">2</span> <span class="tok-o">-</span> <span class="tok-mi">4</span><span class="tok-p">,</span>
+                   <span class="tok-n">BackgroundFlag</span><span class="tok-o">::</span><span class="tok-nb">None</span><span class="tok-p">,</span> <span class="tok-n">TextAlignment</span><span class="tok-o">::</span><span class="tok-n">Center</span><span class="tok-p">,</span>
+                   <span class="tok-s">&quot;TOMBS OF THE ANCIENT KINGS&quot;</span><span class="tok-p">);</span>
+<span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">print_ex</span><span class="tok-p">(</span><span class="tok-n">SCREEN_WIDTH</span><span class="tok-o">/</span><span class="tok-mi">2</span><span class="tok-p">,</span> <span class="tok-n">SCREEN_HEIGHT</span> <span class="tok-o">-</span> <span class="tok-mi">2</span><span class="tok-p">,</span>
+                   <span class="tok-n">BackgroundFlag</span><span class="tok-o">::</span><span class="tok-nb">None</span><span class="tok-p">,</span> <span class="tok-n">TextAlignment</span><span class="tok-o">::</span><span class="tok-n">Center</span><span class="tok-p">,</span>
+                   <span class="tok-s">&quot;By Yours Truly&quot;</span><span class="tok-p">);</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You&#8217;ll notice that the menu rectangle starts with a blank line. That
+is because the header string is empty, but <code>root.get_height_rect</code>
+reports its height as <code>1</code> by default.</p>
+</div>
+<div class="paragraph">
+<p>To make the line go away, we need to check that condition in the
+<code>menu</code> function:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-c1">// calculate total height for the header (after auto-wrap) and one line per option</span>
+<span class="tok-kd">let</span> <span class="tok-n">header_height</span> <span class="tok-o">=</span> <span class="tok-k">if</span> <span class="tok-n">header</span><span class="tok-p">.</span><span class="tok-n">is_empty</span><span class="tok-p">()</span> <span class="tok-p">{</span>
+    <span class="tok-mi">0</span>
+<span class="tok-p">}</span> <span class="tok-k">else</span> <span class="tok-p">{</span>
+    <span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">get_height_rect</span><span class="tok-p">(</span><span class="tok-mi">0</span><span class="tok-p">,</span> <span class="tok-mi">0</span><span class="tok-p">,</span> <span class="tok-n">width</span><span class="tok-p">,</span> <span class="tok-n">SCREEN_HEIGHT</span><span class="tok-p">,</span> <span class="tok-n">header</span><span class="tok-p">)</span>
+<span class="tok-p">};</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Finally, when you start a game, go back to the main menu with Escape
+and start another game results in a bug! Parts of the first game are
+still visible in the second game. To fix that, we need to clear the
+console.</p>
+</div>
+<div class="paragraph">
+<p>In <code>new_game</code> before <code>initialise_fov</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">con</span><span class="tok-p">.</span><span class="tok-n">clear</span><span class="tok-p">();</span>  <span class="tok-c1">// unexplored areas start black (which is the default background color)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>There it is, a neat main menu, and with only a handful of lines of code!</p>
+</div>
 </div>
 </div>
 <div class="sect1">
@@ -1007,7 +1146,7 @@ modular. Which will come in handy in the coming sections.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2016-03-07 23:06:43 CET
+Last updated 2016-03-08 20:55:06 CET
 </div>
 </div>
 </body>
