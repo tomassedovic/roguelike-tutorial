@@ -413,6 +413,127 @@ modular. Which will come in handy in the coming sections.
 
 == The main menu
 
+:image: http://tomassedovic.github.io/tcod-rs/tcod/image/index.html
+
+To keep our main menu from appearing a bit bland, it would be pretty
+cool to show a neat background image below it. Fortunately, tcod lets
+us {image}[load and display images]!
+
+Since libtcod emulates a console, we can't directly show arbitrary
+images, since we can't access the console's pixels. We can, however,
+modify the background color of every console cell to match the color
+of a pixel from the image. The downside is that the image will be in a
+very low resolution.
+
+:subcell: http://roguecentral.org/doryen/data/libtcod/doc/1.5.1/html2/image_blit.html?c=true
+
+However, libtcod can do a neat trick: by using specialized characters,
+and modifying both foreground and background colors, we can double the
+resolution! This is called subcell resolution, and {subcell}[this page of the
+docs] shows some images of the effect (at the end of the page).
+
+:background: https://github.com/tomassedovic/roguelike-tutorial/blob/master/menu_background.png
+
+This means that, for our 80x50 cells console, we need a 160x100 pixels
+image. We'll be using the {background}[image from the original Python
+tutorial].
+
+[source]
+----
+fn main_menu(tcod: &mut Tcod) {
+    let img = tcod::image::Image::from_file("menu_background.png")  // <1>
+        .ok().expect("Background image not found");  // <2>
+
+    while !tcod.root.window_closed() {  // <3>
+        // show the background image, at twice the regular console resolution
+        tcod::image::blit_2x(&img, (0, 0), (-1, -1), &mut tcod.root, (0, 0));
+
+        // show options and wait for the player's choice
+        let choices = &["Play a new game", "Continue last game", "Quit"];
+        let choice = menu("", choices, 24, &mut tcod.root);
+
+        match choice {  // <4>
+            Some(0) => {  // new game
+                let (mut objects, mut game) = new_game(tcod);
+                play_game(&mut objects, &mut game, tcod);
+            }
+            Some(2) => {  // quit
+                break;
+            }
+            _ => {}  // <5>
+        }
+    }
+}
+----
+<1> Load the background image
+<2> Exit if the loading failed
+<3> Show the main menu in a loop -- this lets us play another game
+after the current one ends
+<4> Either start a new game or quit
+<5> If the player selects anything else, keep showing the menu
+
+
+Now replace the calls to `new_game` and `play_game` in `main` with:
+
+[source]
+----
+main_menu(&mut tcod);
+----
+
+If you try it out now, you'll see a nice menu with a dungeon-y
+backdrop!
+
+Now let's add the game's title and some credits. You'll probably want
+to modify the values. Put this in the `main_menu` before calling the
+`menu` function:
+
+[source]
+----
+tcod.root.set_default_foreground(colors::LIGHT_YELLOW);
+tcod.root.print_ex(SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 4,
+                   BackgroundFlag::None, TextAlignment::Center,
+                   "TOMBS OF THE ANCIENT KINGS");
+tcod.root.print_ex(SCREEN_WIDTH/2, SCREEN_HEIGHT - 2,
+                   BackgroundFlag::None, TextAlignment::Center,
+                   "By Yours Truly");
+----
+
+You'll notice that the menu rectangle starts with a blank line. That
+is because the header string is empty, but `root.get_height_rect`
+reports its height as `1` by default.
+
+To make the line go away, we need to check that condition in the
+`menu` function:
+
+[source]
+----
+// calculate total height for the header (after auto-wrap) and one line per option
+let header_height = if header.is_empty() {
+    0
+} else {
+    root.get_height_rect(0, 0, width, SCREEN_HEIGHT, header)
+};
+----
+
+Finally, when you start a game, go back to the main menu with Escape
+and start another game results in a bug! Parts of the first game are
+still visible in the second game. To fix that, we need to clear the
+console.
+
+In `new_game` before `initialise_fov`:
+
+[source]
+----
+tcod.con.clear();  // unexplored areas start black (which is the default background color)
+----
+
+There it is, a neat main menu, and with only a handful of lines of code!
+
+
+
+
+
+
 == Saving and loading
 
 
