@@ -531,9 +531,6 @@ There it is, a neat main menu, and with only a handful of lines of code!
 
 
 
-
-
-
 == Saving and loading
 
 
