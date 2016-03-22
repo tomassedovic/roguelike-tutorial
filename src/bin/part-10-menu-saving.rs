@@ -1137,7 +1137,7 @@ fn play_game(objects: &mut Vec<Object>, game: &mut Game, tcod: &mut Tcod) {
 fn save_game(objects: &[Object], game: &Game) -> Result<(), Box<Error>> {
     let save_data = try! { json::encode(&(objects, game)) };
     let mut file = try! { File::create("savegame") };
-    try!{ file.write_all(save_data.as_bytes()) }
+    try! { file.write_all(save_data.as_bytes()) };
     Ok(())
 }
 

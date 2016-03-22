@@ -533,8 +533,41 @@ There it is, a neat main menu, and with only a handful of lines of code!
 
 == Saving and loading
 
+Storing a game state to disk (and then reloading it) is not
+conceptually hard: You could imagine just taking all the data from our
+`game` and `objects` variables and writing them to a file value by
+value.
 
+It would, however, be a huge hassle that would require a ton of code,
+you'd need to define a way to structure the data in the file and
+there's a good chance you'd get a lot of bugs at first.
 
+Luckily, there are ways of automating most of this that make saving
+and loading quite painless. Here's the teaser:
+
+[source]
+----
+fn save_game(objects: &[Object], game: &Game) -> Result<(), Box<Error>> {  // <1><2>
+    let save_data = try! { json::encode(&(objects, game)) };  // <3>
+    let mut file = try! { File::create("savegame") };  // <4>
+    try!{ file.write_all(save_data.as_bytes()) }  // <5>
+    Ok(())  // <6>
+}
+----
+<1> save `objects` and `game` -- they contain all our game state
+<2> the saving could fail so return a `Result` which could be `Ok` or `Err`
+<3> convert both `objects` and `game` into json
+<4> create a file called "savegame" -- that's where we'll write the
+game state
+<5> write the json-ified game state to the file
+<6> if nothing went wrong return `Ok`, indicating success
+
+Quite straightforward, but there's a couple of things we haven't done
+before: serialisation and error handling.
+
+Serialisation is a process that converts your data into a sequence of
+bytes for sending and decoding somewhere else (or say in a future like
+in the save/load game case).
 
 
 
