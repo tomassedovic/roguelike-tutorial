@@ -692,7 +692,7 @@ In `main_menu` we'll handle the load game choice now:
 match choice {
     Some(0) => {  // new game ... }
     Some(1) => {  // load game
-        let (mut objects, mut game) = load_game().expect("Failed to load the game.");
+        let (mut objects, mut game) = load_game().unwrap();
         initialise_fov(&game.map, &mut tcod.fov);
         play_game(&mut objects, &mut game, tcod);
     }
@@ -708,11 +708,125 @@ After that, you should be able to load a previously saved game and
 continue playing!
 
 
+But what if there is no game to load? Or if the file gets corrupted?
+We haven't talked about error handling much, but now we need to.
+
+:error-handling: https://doc.rust-lang.org/book/error-handling.html
+
+The Rust book has {error-handling}[a whole chapter on error handling]
+so we'll do only a tiny introduction. You should read that chapter.
+
+:result: https://doc.rust-lang.org/std/result/enum.Result.html
+:option: https://doc.rust-lang.org/std/option/enum.Option.html
+
+Both `save_game` and `load_game` return a `Result` value.
+{result}[Result] is similar to {option}[Option] in that it has two
+possibilities it can return -- one that usually indicates a success
+and the other failure. But in `Result`'s case, the failure can have
+associated data as well. The successful variant is called `Ok` and the
+failure is `Err`.
+
+:error: https://doc.rust-lang.org/std/error/trait.Error.html
+
+There's also the {error}[Error trait] which represents an error and
+lets you get its textual description. All the file-handling
+serialiastion errors in our save/load code implement Error.
+
+So, looking at `save_game`, the `json::encode` call returns either
+`Ok(String)` with the encoded value or
+`Err(rustc_serialize::json::EncoderError)` on failure. `File::create`
+and the `write_all` method work similarly although with different
+success and error types.
+
+Since we can return more then one error type, we return `Box<Error>`
+instead. That lets us return any type that implements `Error` and the
+caller can get at the description and the raw error if they want.
+
+:try: https://doc.rust-lang.org/std/macro.try!.html
+
+The {try}[try! macro] is just a convenient way of saying _"If this
+failed, return the function with error immediately, otherwise give me
+the success value"_.
+
+So `let mut file = try! { File::create("savegame") };` is equivalent
+to this:
+
+[source]
+----
+let mut file = match File::create("savegame") {
+    Ok(f) => f,
+    Err(e) => return Box::new(e),
+};
+----
+
+So, that explains the `save/load game` functions. But what about using
+their results?
+
+If you tried to compile the game, you've seen this warning:
+
+----
+cargo build
+   Compiling roguelike-tutorial v0.1.0 (file:///home/thomas/code/roguelike-tutorial)
+src/bin/part-10-menu-saving.rs:1123:13: 1123:38 warning: unused result which must be used, #[warn(unused_must_use)] on by default
+src/bin/part-10-menu-saving.rs:1123             save_game(objects, game);
+                                                ^~~~~~~~~~~~~~~~~~~~~~~~~
+----
+
+It did not cause an error but Rust is being passive-aggressive about
+how we're calling a function that can fail and then ignoring it.
+
+:unwrap: https://doc.rust-lang.org/std/result/enum.Result.html#method.unwrap
+
+So, we can keep ignoring it, try to actually handle the error or
+simply crash by calling {unwrap}[unwrap] :-)
+
+Unwrap will make Rust happy that we've processed the Result, but it
+will simply abort the program whenever we get `Err` back.
+
+Replace the call to `save_game` with `save_game(objects,
+game).unwrap()`.
+
+You have to realise however, that if this ever happens, it will make
+your users really unhappy. If `save_game` fails for any reason, your
+game will just quit without any warning and the player will lose their
+progress. You should always try to handle errors gracefully.
 
 
-TODO: error handling
+Let's do that when we load the game. Calling `load_game` right now
+uses `unwrap` as well, so if there is no game to load or something
+similar, we'll just quit the game.
 
+We could just print a message and let the player start a new game instead:
 
+[source]
+----
+Some(1) => {  // load game
+    match load_game() {
+        Ok((mut objects, mut game)) => {
+            initialise_fov(&game.map, &mut tcod.fov);
+            play_game(&mut objects, &mut game, tcod);
+        }
+        Err(_e) => {
+            msgbox("\nNo saved game to load.\n", 24, &mut tcod.root);
+            continue;
+        }
+    }
+}
+----
+
+And we'll add a function to display messages that relies on `menu` to
+do all the heavy lifting:
+
+[source]
+----
+fn msgbox(text: &str, width: i32, root: &mut Root) {
+    let options: &[&str] = &[];
+    menu(text, options, width, root);
+}
+----
+
+And that's it! The actual saving and loading code was quite small, but
+we had to learn a ton of new stuff to understand it.
 
 
 Here's link:part-10-menu-saving.rs.txt[the complete code so far].
