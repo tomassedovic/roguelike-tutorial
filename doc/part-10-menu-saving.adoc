@@ -4,6 +4,8 @@
 :source-language: rust
 ifdef::env-github[:outfilesuffix: .adoc]
 
+:rustc-serialize: https://crates.io/crates/rustc-serialize
+
 <<index#,Back to the index.>>
 
 Now that our game is bursting with gameplay potential, we can think
@@ -562,16 +564,153 @@ game state
 <5> write the json-ified game state to the file
 <6> if nothing went wrong return `Ok`, indicating success
 
-Quite straightforward, but there's a couple of things we haven't done
-before: serialisation and error handling.
+:json: https://en.wikipedia.org/wiki/JSON
 
-Serialisation is a process that converts your data into a sequence of
-bytes for sending and decoding somewhere else (or say in a future like
-in the save/load game case).
+Don't mind the `try!` blocks for now, they're for error handling and
+we'll explain them in a bit.
+
+The first line (`json::encode(&some_data)`) takes the data we want to
+save (objects and the game state in our case) and turns it to a
+{json}[JSON]-encoded String.
+
+That functionality comes from the {rustc-serialize}[rustc-serialize
+crate] so we need to add it to our `[dependencies]` in the
+`Cargo.toml` file and we'll also enable the "rustc-serialize" feature
+in the _tcod_ crate:
+
+[source,toml]
+----
+[dependencies]
+tcod = { version = "0.9", features = ["rustc-serialize"] }
+rand = "0.3"
+rustc-serialize = "0.3"
+----
+
+The `rustc-serialize` crate gives us options to convert our structs
+into JSON (and other formats).
+
+Now let's add the crate to our source code, including the `save_game`
+function and try to compile:
+
+[source]
+----
+extern crate rustc_serialize;
+
+// the existing imports
+use std::io::{Read, Write};
+use std::fs::File;
+use std::error::Error;
+use rustc_serialize::json;
+----
+
+Unfortunately, it will fail:
+
+----
+   Compiling roguelike-tutorial v0.1.0 (file:///home/thomas/code/roguelike-tutorial)
+src/bin/part-10-menu-saving.rs:1137:28: 1137:40 error: the trait `rustc_serialize::serialize::Encodable` is not implemented for the type `Game` [E0277]
+src/bin/part-10-menu-saving.rs:1137     let save_data = try! { json::encode(&(objects, game)) };
+                                                               ^~~~~~~~~~~~
+src/bin/part-10-menu-saving.rs:1137:21: 1137:60 note: in this expansion of try! (defined in <std macros>)
+src/bin/part-10-menu-saving.rs:1137:28: 1137:40 help: run `rustc --explain E0277` to see a detailed explanation
+src/bin/part-10-menu-saving.rs:1137:28: 1137:40 note: required by `rustc_serialize::json::encode`
+----
+
+:encodable: https://doc.rust-lang.org/rustc-serialize/rustc_serialize/trait.Encodable.html
+
+Apparently, we need to implement {encodable}[the Encodable trait].
+That tells Rust how to encode each bit of data in our structs. We can
+do it manually, but it would be error-prone and *really tedious*.
+Luckily, we can just use `#[derive(RustcEncodable)]` and have Rust do
+it for us!
+
+[source]
+----
+#[derive(RustcEncodable)]  // <1>
+struct Game {
+    map: Map,
+    log: Messages,
+    inventory: Vec<Object>,
+}
+----
+<1> The Game struct can be now serialised... sort of
+
+If you try to compile it now, you'll see that the complaint has
+shifted from `Game` to `Object`. We'll need to derive `RustcEncodable`
+for every struct and enum we'll be saving:
+
+* Game
+* Object
+* Tile
+* Fighter
+* DeathCallback
+* Ai
+* Item
+
+It's a bit of a bother but not the end of the world. After that, our
+code should be compiling, though it will warn that `save_game` is not
+actually called from anywhere. Let's fix that!
+
+Traditionally, roguelikes only let you save when you're quitting the
+game, so we'll call `save_game` in `play_game` right before the
+`break` that ends the game:
+
+[source]
+----
+if player_action == PlayerAction::Exit {
+    save_game(objects, game);
+    break
+}
+----
+
+If you run the game now and then quit it, you should see a new file
+called `savegame` created. You can look inside it -- thanks to it
+being JSON-encoded, it's actually somewhat readable. It will contain
+all the objects and the entire game state.
+
+But if we're not able to do anything with the save file, what use does
+it have? We need to add a `load_game` function, too:
+
+[source]
+----
+fn load_game() -> Result<(Vec<Object>, Game), Box<Error>> {
+    let mut json_save_state = String::new();
+    let mut file = try! { File::open("savegame") };
+    try! { file.read_to_string(&mut json_save_state) };
+    let result = try! { json::decode::<(Vec<Object>, Game)>(&json_save_state) };
+    Ok(result)
+}
+----
+
+It's basically just the reverse of `save_game`: we read the save file
+contents to a String, then we decode it into our `objects` Vec and
+`Game` struct and if it all succeeds, return the pair.
+
+In `main_menu` we'll handle the load game choice now:
+
+[source]
+----
+match choice {
+    Some(0) => {  // new game ... }
+    Some(1) => {  // load game
+        let (mut objects, mut game) = load_game().expect("Failed to load the game.");
+        initialise_fov(&game.map, &mut tcod.fov);
+        play_game(&mut objects, &mut game, tcod);
+    }
+    Some(2) => {  // quit ...}
+    _ => {}
+}
+----
+
+To make things compile, you'll have to derive `RustcDecodable` to
+every struct and enum that has the `RustcEncodable` trait, too.
+
+After that, you should be able to load a previously saved game and
+continue playing!
 
 
 
 
+TODO: error handling
 
 
 

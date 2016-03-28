@@ -13,7 +13,7 @@ use tcod::colors::{self, Color};
 use tcod::input::{self, Event, Key, Mouse};
 use tcod::map::{Map as FovMap, FovAlgorithm};
 use rand::Rng;
-use rustc_serialize::{json, Encodable, Encoder};
+use rustc_serialize::json;
 
 // actual size of the window
 const SCREEN_WIDTH: i32 = 80;
@@ -1120,6 +1120,7 @@ fn play_game(objects: &mut Vec<Object>, game: &mut Game, tcod: &mut Tcod) {
         previous_player_position = objects[PLAYER].pos();
         let player_action = handle_keys(key, tcod, objects, game);
         if player_action == PlayerAction::Exit {
+            save_game(objects, game);
             break
         }
 
@@ -1139,6 +1140,14 @@ fn save_game(objects: &[Object], game: &Game) -> Result<(), Box<Error>> {
     let mut file = try! { File::create("savegame") };
     try! { file.write_all(save_data.as_bytes()) };
     Ok(())
+}
+
+fn load_game() -> Result<(Vec<Object>, Game), Box<Error>> {
+    let mut json_save_state = String::new();
+    let mut file = try! { File::open("savegame") };
+    try! { file.read_to_string(&mut json_save_state) };
+    let result = try! { json::decode::<(Vec<Object>, Game)>(&json_save_state) };
+    Ok(result)
 }
 
 fn main_menu(tcod: &mut Tcod) {
@@ -1164,6 +1173,11 @@ fn main_menu(tcod: &mut Tcod) {
         match choice {
             Some(0) => {  // new game
                 let (mut objects, mut game) = new_game(tcod);
+                play_game(&mut objects, &mut game, tcod);
+            }
+            Some(1) => {  // load game
+                let (mut objects, mut game) = load_game().expect("Failed to load the game.");
+                initialise_fov(&game.map, &mut tcod.fov);
                 play_game(&mut objects, &mut game, tcod);
             }
             Some(2) => {  // quit
