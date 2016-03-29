@@ -188,7 +188,7 @@ Start your game right away by setting up the screen, printing the
   A main menu complete with a background image and the ability to save
   and load the game.
 
-Part 11: Dungeon levels and character progression::
+<<part-11-dungeon-progression#,Part 11: Dungeon levels and character progression>>::
 
   Let the player venture deeper into the dungeon and grow stronger,
   including experience gain, levels and raising stats!
