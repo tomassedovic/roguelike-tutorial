@@ -1136,6 +1136,368 @@ console.</p>
 <h2 id="_saving_and_loading">Saving and loading</h2>
 <div class="sectionbody">
 <div class="paragraph">
+<p>Storing a game state to disk (and then reloading it) is not
+conceptually hard: You could imagine just taking all the data from our
+<code>game</code> and <code>objects</code> variables and writing them to a file value by
+value.</p>
+</div>
+<div class="paragraph">
+<p>It would, however, be a huge hassle that would require a ton of code,
+you&#8217;d need to define a way to structure the data in the file and
+there&#8217;s a good chance you&#8217;d get a lot of bugs at first.</p>
+</div>
+<div class="paragraph">
+<p>Luckily, there are ways of automating most of this that make saving
+and loading quite painless. Here&#8217;s the teaser:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-k">fn</span> <span class="tok-n">save_game</span><span class="tok-p">(</span><span class="tok-n">objects</span><span class="tok-o">:</span> <span class="tok-o">&amp;</span><span class="tok-p">[</span><span class="tok-n">Object</span><span class="tok-p">],</span> <span class="tok-n">game</span><span class="tok-o">:</span> <span class="tok-o">&amp;</span><span class="tok-n">Game</span><span class="tok-p">)</span> <span class="tok-o">-&gt;</span> <span class="tok-nb">Result</span><span class="tok-o">&lt;</span><span class="tok-p">(),</span> <span class="tok-n">Box</span><span class="tok-o">&lt;</span><span class="tok-n">Error</span><span class="tok-o">&gt;&gt;</span> <span class="tok-p">{</span>  <i class="conum" data-value="1"></i><b>(1)</b> <i class="conum" data-value="2"></i><b>(2)</b>
+    <span class="tok-kd">let</span> <span class="tok-n">save_data</span> <span class="tok-o">=</span> <span class="tok-n">try</span><span class="tok-o">!</span> <span class="tok-p">{</span> <span class="tok-n">json</span><span class="tok-o">::</span><span class="tok-n">encode</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-p">(</span><span class="tok-n">objects</span><span class="tok-p">,</span> <span class="tok-n">game</span><span class="tok-p">))</span> <span class="tok-p">};</span>  <i class="conum" data-value="3"></i><b>(3)</b>
+    <span class="tok-kd">let</span> <span class="tok-k">mut</span> <span class="tok-n">file</span> <span class="tok-o">=</span> <span class="tok-n">try</span><span class="tok-o">!</span> <span class="tok-p">{</span> <span class="tok-n">File</span><span class="tok-o">::</span><span class="tok-n">create</span><span class="tok-p">(</span><span class="tok-s">&quot;savegame&quot;</span><span class="tok-p">)</span> <span class="tok-p">};</span>  <i class="conum" data-value="4"></i><b>(4)</b>
+    <span class="tok-n">try</span><span class="tok-o">!</span><span class="tok-p">{</span> <span class="tok-n">file</span><span class="tok-p">.</span><span class="tok-n">write_all</span><span class="tok-p">(</span><span class="tok-n">save_data</span><span class="tok-p">.</span><span class="tok-n">as_bytes</span><span class="tok-p">())</span> <span class="tok-p">}</span>  <i class="conum" data-value="5"></i><b>(5)</b>
+    <span class="tok-nb">Ok</span><span class="tok-p">(())</span>  <i class="conum" data-value="6"></i><b>(6)</b>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>save <code>objects</code> and <code>game</code>&#8201;&#8212;&#8201;they contain all our game state</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>the saving could fail so return a <code>Result</code> which could be <code>Ok</code> or <code>Err</code></td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>convert both <code>objects</code> and <code>game</code> into json</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>create a file called "savegame"&#8201;&#8212;&#8201;that&#8217;s where we&#8217;ll write the
+game state</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="5"></i><b>5</b></td>
+<td>write the json-ified game state to the file</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="6"></i><b>6</b></td>
+<td>if nothing went wrong return <code>Ok</code>, indicating success</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Don&#8217;t mind the <code>try!</code> blocks for now, they&#8217;re for error handling and
+we&#8217;ll explain them in a bit.</p>
+</div>
+<div class="paragraph">
+<p>The first line (<code>json::encode(&amp;some_data)</code>) takes the data we want to
+save (objects and the game state in our case) and turns it to a
+<a href="https://en.wikipedia.org/wiki/JSON">JSON</a>-encoded String.</p>
+</div>
+<div class="paragraph">
+<p>That functionality comes from the <a href="https://crates.io/crates/rustc-serialize">rustc-serialize
+crate</a> so we need to add it to our <code>[dependencies]</code> in the
+<code>Cargo.toml</code> file and we&#8217;ll also enable the "rustc-serialize" feature
+in the <em>tcod</em> crate:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="toml"><span class="tok-p">[</span><span class="tok-n">dependencies</span><span class="tok-p">]</span>
+<span class="tok-n">tcod</span> <span class="tok-o">=</span> <span class="tok-p">{</span> <span class="tok-n">version</span> <span class="tok-o">=</span> <span class="tok-s">&quot;0.9&quot;</span><span class="tok-p">,</span> <span class="tok-n">features</span> <span class="tok-o">=</span> <span class="tok-p">[</span><span class="tok-s">&quot;rustc-serialize&quot;</span><span class="tok-p">]</span> <span class="tok-p">}</span>
+<span class="tok-n">rand</span> <span class="tok-o">=</span> <span class="tok-s">&quot;0.3&quot;</span>
+<span class="tok-n">rustc-serialize</span> <span class="tok-o">=</span> <span class="tok-s">&quot;0.3&quot;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>rustc-serialize</code> crate gives us options to convert our structs
+into JSON (and other formats).</p>
+</div>
+<div class="paragraph">
+<p>Now let&#8217;s add the crate to our source code, including the <code>save_game</code>
+function and try to compile:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-k">extern</span> <span class="tok-n">crate</span> <span class="tok-n">rustc_serialize</span><span class="tok-p">;</span>
+
+<span class="tok-c1">// the existing imports</span>
+<span class="tok-kn">use</span> <span class="tok-n">std</span><span class="tok-o">::</span><span class="tok-n">io</span><span class="tok-o">::</span><span class="tok-p">{</span><span class="tok-n">Read</span><span class="tok-p">,</span> <span class="tok-n">Write</span><span class="tok-p">};</span>
+<span class="tok-kn">use</span> <span class="tok-n">std</span><span class="tok-o">::</span><span class="tok-n">fs</span><span class="tok-o">::</span><span class="tok-n">File</span><span class="tok-p">;</span>
+<span class="tok-kn">use</span> <span class="tok-n">std</span><span class="tok-o">::</span><span class="tok-n">error</span><span class="tok-o">::</span><span class="tok-n">Error</span><span class="tok-p">;</span>
+<span class="tok-kn">use</span> <span class="tok-n">rustc_serialize</span><span class="tok-o">::</span><span class="tok-n">json</span><span class="tok-p">;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Unfortunately, it will fail:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>   Compiling roguelike-tutorial v0.1.0 (file:///home/thomas/code/roguelike-tutorial)
+src/bin/part-10-menu-saving.rs:1137:28: 1137:40 error: the trait `rustc_serialize::serialize::Encodable` is not implemented for the type `Game` [E0277]
+src/bin/part-10-menu-saving.rs:1137     let save_data = try! { json::encode(&amp;(objects, game)) };
+                                                               ^~~~~~~~~~~~
+src/bin/part-10-menu-saving.rs:1137:21: 1137:60 note: in this expansion of try! (defined in &lt;std macros&gt;)
+src/bin/part-10-menu-saving.rs:1137:28: 1137:40 help: run `rustc --explain E0277` to see a detailed explanation
+src/bin/part-10-menu-saving.rs:1137:28: 1137:40 note: required by `rustc_serialize::json::encode`</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Apparently, we need to implement <a href="https://doc.rust-lang.org/rustc-serialize/rustc_serialize/trait.Encodable.html">the Encodable trait</a>.
+That tells Rust how to encode each bit of data in our structs. We can
+do it manually, but it would be error-prone and <strong>really tedious</strong>.
+Luckily, we can just use <code>#[derive(RustcEncodable)]</code> and have Rust do
+it for us!</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-cp">#[derive(RustcEncodable)]</span>  <i class="conum" data-value="1"></i><b>(1)</b>
+<span class="tok-k">struct</span> <span class="tok-n">Game</span> <span class="tok-p">{</span>
+    <span class="tok-n">map</span><span class="tok-o">:</span> <span class="tok-nb">Map</span><span class="tok-p">,</span>
+    <span class="tok-n">log</span><span class="tok-o">:</span> <span class="tok-n">Messages</span><span class="tok-p">,</span>
+    <span class="tok-n">inventory</span><span class="tok-o">:</span> <span class="tok-n">Vec</span><span class="tok-o">&lt;</span><span class="tok-n">Object</span><span class="tok-o">&gt;</span><span class="tok-p">,</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>The Game struct can be now serialised&#8230;&#8203; sort of</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>If you try to compile it now, you&#8217;ll see that the complaint has
+shifted from <code>Game</code> to <code>Object</code>. We&#8217;ll need to derive <code>RustcEncodable</code>
+for every struct and enum we&#8217;ll be saving:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Game</p>
+</li>
+<li>
+<p>Object</p>
+</li>
+<li>
+<p>Tile</p>
+</li>
+<li>
+<p>Fighter</p>
+</li>
+<li>
+<p>DeathCallback</p>
+</li>
+<li>
+<p>Ai</p>
+</li>
+<li>
+<p>Item</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>It&#8217;s a bit of a bother but not the end of the world. After that, our
+code should be compiling, though it will warn that <code>save_game</code> is not
+actually called from anywhere. Let&#8217;s fix that!</p>
+</div>
+<div class="paragraph">
+<p>Traditionally, roguelikes only let you save when you&#8217;re quitting the
+game, so we&#8217;ll call <code>save_game</code> in <code>play_game</code> right before the
+<code>break</code> that ends the game:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-k">if</span> <span class="tok-n">player_action</span> <span class="tok-o">==</span> <span class="tok-n">PlayerAction</span><span class="tok-o">::</span><span class="tok-n">Exit</span> <span class="tok-p">{</span>
+    <span class="tok-n">save_game</span><span class="tok-p">(</span><span class="tok-n">objects</span><span class="tok-p">,</span> <span class="tok-n">game</span><span class="tok-p">);</span>
+    <span class="tok-k">break</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If you run the game now and then quit it, you should see a new file
+called <code>savegame</code> created. You can look inside it&#8201;&#8212;&#8201;thanks to it
+being JSON-encoded, it&#8217;s actually somewhat readable. It will contain
+all the objects and the entire game state.</p>
+</div>
+<div class="paragraph">
+<p>But if we&#8217;re not able to do anything with the save file, what use does
+it have? We need to add a <code>load_game</code> function, too:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-k">fn</span> <span class="tok-n">load_game</span><span class="tok-p">()</span> <span class="tok-o">-&gt;</span> <span class="tok-nb">Result</span><span class="tok-o">&lt;</span><span class="tok-p">(</span><span class="tok-n">Vec</span><span class="tok-o">&lt;</span><span class="tok-n">Object</span><span class="tok-o">&gt;</span><span class="tok-p">,</span> <span class="tok-n">Game</span><span class="tok-p">),</span> <span class="tok-n">Box</span><span class="tok-o">&lt;</span><span class="tok-n">Error</span><span class="tok-o">&gt;&gt;</span> <span class="tok-p">{</span>
+    <span class="tok-kd">let</span> <span class="tok-k">mut</span> <span class="tok-n">json_save_state</span> <span class="tok-o">=</span> <span class="tok-n">String</span><span class="tok-o">::</span><span class="tok-n">new</span><span class="tok-p">();</span>
+    <span class="tok-kd">let</span> <span class="tok-k">mut</span> <span class="tok-n">file</span> <span class="tok-o">=</span> <span class="tok-n">try</span><span class="tok-o">!</span> <span class="tok-p">{</span> <span class="tok-n">File</span><span class="tok-o">::</span><span class="tok-n">open</span><span class="tok-p">(</span><span class="tok-s">&quot;savegame&quot;</span><span class="tok-p">)</span> <span class="tok-p">};</span>
+    <span class="tok-n">try</span><span class="tok-o">!</span> <span class="tok-p">{</span> <span class="tok-n">file</span><span class="tok-p">.</span><span class="tok-n">read_to_string</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">json_save_state</span><span class="tok-p">)</span> <span class="tok-p">};</span>
+    <span class="tok-kd">let</span> <span class="tok-n">result</span> <span class="tok-o">=</span> <span class="tok-n">try</span><span class="tok-o">!</span> <span class="tok-p">{</span> <span class="tok-n">json</span><span class="tok-o">::</span><span class="tok-n">decode</span><span class="tok-o">::&lt;</span><span class="tok-p">(</span><span class="tok-n">Vec</span><span class="tok-o">&lt;</span><span class="tok-n">Object</span><span class="tok-o">&gt;</span><span class="tok-p">,</span> <span class="tok-n">Game</span><span class="tok-p">)</span><span class="tok-o">&gt;</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-n">json_save_state</span><span class="tok-p">)</span> <span class="tok-p">};</span>
+    <span class="tok-nb">Ok</span><span class="tok-p">(</span><span class="tok-n">result</span><span class="tok-p">)</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It&#8217;s basically just the reverse of <code>save_game</code>: we read the save file
+contents to a String, then we decode it into our <code>objects</code> Vec and
+<code>Game</code> struct and if it all succeeds, return the pair.</p>
+</div>
+<div class="paragraph">
+<p>In <code>main_menu</code> we&#8217;ll handle the load game choice now:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-k">match</span> <span class="tok-n">choice</span> <span class="tok-p">{</span>
+    <span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-mi">0</span><span class="tok-p">)</span> <span class="tok-o">=&gt;</span> <span class="tok-p">{</span>  <span class="tok-c1">// new game ... }</span>
+    <span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-mi">1</span><span class="tok-p">)</span> <span class="tok-o">=&gt;</span> <span class="tok-p">{</span>  <span class="tok-c1">// load game</span>
+        <span class="tok-kd">let</span> <span class="tok-p">(</span><span class="tok-k">mut</span> <span class="tok-n">objects</span><span class="tok-p">,</span> <span class="tok-k">mut</span> <span class="tok-n">game</span><span class="tok-p">)</span> <span class="tok-o">=</span> <span class="tok-n">load_game</span><span class="tok-p">().</span><span class="tok-n">unwrap</span><span class="tok-p">();</span>
+        <span class="tok-n">initialise_fov</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">map</span><span class="tok-p">,</span> <span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">fov</span><span class="tok-p">);</span>
+        <span class="tok-n">play_game</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">objects</span><span class="tok-p">,</span> <span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">game</span><span class="tok-p">,</span> <span class="tok-n">tcod</span><span class="tok-p">);</span>
+    <span class="tok-p">}</span>
+    <span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-mi">2</span><span class="tok-p">)</span> <span class="tok-o">=&gt;</span> <span class="tok-p">{</span>  <span class="tok-c1">// quit ...}</span>
+    <span class="tok-n">_</span> <span class="tok-o">=&gt;</span> <span class="tok-p">{}</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To make things compile, you&#8217;ll have to derive <code>RustcDecodable</code> to
+every struct and enum that has the <code>RustcEncodable</code> trait, too.</p>
+</div>
+<div class="paragraph">
+<p>After that, you should be able to load a previously saved game and
+continue playing!</p>
+</div>
+<div class="paragraph">
+<p>But what if there is no game to load? Or if the file gets corrupted?
+We haven&#8217;t talked about error handling much, but now we need to.</p>
+</div>
+<div class="paragraph">
+<p>The Rust book has <a href="https://doc.rust-lang.org/book/error-handling.html">a whole chapter on error handling</a>
+so we&#8217;ll do only a tiny introduction. You should read that chapter.</p>
+</div>
+<div class="paragraph">
+<p>Both <code>save_game</code> and <code>load_game</code> return a <code>Result</code> value.
+<a href="https://doc.rust-lang.org/std/result/enum.Result.html">Result</a> is similar to <a href="https://doc.rust-lang.org/std/option/enum.Option.html">Option</a> in that it has two
+possibilities it can return&#8201;&#8212;&#8201;one that usually indicates a success
+and the other failure. But in <code>Result&#8217;s case, the failure can have
+associated data as well. The successful variant is called `Ok</code> and the
+failure is <code>Err</code>.</p>
+</div>
+<div class="paragraph">
+<p>There&#8217;s also the <a href="https://doc.rust-lang.org/std/error/trait.Error.html">Error trait</a> which represents an error and
+lets you get its textual description. All the file-handling
+serialiastion errors in our save/load code implement Error.</p>
+</div>
+<div class="paragraph">
+<p>So, looking at <code>save_game</code>, the <code>json::encode</code> call returns either
+<code>Ok(String)</code> with the encoded value or
+<code>Err(rustc_serialize::json::EncoderError)</code> on failure. <code>File::create</code>
+and the <code>write_all</code> method work similarly although with different
+success and error types.</p>
+</div>
+<div class="paragraph">
+<p>Since we can return more then one error type, we return <code>Box&lt;Error&gt;</code>
+instead. That lets us return any type that implements <code>Error</code> and the
+caller can get at the description and the raw error if they want.</p>
+</div>
+<div class="paragraph">
+<p>The <a href="https://doc.rust-lang.org/std/macro.try!.html">try! macro</a> is just a convenient way of saying <em>"If this
+failed, return the function with error immediately, otherwise give me
+the success value"</em>.</p>
+</div>
+<div class="paragraph">
+<p>So <code>let mut file = try! { File::create("savegame") };</code> is equivalent
+to this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-kd">let</span> <span class="tok-k">mut</span> <span class="tok-n">file</span> <span class="tok-o">=</span> <span class="tok-k">match</span> <span class="tok-n">File</span><span class="tok-o">::</span><span class="tok-n">create</span><span class="tok-p">(</span><span class="tok-s">&quot;savegame&quot;</span><span class="tok-p">)</span> <span class="tok-p">{</span>
+    <span class="tok-nb">Ok</span><span class="tok-p">(</span><span class="tok-n">f</span><span class="tok-p">)</span> <span class="tok-o">=&gt;</span> <span class="tok-n">f</span><span class="tok-p">,</span>
+    <span class="tok-nb">Err</span><span class="tok-p">(</span><span class="tok-n">e</span><span class="tok-p">)</span> <span class="tok-o">=&gt;</span> <span class="tok-k">return</span> <span class="tok-n">Box</span><span class="tok-o">::</span><span class="tok-n">new</span><span class="tok-p">(</span><span class="tok-n">e</span><span class="tok-p">),</span>
+<span class="tok-p">};</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>So, that explains the <code>save/load game</code> functions. But what about using
+their results?</p>
+</div>
+<div class="paragraph">
+<p>If you tried to compile the game, you&#8217;ve seen this warning:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>cargo build
+   Compiling roguelike-tutorial v0.1.0 (file:///home/thomas/code/roguelike-tutorial)
+src/bin/part-10-menu-saving.rs:1123:13: 1123:38 warning: unused result which must be used, #[warn(unused_must_use)] on by default
+src/bin/part-10-menu-saving.rs:1123             save_game(objects, game);
+                                                ^~~~~~~~~~~~~~~~~~~~~~~~~</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It did not cause an error but Rust is being passive-aggressive about
+how we&#8217;re calling a function that can fail and then ignoring it.</p>
+</div>
+<div class="paragraph">
+<p>So, we can keep ignoring it, try to actually handle the error or
+simply crash by calling <a href="https://doc.rust-lang.org/std/result/enum.Result.html#method.unwrap">unwrap</a> :-)</p>
+</div>
+<div class="paragraph">
+<p>Unwrap will make Rust happy that we&#8217;ve processed the Result, but it
+will simply abort the program whenever we get <code>Err</code> back.</p>
+</div>
+<div class="paragraph">
+<p>Replace the call to <code>save_game</code> with <code>save_game(objects,
+game).unwrap()</code>.</p>
+</div>
+<div class="paragraph">
+<p>You have to realise however, that if this ever happens, it will make
+your users really unhappy. If <code>save_game</code> fails for any reason, your
+game will just quit without any warning and the player will lose their
+progress. You should always try to handle errors gracefully.</p>
+</div>
+<div class="paragraph">
+<p>Let&#8217;s do that when we load the game. Calling <code>load_game</code> right now
+uses <code>unwrap</code> as well, so if there is no game to load or something
+similar, we&#8217;ll just quit the game.</p>
+</div>
+<div class="paragraph">
+<p>We could just print a message and let the player start a new game instead:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-mi">1</span><span class="tok-p">)</span> <span class="tok-o">=&gt;</span> <span class="tok-p">{</span>  <span class="tok-c1">// load game</span>
+    <span class="tok-k">match</span> <span class="tok-n">load_game</span><span class="tok-p">()</span> <span class="tok-p">{</span>
+        <span class="tok-nb">Ok</span><span class="tok-p">((</span><span class="tok-k">mut</span> <span class="tok-n">objects</span><span class="tok-p">,</span> <span class="tok-k">mut</span> <span class="tok-n">game</span><span class="tok-p">))</span> <span class="tok-o">=&gt;</span> <span class="tok-p">{</span>
+            <span class="tok-n">initialise_fov</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">map</span><span class="tok-p">,</span> <span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">fov</span><span class="tok-p">);</span>
+            <span class="tok-n">play_game</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">objects</span><span class="tok-p">,</span> <span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">game</span><span class="tok-p">,</span> <span class="tok-n">tcod</span><span class="tok-p">);</span>
+        <span class="tok-p">}</span>
+        <span class="tok-nb">Err</span><span class="tok-p">(</span><span class="tok-n">_e</span><span class="tok-p">)</span> <span class="tok-o">=&gt;</span> <span class="tok-p">{</span>
+            <span class="tok-n">msgbox</span><span class="tok-p">(</span><span class="tok-s">&quot;</span><span class="tok-se">\n</span><span class="tok-s">No saved game to load.</span><span class="tok-se">\n</span><span class="tok-s">&quot;</span><span class="tok-p">,</span> <span class="tok-mi">24</span><span class="tok-p">,</span> <span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">root</span><span class="tok-p">);</span>
+            <span class="tok-k">continue</span><span class="tok-p">;</span>
+        <span class="tok-p">}</span>
+    <span class="tok-p">}</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>And we&#8217;ll add a function to display messages that relies on <code>menu</code> to
+do all the heavy lifting:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-k">fn</span> <span class="tok-n">msgbox</span><span class="tok-p">(</span><span class="tok-n">text</span><span class="tok-o">:</span> <span class="tok-o">&amp;</span><span class="tok-kt">str</span><span class="tok-p">,</span> <span class="tok-n">width</span><span class="tok-o">:</span> <span class="tok-kt">i32</span><span class="tok-p">,</span> <span class="tok-n">root</span><span class="tok-o">:</span> <span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">Root</span><span class="tok-p">)</span> <span class="tok-p">{</span>
+    <span class="tok-kd">let</span> <span class="tok-n">options</span><span class="tok-o">:</span> <span class="tok-o">&amp;</span><span class="tok-p">[</span><span class="tok-o">&amp;</span><span class="tok-kt">str</span><span class="tok-p">]</span> <span class="tok-o">=</span> <span class="tok-o">&amp;</span><span class="tok-p">[];</span>
+    <span class="tok-n">menu</span><span class="tok-p">(</span><span class="tok-n">text</span><span class="tok-p">,</span> <span class="tok-n">options</span><span class="tok-p">,</span> <span class="tok-n">width</span><span class="tok-p">,</span> <span class="tok-n">root</span><span class="tok-p">);</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>And that&#8217;s it! The actual saving and loading code was quite small, but
+we had to learn a ton of new stuff to understand it.</p>
+</div>
+<div class="paragraph">
 <p>Here&#8217;s <a href="part-10-menu-saving.rs.txt">the complete code so far</a>.</p>
 </div>
 <div class="paragraph">
@@ -1146,7 +1508,7 @@ console.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2016-03-08 20:55:06 CET
+Last updated 2016-03-28 21:03:21 CEST
 </div>
 </div>
 </body>

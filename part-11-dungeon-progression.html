@@ -5,8 +5,7 @@
 <!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="generator" content="Asciidoctor 1.5.2">
-<meta name="author" content="Tomas Sedovic">
-<title>Roguelike Tutorial in Rust + tcod</title>
+<title>Dungeon levels and character progression</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400">
 <style>
 /* Asciidoctor default stylesheet | MIT License | http://asciidoctor.org */
@@ -409,262 +408,111 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 .hide-for-print{display:none!important}
 .show-for-print{display:inherit!important}}
 </style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.2.0/css/font-awesome.min.css">
+<style>
+.listingblock .pygments .hll { background-color: #ffffcc }
+.listingblock .pygments  { background: #f8f8f8; }
+.listingblock .pygments .tok-c { color: #408080; font-style: italic } /* Comment */
+.listingblock .pygments .tok-err { border: 1px solid #FF0000 } /* Error */
+.listingblock .pygments .tok-k { color: #008000; font-weight: bold } /* Keyword */
+.listingblock .pygments .tok-o { color: #666666 } /* Operator */
+.listingblock .pygments .tok-cm { color: #408080; font-style: italic } /* Comment.Multiline */
+.listingblock .pygments .tok-cp { color: #BC7A00 } /* Comment.Preproc */
+.listingblock .pygments .tok-c1 { color: #408080; font-style: italic } /* Comment.Single */
+.listingblock .pygments .tok-cs { color: #408080; font-style: italic } /* Comment.Special */
+.listingblock .pygments .tok-gd { color: #A00000 } /* Generic.Deleted */
+.listingblock .pygments .tok-ge { font-style: italic } /* Generic.Emph */
+.listingblock .pygments .tok-gr { color: #FF0000 } /* Generic.Error */
+.listingblock .pygments .tok-gh { color: #000080; font-weight: bold } /* Generic.Heading */
+.listingblock .pygments .tok-gi { color: #00A000 } /* Generic.Inserted */
+.listingblock .pygments .tok-go { color: #888888 } /* Generic.Output */
+.listingblock .pygments .tok-gp { color: #000080; font-weight: bold } /* Generic.Prompt */
+.listingblock .pygments .tok-gs { font-weight: bold } /* Generic.Strong */
+.listingblock .pygments .tok-gu { color: #800080; font-weight: bold } /* Generic.Subheading */
+.listingblock .pygments .tok-gt { color: #0044DD } /* Generic.Traceback */
+.listingblock .pygments .tok-kc { color: #008000; font-weight: bold } /* Keyword.Constant */
+.listingblock .pygments .tok-kd { color: #008000; font-weight: bold } /* Keyword.Declaration */
+.listingblock .pygments .tok-kn { color: #008000; font-weight: bold } /* Keyword.Namespace */
+.listingblock .pygments .tok-kp { color: #008000 } /* Keyword.Pseudo */
+.listingblock .pygments .tok-kr { color: #008000; font-weight: bold } /* Keyword.Reserved */
+.listingblock .pygments .tok-kt { color: #B00040 } /* Keyword.Type */
+.listingblock .pygments .tok-m { color: #666666 } /* Literal.Number */
+.listingblock .pygments .tok-s { color: #BA2121 } /* Literal.String */
+.listingblock .pygments .tok-na { color: #7D9029 } /* Name.Attribute */
+.listingblock .pygments .tok-nb { color: #008000 } /* Name.Builtin */
+.listingblock .pygments .tok-nc { color: #0000FF; font-weight: bold } /* Name.Class */
+.listingblock .pygments .tok-no { color: #880000 } /* Name.Constant */
+.listingblock .pygments .tok-nd { color: #AA22FF } /* Name.Decorator */
+.listingblock .pygments .tok-ni { color: #999999; font-weight: bold } /* Name.Entity */
+.listingblock .pygments .tok-ne { color: #D2413A; font-weight: bold } /* Name.Exception */
+.listingblock .pygments .tok-nf { color: #0000FF } /* Name.Function */
+.listingblock .pygments .tok-nl { color: #A0A000 } /* Name.Label */
+.listingblock .pygments .tok-nn { color: #0000FF; font-weight: bold } /* Name.Namespace */
+.listingblock .pygments .tok-nt { color: #008000; font-weight: bold } /* Name.Tag */
+.listingblock .pygments .tok-nv { color: #19177C } /* Name.Variable */
+.listingblock .pygments .tok-ow { color: #AA22FF; font-weight: bold } /* Operator.Word */
+.listingblock .pygments .tok-w { color: #bbbbbb } /* Text.Whitespace */
+.listingblock .pygments .tok-mb { color: #666666 } /* Literal.Number.Bin */
+.listingblock .pygments .tok-mf { color: #666666 } /* Literal.Number.Float */
+.listingblock .pygments .tok-mh { color: #666666 } /* Literal.Number.Hex */
+.listingblock .pygments .tok-mi { color: #666666 } /* Literal.Number.Integer */
+.listingblock .pygments .tok-mo { color: #666666 } /* Literal.Number.Oct */
+.listingblock .pygments .tok-sb { color: #BA2121 } /* Literal.String.Backtick */
+.listingblock .pygments .tok-sc { color: #BA2121 } /* Literal.String.Char */
+.listingblock .pygments .tok-sd { color: #BA2121; font-style: italic } /* Literal.String.Doc */
+.listingblock .pygments .tok-s2 { color: #BA2121 } /* Literal.String.Double */
+.listingblock .pygments .tok-se { color: #BB6622; font-weight: bold } /* Literal.String.Escape */
+.listingblock .pygments .tok-sh { color: #BA2121 } /* Literal.String.Heredoc */
+.listingblock .pygments .tok-si { color: #BB6688; font-weight: bold } /* Literal.String.Interpol */
+.listingblock .pygments .tok-sx { color: #008000 } /* Literal.String.Other */
+.listingblock .pygments .tok-sr { color: #BB6688 } /* Literal.String.Regex */
+.listingblock .pygments .tok-s1 { color: #BA2121 } /* Literal.String.Single */
+.listingblock .pygments .tok-ss { color: #19177C } /* Literal.String.Symbol */
+.listingblock .pygments .tok-bp { color: #008000 } /* Name.Builtin.Pseudo */
+.listingblock .pygments .tok-vc { color: #19177C } /* Name.Variable.Class */
+.listingblock .pygments .tok-vg { color: #19177C } /* Name.Variable.Global */
+.listingblock .pygments .tok-vi { color: #19177C } /* Name.Variable.Instance */
+.listingblock .pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
+</style>
 </head>
 <body class="article">
 <div id="header">
-<h1>Roguelike Tutorial in Rust + tcod</h1>
-<div class="details">
-<span id="author" class="author">Tomas Sedovic</span><br>
-<span id="email" class="email"><a href="mailto:tomas@sedovic.cz">tomas@sedovic.cz</a></span><br>
-</div>
+<h1>Dungeon levels and character progression</h1>
 </div>
 <div id="content">
 <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>A port of the <a href="http://www.roguebasin.com/index.php?title=Complete_Roguelike_Tutorial,_using_python%2Blibtcod">Complete Roguelike Tutorial, using python+libtcod</a>.</p>
-</div>
-<div class="admonitionblock caution">
-<table>
-<tr>
-<td class="icon">
-<div class="title">Caution</div>
-</td>
-<td class="content">
-This text is so preliminary, it&#8217;s not even a <em>draft</em> at this
-point. More like asking a five-year-old if they want to play with toy
-soldiers.
-</td>
-</tr>
-</table>
+<p><a href="index.html">Back to the index.</a></p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_short_introduction">Short introduction</h2>
+<h2 id="_second_floor_please">Second floor please</h2>
 <div class="sectionbody">
-<div class="sect2">
-<h3 id="_welcome">Welcome!</h3>
 <div class="paragraph">
-<p>Hello! This tutorial will show you how to write a roguelike in the
-<a href="https://www.rust-lang.org/">Rust programming language</a> and the <a href="http://roguecentral.org/doryen/libtcod/">libtcod
-library</a>.</p>
-</div>
-<div class="paragraph">
-<p>It is based on the <a href="http://www.roguebasin.com/index.php?title=Complete_Roguelike_Tutorial,_using_python%2Blibtcod">Python libtcod tutorial</a>. Getting
-familiar with Rust is not necessarily as easy as with Python so if
-you&#8217;ve never programmed before, you may want to check out the original
-instead. That said, Rust is a fine language to start with.</p>
-</div>
-<div class="paragraph">
-<p>This tutorial does assume some prior programming knowledge and at
-least basic familiarity with Rust. However, we do talk about
-potentially foreign concepts when we introduce them, so you should
-still be able to follow along even if you don&#8217;t have a lot of
-programming experience.</p>
-</div>
-<div class="paragraph">
-<p>There are two great resources to get started with Rust: <a href="http://doc.rust-lang.org/book/">The
-Rust Programming Language book</a> and <a href="http://rustbyexample.com/">Rust by Example</a>.</p>
-</div>
-<div class="paragraph">
-<p>You can find the source of this text as well as the code samples here:</p>
-</div>
-<div class="paragraph">
-<p><a href="https://github.com/tomassedovic/roguelike-tutorial/" class="bare">https://github.com/tomassedovic/roguelike-tutorial/</a></p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_why_rust">Why Rust?</h3>
-<div class="paragraph">
-<p>Rust is a systems programming language targeting roughly the same
-space as C++. That means it&#8217;s fast and is generally used for things
-where you need a fair bit of control over how are things structured in
-the memory, etc. Rust is a good candidate for writing a browser,
-database, operating system, web server and&#8230;&#8203; games.</p>
-</div>
-<div class="paragraph">
-<p>What attracted me personally to Rust was the fact that it was
-reasonably low-level (i.e. I could use it for things where I&#8217;d
-normally go for C or C++), with a good support for calling into
-libraries written in C/C++ but feeling much more modern.</p>
-</div>
-<div class="paragraph">
-<p>It has a real module system, closures, powerful macros and it protects
-you from segfaults.</p>
-</div>
-<div class="paragraph">
-<p>As a <strong>wonderful</strong> cherry on top, it doesn&#8217;t have null pointers or references.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_why_libtcod">Why libtcod?</h3>
-<div class="paragraph">
-<p><code>libtcod</code> is a library specifically designed for writing roguelikes.
-It deals with rendering ASCII characters in a grid, mouse and keyboard
-input and provides useful utilities for path finding, field of view,
-noise toolkit and a name generator.</p>
-</div>
-<div class="paragraph">
-<p>In other words, it provides a good chunk of what a typical roguelike would need.</p>
-</div>
-<div class="paragraph">
-<p>Among the alternatives to libtcod are T-Engine (the engine ToME is
-written in) and rot.js (a JavaScript engine inspired by libtcod for
-targeting the web).</p>
-</div>
+<p>todo</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_some_notes_about_this_port">Some notes about this port</h2>
+<h2 id="_character_progression">Character progression</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Python and Rust are very different languages. That means what is
-sometimes straightforward in one may not be as easy in the other. The
-tutorial follows the structure of the original, but changes things
-around where it makes sense.</p>
-</div>
-<div class="dlist">
-<dl>
-<dt class="hdlist1">No global variables</dt>
-<dd>
-<p>Changing a global variable in Rust is not safe and it&#8217;s rather
-cumbersome, too. We do use global constants for things like the world
-size, but instead of global variables we just pass values as function
-parameters.</p>
-</dd>
-<dt class="hdlist1">No garbage collection and backreferences</dt>
-<dd>
-<p>Every value in Python is behind a reference-counted pointer. The
-original tutorial contains a list of objects that are then moved
-around at will (e.g. by adding them into the inventory) without
-affecting the original array. They contain other objects (components)
-with backreferences that can manipulate the original object.</p>
-<div class="paragraph">
-<p>Such a thing is in general not safe in Rust and while you can use
-mutable reference-counted pointers, the code becomes cumbersome and
-even then has limitations the Python version doesn&#8217;t.</p>
+<p>todo</p>
 </div>
 <div class="paragraph">
-<p>To deal with this, we are using a contiguous block of memory (<code>Vec</code>)
-which holds the game objects directly and we use references into that
-vector where necessary.</p>
+<p>Here&#8217;s <a href="part-11-dungeon-progression.rs.txt">the complete code so far</a>.</p>
 </div>
-</dd>
-<dt class="hdlist1">All in one file</dt>
-<dd>
-<p>The original Python tutorial is all one file. That&#8217;s not something you
-want to end up with&#8201;&#8212;&#8201;especially when you&#8217;re collaborating on the
-project&#8201;&#8212;&#8201;but the final result is still not <em>that</em> big and it&#8217;s makes
-writing and following the tutorial easier when you don&#8217;t have to worry
-about where each code snippet goes.</p>
-</dd>
-<dt class="hdlist1">Architecture</dt>
-<dd>
-<p>This isn&#8217;t trying to show the best architecture for roguelikes. It&#8217;s
-<strong>an</strong> architecture that works. It&#8217;s not the most performant or
-extensible one. But it&#8217;s easy enough to follow and use to make more
-stuff.</p>
-</dd>
-<dt class="hdlist1">Sameness</dt>
-<dd>
-<p>The original Python tutorial is a bit infamous because games that
-people do after going through it all look samey. That&#8217;s not a reason
-to shun the tutorial, though. Just don&#8217;t get caught in the game
-desighn of it. The purpose of this is to teach you how to write a game
-using libtcod. There&#8217;s little of game design here. What I&#8217;d recommend
-is: go through this, absorb the concepts but then start from scratch
-when actually writing your game. And think about how to make it
-unique.</p>
-</dd>
-</dl>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_start_the_tutorial">Start the tutorial</h2>
-<div class="sectionbody">
-<div class="dlist">
-<dl>
-<dt class="hdlist1"><a href="part-1-graphics.html">Part 1: Graphics</a></dt>
-<dd>
-<p>Start your game right away by setting up the screen, printing the
-  stereotypical @ character and moving it around with the arrow keys.</p>
-</dd>
-<dt class="hdlist1"><a href="part-2-object-map.html">Part 2: The object and the map</a></dt>
-<dd>
-<p>This introduces two new concepts: the generic object system that
-will be the basis for the whole game, and a general map object that
-you&#8217;ll use to hold your dungeon.</p>
-</dd>
-<dt class="hdlist1"><a href="part-3-dungeon.html">Part 3: The dungeon</a></dt>
-<dd>
-<p>Learn how to code up a neat little dungeon generator.</p>
-</dd>
-<dt class="hdlist1"><a href="part-4-fov-exploration.html">Part 4: Field-of-view and exploration</a></dt>
-<dd>
-<p>Display the player&#8217;s field-of-view (FOV) and explore the dungeon
-gradually (also known as fog-of-war).</p>
-</dd>
-<dt class="hdlist1"><a href="part-5-combat.html">Part 5: Preparing for combat</a></dt>
-<dd>
-<p>Place some orcs and trolls around the dungeon (they won&#8217;t stay there
-for long!). Also, deal with blocking objects and game states, which
-are important before coding the next part.</p>
-</dd>
-<dt class="hdlist1"><a href="part-6-going-berserk.html">Part 6: Going Berserk!</a></dt>
-<dd>
-<p>Stalking monsters, fights, splatter&#8201;&#8212;&#8201;need we say more?</p>
-</dd>
-<dt class="hdlist1"><a href="part-7-gui.html">Part 7: The GUI</a></dt>
-<dd>
-<p>A juicy Graphical User Interface with status bars and a colored
-message log for maximum eye-candy. Also, the infamous "look"
-command, with a twist: you can use the mouse.</p>
-</dd>
-<dt class="hdlist1"><a href="part-8-items.html">Part 8: Items and Inventory</a></dt>
-<dd>
-<p>The player gets to collect ("borrow") items from the dungeon and use
-them, with a neat inventory screen. More items added in the next
-part.</p>
-</dd>
-<dt class="hdlist1"><a href="part-9-spells.html">Part 9: Spells and ranged combat</a></dt>
-<dd>
-<p>The player&#8217;s strategic choices increase exponentially as we add a
-few magic scrolls to the mix. Covers damage and mind spells, as well
-as ranged combat.</p>
-</dd>
-<dt class="hdlist1"><a href="part-10-menu-saving.html">Part 10: Main menu and saving</a></dt>
-<dd>
-<p>A main menu complete with a background image and the ability to save
-and load the game.</p>
-</dd>
-<dt class="hdlist1"><a href="part-11-dungeon-progression.html">Part 11: Dungeon levels and character progression</a></dt>
-<dd>
-<p>Let the player venture deeper into the dungeon and grow stronger,
-including experience gain, levels and raising stats!</p>
-</dd>
-<dt class="hdlist1">Part 12: Monster and item progression</dt>
-<dd>
-<p>Deeper dungeon levels become increasingly more difficult! Here we
-create tools for dealing with chances and making them vary with
-level.</p>
-</dd>
-<dt class="hdlist1">Part 13: Adventure gear</dt>
-<dd>
-<p>Swords, shields and other equipment can now help the player by
-granting hefty bonuses. The bonus system can also be used for all
-kinds of magics and buffs!</p>
-</dd>
-</dl>
+<div class="paragraph">
+<p>Continue to <a href="part-12-monster-item-progression.html">the next part</a>.</p>
 </div>
 </div>
 </div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2016-03-29 12:36:33 CEST
+Last updated 2016-03-29 12:37:29 CEST
 </div>
 </div>
 </body>
