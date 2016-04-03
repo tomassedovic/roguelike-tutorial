@@ -296,7 +296,7 @@ fn new_game(tcod: &mut Tcod) -> (Vec<Object>, Game) {
         inventory: vec![],
     };
 
-    initialise_fov(&game.map, &mut tcod.fov);
+    initialise_fov(&game.map, tcod);
 
     // a warm welcoming message!
     game.log.add("Welcome stranger! Prepare to perish in the Tombs of the Ancient Kings.",
@@ -314,13 +314,13 @@ the FOV-related code to it:
 
 [source]
 ----
-fn initialise_fov(map: &Map, fov_map: &mut FovMap) {
+fn initialise_fov(map: &Map, tcod: &mut Tcod) {
     // create the FOV map, according to the generated map
     for y in 0..MAP_HEIGHT {
         for x in 0..MAP_WIDTH {
-            fov_map.set(x, y,
-                        !map[x as usize][y as usize].block_sight,
-                        !map[x as usize][y as usize].blocked);
+            tcod.fov.set(x, y,
+                !map[x as usize][y as usize].block_sight,
+                !map[x as usize][y as usize].blocked);
         }
     }
 }
@@ -522,7 +522,7 @@ and start another game results in a bug! Parts of the first game are
 still visible in the second game. To fix that, we need to clear the
 console.
 
-In `new_game` before `initialise_fov`:
+At the end of `initialise_fov`:
 
 [source]
 ----

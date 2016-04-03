@@ -737,7 +737,7 @@ fn next_level(tcod: &mut Tcod, objects: &mut Vec<Object>, game: &mut Game) {
     game.log.add("After a rare moment of peace, you descend deeper into \
                   the heart of the dungeon...", colors::RED);
     game.map = make_map(objects);
-    initialise_fov(&game.map, &mut tcod.fov);
+    initialise_fov(&game.map, tcod);
 }
 
 fn render_bar(panel: &mut Offscreen,
@@ -1113,8 +1113,7 @@ fn new_game(tcod: &mut Tcod) -> (Vec<Object>, Game) {
         inventory: vec![],
     };
 
-    tcod.con.clear();  // unexplored areas start black (which is the default background color)
-    initialise_fov(&game.map, &mut tcod.fov);
+    initialise_fov(&game.map, tcod);
 
     // a warm welcoming message!
     game.log.add("Welcome stranger! Prepare to perish in the Tombs of the Ancient Kings.",
@@ -1123,15 +1122,18 @@ fn new_game(tcod: &mut Tcod) -> (Vec<Object>, Game) {
     (objects, game)
 }
 
-fn initialise_fov(map: &Map, fov_map: &mut FovMap) {
+fn initialise_fov(map: &Map, tcod: &mut Tcod) {
     // create the FOV map, according to the generated map
     for y in 0..MAP_HEIGHT {
         for x in 0..MAP_WIDTH {
-            fov_map.set(x, y,
-                        !map[x as usize][y as usize].block_sight,
-                        !map[x as usize][y as usize].blocked);
+            tcod.fov.set(x, y,
+                !map[x as usize][y as usize].block_sight,
+                !map[x as usize][y as usize].blocked);
         }
     }
+
+    // unexplored areas start black (which is the default background color)
+    tcod.con.clear();
 }
 
 fn play_game(objects: &mut Vec<Object>, game: &mut Game, tcod: &mut Tcod) {
@@ -1220,7 +1222,7 @@ fn main_menu(tcod: &mut Tcod) {
             Some(1) => {  // load game
                 match load_game() {
                     Ok((mut objects, mut game)) => {
-                        initialise_fov(&game.map, &mut tcod.fov);
+                        initialise_fov(&game.map, tcod);
                         play_game(&mut objects, &mut game, tcod);
                     }
                     Err(_e) => {
