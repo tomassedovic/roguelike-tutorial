@@ -100,14 +100,106 @@ those. This is safe because we never dereference them. As a bonus, the
 compiler can infer the type (`Object`) so you can just say `_` and it
 will fill it in.
 
+NOTE: If you want to let the player go back up, you may want to keep
+track of the map and objects at the previous levels so that they stay
+the same.
 
+We'll want to keep track of the dungeon level the player is on. Let's
+add a variable to `Game` and set it to one when we start the game and
+increase it when we go deeper:
 
+[source]
+----
+struct Game {
+    map: Map,
+    log: Messages,
+    inventory: Vec<Object>,
+    dungeon_level: u32,
+}
+----
 
+in `new_game`:
 
-TODO: talk about keeping track of objects throughout the game
+[source]
+----
+let mut game = Game {
+    // ...
+    dungeon_level: 1,
+};
+----
 
-TODO: mention vec::swap if player isn't the first object.
+and in `next_level` before calling `make_map`:
 
+[source]
+----
+game.dungeon_level += 1;
+----
+
+Now we can display it in the GUI. Add this line to `render_all` after
+calling `render_bar`:
+
+[source]
+----
+tcod.panel.print_ex(1, 3, BackgroundFlag::None, TextAlignment::Left,
+                    format!("Dungeon level: {}", game.dungeon_level));
+----
+
+Finally, it would be great to always show the stairs once discovered,
+so the player can explore the rest of the map before going down. So
+let's allow some objects to be always visible as long as they're on a
+tile that's already been explored.
+
+We can add `always_visible` to `Object`:
+
+[source]
+----
+struct Object {
+    x: i32,
+    y: i32,
+    // ...
+    always_visible: bool,
+}
+----
+
+Let's initialise it to `false` in `Object::new`:
+
+[source]
+----
+pub fn new(x: i32, y: i32, char: char, name: &str, color: Color, blocks: bool) -> Self {
+    Object {
+        x: x,
+        y: y,
+        // ...
+        always_visible: false,
+    }
+}
+----
+
+Now update `render_all` to take it into account. When building the
+`to_draw` vector, let's update the `filter` test to this:
+
+[source]
+----
+.filter(|o| {
+    tcod.fov.is_in_fov(o.x, o.y) ||
+        (o.always_visible && game.map[o.x as usize][o.y as usize].explored)
+})
+----
+
+We keep the old `is_in_fov` test, but now we can also show the object
+if it's always visible and on an `explored` tile.
+
+So let's set `always_visible = true` to stairs in `make_map`:
+
+[source]
+----
+stairs.always_visible = true;
+----
+
+you will also have to add `mut` to `let stairs` a line above.
+
+And let's do the same for items, too! In `place_objects` before
+`objects.push(item)`.
 
 
 == Character progression
