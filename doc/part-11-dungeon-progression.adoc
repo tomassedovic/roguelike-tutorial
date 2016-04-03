@@ -68,11 +68,45 @@ fn next_level(tcod: &mut Tcod, objects: &mut Vec<Object>, game: &mut Game) {
 ----
 
 You can try it out now. We do generate stairs and let the player go
-deeper, but parts of the previous level are still visible and you'll
-notice that the items and monsters from the old level are still
-here -- sometimes lodged in a wall.
+deeper, but you'll notice that the items and monsters from the old
+level are still here -- sometimes lodged in a wall.
 
-TODO
+The reason we're seeing old objects is because we've never removed
+them from the `objects` Vec!
+
+So we need to remove everything except for the Player. Put this in
+`make_map` right after we create the empty map:
+
+[source]
+----
+// Player is the first element, remove everything else.
+// NOTE: works only when the player is the first object!
+assert_eq!(&objects[PLAYER] as *const _, &objects[0] as *const _);
+objects.truncate(1);
+----
+
+:truncate: https://doc.rust-lang.org/std/vec/struct.Vec.html#method.truncate
+
+Luckily, {truncate}[Vec has the truncate method], which leaves the
+first *n* elements and removes everything else. Since our _player_ is
+always the first object in the list, this just works.
+
+The assert is there to make sure that the first object is indeed the
+player -- the program will panic otherwise, making sure you address it
+if you change your game layout at some point. By the way, this is how
+you test for a pointer equivalence in Rust: you convert ordinary Rust
+references to raw pointers (`*const Object` in this case) and compare
+those. This is safe because we never dereference them. As a bonus, the
+compiler can infer the type (`Object`) so you can just say `_` and it
+will fill it in.
+
+
+
+
+
+TODO: talk about keeping track of objects throughout the game
+
+TODO: mention vec::swap if player isn't the first object.
 
 
 

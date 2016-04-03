@@ -589,6 +589,11 @@ fn make_map(objects: &mut Vec<Object>) -> Map {
     // fill map with "blocked" tiles
     let mut map = vec![vec![Tile::wall(); MAP_HEIGHT as usize]; MAP_WIDTH as usize];
 
+    // Player is the first element, remove everything else.
+    // NOTE: works only when the player is the first object!
+    assert_eq!(&objects[PLAYER] as *const _, &objects[0] as *const _);
+    objects.truncate(1);
+
     let mut rooms = vec![];
 
     for _ in 0..MAX_ROOMS {
