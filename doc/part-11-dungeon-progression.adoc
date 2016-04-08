@@ -414,8 +414,98 @@ Now we can call `level_up` in the main loop (in `play_game`) after
 level_up(objects, game, tcod);
 ----
 
-TODO
+So the player can now level up, but it would be great to show the
+current stats somewhere. Let's display a little message box when the
+`C` key is pressed. In `handle_keys`:
 
+[source]
+----
+(Key { printable: 'c', .. }, true) => {
+    // show character information
+    let player = &objects[PLAYER];
+    let level = player.level;
+    let level_up_xp = LEVEL_UP_BASE + player.level * LEVEL_UP_FACTOR;
+    if let Some(fighter) = player.fighter.as_ref() {
+        let msg = format!("Character information
+
+Level: {}
+Experience: {}
+Experience to level up: {}
+
+Maximum HP: {}
+Attack: {}
+Defense: {}", level, fighter.xp, level_up_xp, fighter.max_hp, fighter.power, fighter.defense);
+        msgbox(&msg, CHARACTER_SCREEN_WIDTH, &mut tcod.root);
+    }
+
+    DidntTakeTurn
+}
+----
+
+This will build up a multiline string that we use msgbox to show.
+We'll need to define `const CHARACTER_SCREEN_WIDTH: i32 = 30;` at the
+top of the file and then it should all work.
+
+It would also be nice if we showed how much XP did the player get for
+slaying a monster. We can modify the log message in `monster_death`:
+
+[source]
+----
+game.log.add(
+    format!("{} is dead! You gain {} experience points.",
+            monster.name, monster.fighter.unwrap().xp), colors::ORANGE);
+----
+
+
+/
+Finally, completely unrelated to the character progression, but let's
+add diagonal movement and sleep command using the keys on the numpad.
+
+The key codes for the numpad keys are `NumPad0` to `NumPad9`. So in
+`handle_keys`, we'll replace the existing movement code with this:
+
+[source]
+----
+// movement keys
+(Key { code: Up, .. }, true) | (Key { code: NumPad8, ..}, true) => {
+    player_move_or_attack(0, -1, objects, game);
+    TookTurn
+}
+(Key { code: Down, .. }, true) | (Key { code: NumPad2, ..}, true) => {
+    player_move_or_attack(0, 1, objects, game);
+    TookTurn
+}
+(Key { code: Left, .. }, true) | (Key { code: NumPad4, ..}, true) => {
+    player_move_or_attack(-1, 0, objects, game);
+    TookTurn
+}
+(Key { code: Right, .. }, true) | (Key { code: NumPad6, ..}, true) => {
+    player_move_or_attack(1, 0, objects, game);
+    TookTurn
+}
+(Key { code: Home, .. }, true) | (Key { code: NumPad7, ..}, true) => {
+    player_move_or_attack(-1, -1, objects, game);
+    TookTurn
+}
+(Key { code: PageUp, .. }, true) | (Key { code: NumPad9, ..}, true) => {
+    player_move_or_attack(1, -1, objects, game);
+    TookTurn
+}
+(Key { code: End, .. }, true) | (Key { code: NumPad1, ..}, true) => {
+    player_move_or_attack(-1, 1, objects, game);
+    TookTurn
+}
+(Key { code: PageDown, .. }, true) | (Key { code: NumPad3, ..}, true) => {
+    player_move_or_attack(1, 1, objects, game);
+    TookTurn
+}
+(Key { code: NumPad5, .. }, true) => {
+    TookTurn  // do nothing, i.e. wait for the monster to come to you
+}
+----
+
+Now we can use arrows and numpad to move around. And pressing `5` will
+let you skip a turn and have the monster come to you.
 
 Here's link:part-11-dungeon-progression.rs.txt[the complete code so far].
 
