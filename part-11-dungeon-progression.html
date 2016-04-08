@@ -717,7 +717,262 @@ if it&#8217;s always visible and on an <code>explored</code> tile.</p>
 <h2 id="_character_progression">Character progression</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>todo</p>
+<p>With being able to go into deeper levels, the player character now
+feels a bit static. Let&#8217;s track their experience and allow to
+level up. We&#8217;ll put a new <code>xp</code> field into the <code>Fighter</code> struct:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-k">struct</span> <span class="tok-n">Fighter</span> <span class="tok-p">{</span>
+    <span class="tok-c1">// ...</span>
+    <span class="tok-n">xp</span><span class="tok-o">:</span> <span class="tok-kt">i32</span><span class="tok-p">,</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>When setting the orc and trolls' <code>Fighter</code> component in
+<code>place_objects</code>, we&#8217;ll add 35 and 100 <code>xp</code> respectively. Feel free to
+plug your own values here.</p>
+</div>
+<div class="paragraph">
+<p>We&#8217;ll have to set player&#8217;s XP in <code>new_game</code> to something as well.
+Let&#8217;s put a <code>0</code> in and we&#8217;ll use it to track player&#8217;s experience.</p>
+</div>
+<div class="paragraph">
+<p>Now update <code>take_damage</code> to return the experience points when a
+monster is killed:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-k">pub</span> <span class="tok-k">fn</span> <span class="tok-n">take_damage</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-bp">self</span><span class="tok-p">,</span> <span class="tok-n">damage</span><span class="tok-o">:</span> <span class="tok-kt">i32</span><span class="tok-p">,</span> <span class="tok-n">game</span><span class="tok-o">:</span> <span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">Game</span><span class="tok-p">)</span> <span class="tok-o">-&gt;</span> <span class="tok-nb">Option</span><span class="tok-o">&lt;</span><span class="tok-kt">i32</span><span class="tok-o">&gt;</span> <span class="tok-p">{</span>  <i class="conum" data-value="1"></i><b>(1)</b>
+    <span class="tok-c1">// apply damage if possible</span>
+    <span class="tok-k">if</span> <span class="tok-kd">let</span> <span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">fighter</span><span class="tok-p">)</span> <span class="tok-o">=</span> <span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">fighter</span><span class="tok-p">.</span><span class="tok-n">as_mut</span><span class="tok-p">()</span> <span class="tok-p">{</span>
+        <span class="tok-k">if</span> <span class="tok-n">damage</span> <span class="tok-o">&gt;</span> <span class="tok-mi">0</span> <span class="tok-p">{</span>
+            <span class="tok-n">fighter</span><span class="tok-p">.</span><span class="tok-n">hp</span> <span class="tok-o">-=</span> <span class="tok-n">damage</span><span class="tok-p">;</span>
+        <span class="tok-p">}</span>
+    <span class="tok-p">}</span>
+    <span class="tok-c1">// check for death, call the death function</span>
+    <span class="tok-k">if</span> <span class="tok-kd">let</span> <span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">fighter</span><span class="tok-p">)</span> <span class="tok-o">=</span> <span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">fighter</span> <span class="tok-p">{</span>
+        <span class="tok-k">if</span> <span class="tok-n">fighter</span><span class="tok-p">.</span><span class="tok-n">hp</span> <span class="tok-o">&lt;=</span> <span class="tok-mi">0</span> <span class="tok-p">{</span>
+            <span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">alive</span> <span class="tok-o">=</span> <span class="tok-kc">false</span><span class="tok-p">;</span>
+            <span class="tok-n">fighter</span><span class="tok-p">.</span><span class="tok-n">on_death</span><span class="tok-p">.</span><span class="tok-n">callback</span><span class="tok-p">(</span><span class="tok-bp">self</span><span class="tok-p">,</span> <span class="tok-n">game</span><span class="tok-p">);</span>
+            <span class="tok-k">return</span> <span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">fighter</span><span class="tok-p">.</span><span class="tok-n">xp</span><span class="tok-p">);</span>  <i class="conum" data-value="2"></i><b>(2)</b>
+        <span class="tok-p">}</span>
+    <span class="tok-p">}</span>
+    <span class="tok-nb">None</span>  <i class="conum" data-value="3"></i><b>(3)</b>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>May return a number of XP if <code>take_damage</code> killed the monster</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>We did kill the monster, return it&#8217;s XP</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>We did not kill the monster, don&#8217;t return anything</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Now in <code>attack</code>, when an attacker kills its target, let&#8217;s increase its
+xp by replacing the <code>target.take_damage(&#8230;&#8203;)</code> call with:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-k">if</span> <span class="tok-kd">let</span> <span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">xp</span><span class="tok-p">)</span> <span class="tok-o">=</span> <span class="tok-n">target</span><span class="tok-p">.</span><span class="tok-n">take_damage</span><span class="tok-p">(</span><span class="tok-n">damage</span><span class="tok-p">,</span> <span class="tok-n">game</span><span class="tok-p">)</span> <span class="tok-p">{</span>
+    <span class="tok-c1">// yield experience to the player</span>
+    <span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">fighter</span><span class="tok-p">.</span><span class="tok-n">as_mut</span><span class="tok-p">().</span><span class="tok-n">unwrap</span><span class="tok-p">().</span><span class="tok-n">xp</span> <span class="tok-o">+=</span> <span class="tok-n">xp</span><span class="tok-p">;</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>And we need to do the same in the two other places we&#8217;re calling
+<code>take_damage</code>. First in <code>cast_lightning</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-k">if</span> <span class="tok-kd">let</span> <span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">xp</span><span class="tok-p">)</span> <span class="tok-o">=</span> <span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-n">monster_id</span><span class="tok-p">].</span><span class="tok-n">take_damage</span><span class="tok-p">(</span><span class="tok-n">LIGHTNING_DAMAGE</span><span class="tok-p">,</span> <span class="tok-n">game</span><span class="tok-p">)</span> <span class="tok-p">{</span>
+    <span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-n">PLAYER</span><span class="tok-p">].</span><span class="tok-n">fighter</span><span class="tok-p">.</span><span class="tok-n">as_mut</span><span class="tok-p">().</span><span class="tok-n">unwrap</span><span class="tok-p">().</span><span class="tok-n">xp</span> <span class="tok-o">+=</span> <span class="tok-n">xp</span><span class="tok-p">;</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>cast_fireball</code> function is going to be slightly trickier because
+we don&#8217;t want to give the player XP for burning themself and we can&#8217;t
+modify the player inside the loop because the <code>objects</code> Vec is already
+mutably borrowed.</p>
+</div>
+<div class="paragraph">
+<p>So, whenever we get some XP from <code>take_damage</code>, we&#8217;ll add it to a
+variable and then give it all to the player afterwards:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-kd">let</span> <span class="tok-k">mut</span> <span class="tok-n">xp_to_gain</span> <span class="tok-o">=</span> <span class="tok-mi">0</span><span class="tok-p">;</span>  <i class="conum" data-value="1"></i><b>(1)</b>
+<span class="tok-k">for</span> <span class="tok-p">(</span><span class="tok-n">id</span><span class="tok-p">,</span> <span class="tok-n">obj</span><span class="tok-p">)</span> <span class="tok-k">in</span> <span class="tok-n">objects</span><span class="tok-p">.</span><span class="tok-n">iter_mut</span><span class="tok-p">().</span><span class="tok-n">enumerate</span><span class="tok-p">()</span> <span class="tok-p">{</span>  <i class="conum" data-value="2"></i><b>(2)</b>
+    <span class="tok-k">if</span> <span class="tok-n">obj</span><span class="tok-p">.</span><span class="tok-n">distance</span><span class="tok-p">(</span><span class="tok-n">x</span><span class="tok-p">,</span> <span class="tok-n">y</span><span class="tok-p">)</span> <span class="tok-o">&lt;=</span> <span class="tok-n">FIREBALL_RADIUS</span> <span class="tok-k">as</span> <span class="tok-kt">f32</span> <span class="tok-o">&amp;&amp;</span> <span class="tok-n">obj</span><span class="tok-p">.</span><span class="tok-n">fighter</span><span class="tok-p">.</span><span class="tok-n">is_some</span><span class="tok-p">()</span> <span class="tok-p">{</span>
+        <span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">log</span><span class="tok-p">.</span><span class="tok-n">add</span><span class="tok-p">(</span><span class="tok-n">format</span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-s">&quot;The {} gets burned for {} hit points.&quot;</span><span class="tok-p">,</span> <span class="tok-n">obj</span><span class="tok-p">.</span><span class="tok-n">name</span><span class="tok-p">,</span> <span class="tok-n">FIREBALL_DAMAGE</span><span class="tok-p">),</span>
+                     <span class="tok-n">colors</span><span class="tok-o">::</span><span class="tok-n">ORANGE</span><span class="tok-p">);</span>
+        <span class="tok-k">if</span> <span class="tok-kd">let</span> <span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">xp</span><span class="tok-p">)</span> <span class="tok-o">=</span> <span class="tok-n">obj</span><span class="tok-p">.</span><span class="tok-n">take_damage</span><span class="tok-p">(</span><span class="tok-n">FIREBALL_DAMAGE</span><span class="tok-p">,</span> <span class="tok-n">game</span><span class="tok-p">)</span> <span class="tok-p">{</span>
+            <span class="tok-c1">// Don&#39;t reward the player for burning themself!</span>
+            <span class="tok-k">if</span> <span class="tok-n">id</span> <span class="tok-o">!=</span> <span class="tok-n">PLAYER</span> <span class="tok-p">{</span>  <i class="conum" data-value="3"></i><b>(3)</b>
+                <span class="tok-n">xp_to_gain</span> <span class="tok-o">+=</span> <span class="tok-n">xp</span><span class="tok-p">;</span>
+            <span class="tok-p">}</span>
+        <span class="tok-p">}</span>
+    <span class="tok-p">}</span>
+<span class="tok-p">}</span>
+<span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-n">PLAYER</span><span class="tok-p">].</span><span class="tok-n">fighter</span><span class="tok-p">.</span><span class="tok-n">as_mut</span><span class="tok-p">().</span><span class="tok-n">unwrap</span><span class="tok-p">().</span><span class="tok-n">xp</span> <span class="tok-o">+=</span> <span class="tok-n">xp_to_gain</span><span class="tok-p">;</span> <i class="conum" data-value="4"></i><b>(4)</b></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Keep track of all the XP player should receive</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Use <code>enumerate</code> to get the object&#8217;s index as well</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>Use the index to make sure we don&#8217;t include the player&#8217;s XP</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>Give all the accumulated XP to the player</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Ok, so what can the player do with all this experience they&#8217;re getting
+now? Level up of course!</p>
+</div>
+<div class="paragraph">
+<p>First, we&#8217;ll need to keep track of player&#8217;s level. We&#8217;ll add it as
+another field to <code>Object</code> (so that monsters and items can have levels
+too if we decide to use them later), but you could add it into <code>Game</code>
+just as easily.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-k">struct</span> <span class="tok-n">Object</span> <span class="tok-p">{</span>
+    <span class="tok-c1">// ...</span>
+    <span class="tok-n">level</span><span class="tok-o">:</span> <span class="tok-kt">i32</span><span class="tok-p">,</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>And initialise it to <code>1</code> in Object&#8217;s <code>new</code> method:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust">    <span class="tok-k">pub</span> <span class="tok-k">fn</span> <span class="tok-n">new</span><span class="tok-p">(</span><span class="tok-n">x</span><span class="tok-o">:</span> <span class="tok-kt">i32</span><span class="tok-p">,</span> <span class="tok-n">y</span><span class="tok-o">:</span> <span class="tok-kt">i32</span><span class="tok-p">,</span> <span class="tok-n">char</span><span class="tok-o">:</span> <span class="tok-n">char</span><span class="tok-p">,</span> <span class="tok-n">name</span><span class="tok-o">:</span> <span class="tok-o">&amp;</span><span class="tok-kt">str</span><span class="tok-p">,</span> <span class="tok-n">color</span><span class="tok-o">:</span> <span class="tok-n">Color</span><span class="tok-p">,</span> <span class="tok-n">blocks</span><span class="tok-o">:</span> <span class="tok-kt">bool</span><span class="tok-p">)</span> <span class="tok-o">-&gt;</span> <span class="tok-n">Self</span> <span class="tok-p">{</span>
+        <span class="tok-n">Object</span> <span class="tok-p">{</span>
+            <span class="tok-c1">// ...</span>
+            <span class="tok-n">level</span><span class="tok-o">:</span> <span class="tok-mi">1</span><span class="tok-p">,</span>
+        <span class="tok-p">}</span>
+    <span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Typically, you need more experience to level up the higher you get.
+Let&#8217;s set the starting point to 350 xp and then require 150 for every
+new level. So the formula is <code>200 + player.level * 150</code>.</p>
+</div>
+<div class="paragraph">
+<p>Add constants so it can be easily tweaked later:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-c1">// experience and level-ups</span>
+<span class="tok-kr">const</span> <span class="tok-n">LEVEL_UP_BASE</span><span class="tok-o">:</span> <span class="tok-kt">i32</span> <span class="tok-o">=</span> <span class="tok-mi">200</span><span class="tok-p">;</span>
+<span class="tok-kr">const</span> <span class="tok-n">LEVEL_UP_FACTOR</span><span class="tok-o">:</span> <span class="tok-kt">i32</span> <span class="tok-o">=</span> <span class="tok-mi">150</span><span class="tok-p">;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Now the function that level&#8217;s the player up if they have enough
+experience:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-k">fn</span> <span class="tok-n">level_up</span><span class="tok-p">(</span><span class="tok-n">objects</span><span class="tok-o">:</span> <span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-p">[</span><span class="tok-n">Object</span><span class="tok-p">],</span> <span class="tok-n">game</span><span class="tok-o">:</span> <span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">Game</span><span class="tok-p">,</span> <span class="tok-n">tcod</span><span class="tok-o">:</span> <span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">Tcod</span><span class="tok-p">)</span> <span class="tok-p">{</span>
+    <span class="tok-kd">let</span> <span class="tok-n">player</span> <span class="tok-o">=</span> <span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-n">PLAYER</span><span class="tok-p">];</span>
+    <span class="tok-kd">let</span> <span class="tok-n">level_up_xp</span> <span class="tok-o">=</span> <span class="tok-n">LEVEL_UP_BASE</span> <span class="tok-o">+</span> <span class="tok-n">player</span><span class="tok-p">.</span><span class="tok-n">level</span> <span class="tok-o">*</span> <span class="tok-n">LEVEL_UP_FACTOR</span><span class="tok-p">;</span>
+    <span class="tok-c1">// see if the player&#39;s experience is enough to level-up</span>
+    <span class="tok-k">if</span> <span class="tok-n">player</span><span class="tok-p">.</span><span class="tok-n">fighter</span><span class="tok-p">.</span><span class="tok-n">as_ref</span><span class="tok-p">().</span><span class="tok-n">map_or</span><span class="tok-p">(</span><span class="tok-mi">0</span><span class="tok-p">,</span> <span class="tok-o">|</span><span class="tok-n">f</span><span class="tok-o">|</span> <span class="tok-n">f</span><span class="tok-p">.</span><span class="tok-n">xp</span><span class="tok-p">)</span> <span class="tok-o">&gt;=</span> <span class="tok-n">level_up_xp</span> <span class="tok-p">{</span>
+        <span class="tok-c1">// it is! level up</span>
+        <span class="tok-n">player</span><span class="tok-p">.</span><span class="tok-n">level</span> <span class="tok-o">+=</span> <span class="tok-mi">1</span><span class="tok-p">;</span>
+        <span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">log</span><span class="tok-p">.</span><span class="tok-n">add</span><span class="tok-p">(</span><span class="tok-n">format</span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-s">&quot;Your battle skills grow stronger! You reached level {}!&quot;</span><span class="tok-p">,</span>
+                             <span class="tok-n">player</span><span class="tok-p">.</span><span class="tok-n">level</span><span class="tok-p">),</span>
+                     <span class="tok-n">colors</span><span class="tok-o">::</span><span class="tok-n">YELLOW</span><span class="tok-p">);</span>
+        <span class="tok-c1">// ... TODO increase players&#39;s stats!</span>
+    <span class="tok-p">}</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>So, if the player has enough experience, we&#8217;ll increase their level
+and print out a message.</p>
+</div>
+<div class="paragraph">
+<p>But let&#8217;s give them an actual gameplay bonus. Using the <code>menu</code>
+function, we&#8217;ll give them three choices: to increase the HP, attack or
+defense.</p>
+</div>
+<div class="paragraph">
+<p>Put this in place of the TODO comment:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-kd">let</span> <span class="tok-n">fighter</span> <span class="tok-o">=</span> <span class="tok-n">player</span><span class="tok-p">.</span><span class="tok-n">fighter</span><span class="tok-p">.</span><span class="tok-n">as_mut</span><span class="tok-p">().</span><span class="tok-n">unwrap</span><span class="tok-p">();</span>
+<span class="tok-kd">let</span> <span class="tok-k">mut</span> <span class="tok-n">choice</span> <span class="tok-o">=</span> <span class="tok-nb">None</span><span class="tok-p">;</span>
+<span class="tok-k">while</span> <span class="tok-n">choice</span><span class="tok-p">.</span><span class="tok-n">is_none</span><span class="tok-p">()</span> <span class="tok-p">{</span>  <span class="tok-c1">// keep asking until a choice is made</span>
+    <span class="tok-n">choice</span> <span class="tok-o">=</span> <span class="tok-n">menu</span><span class="tok-p">(</span>
+        <span class="tok-s">&quot;Level up! Choose a stat to raise:</span><span class="tok-se">\n</span><span class="tok-s">&quot;</span><span class="tok-p">,</span>
+        <span class="tok-o">&amp;</span><span class="tok-p">[</span><span class="tok-n">format</span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-s">&quot;Constitution (+20 HP, from {})&quot;</span><span class="tok-p">,</span> <span class="tok-n">fighter</span><span class="tok-p">.</span><span class="tok-n">max_hp</span><span class="tok-p">),</span>
+          <span class="tok-n">format</span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-s">&quot;Strength (+1 attack, from {})&quot;</span><span class="tok-p">,</span> <span class="tok-n">fighter</span><span class="tok-p">.</span><span class="tok-n">power</span><span class="tok-p">),</span>
+          <span class="tok-n">format</span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-s">&quot;Agility (+1 defense, from {})&quot;</span><span class="tok-p">,</span> <span class="tok-n">fighter</span><span class="tok-p">.</span><span class="tok-n">defense</span><span class="tok-p">)],</span>
+        <span class="tok-n">LEVEL_SCREEN_WIDTH</span><span class="tok-p">,</span> <span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">root</span><span class="tok-p">);</span>
+<span class="tok-p">};</span>
+<span class="tok-n">fighter</span><span class="tok-p">.</span><span class="tok-n">xp</span> <span class="tok-o">-=</span> <span class="tok-n">level_up_xp</span><span class="tok-p">;</span>
+<span class="tok-k">match</span> <span class="tok-n">choice</span><span class="tok-p">.</span><span class="tok-n">unwrap</span><span class="tok-p">()</span> <span class="tok-p">{</span>
+    <span class="tok-mi">0</span> <span class="tok-o">=&gt;</span> <span class="tok-p">{</span>
+        <span class="tok-n">fighter</span><span class="tok-p">.</span><span class="tok-n">max_hp</span> <span class="tok-o">+=</span> <span class="tok-mi">20</span><span class="tok-p">;</span>
+        <span class="tok-n">fighter</span><span class="tok-p">.</span><span class="tok-n">hp</span> <span class="tok-o">+=</span> <span class="tok-mi">20</span><span class="tok-p">;</span>
+    <span class="tok-p">}</span>
+    <span class="tok-mi">1</span> <span class="tok-o">=&gt;</span> <span class="tok-p">{</span>
+        <span class="tok-n">fighter</span><span class="tok-p">.</span><span class="tok-n">power</span> <span class="tok-o">+=</span> <span class="tok-mi">1</span><span class="tok-p">;</span>
+    <span class="tok-p">}</span>
+    <span class="tok-mi">2</span> <span class="tok-o">=&gt;</span> <span class="tok-p">{</span>
+        <span class="tok-n">fighter</span><span class="tok-p">.</span><span class="tok-n">defense</span> <span class="tok-o">+=</span> <span class="tok-mi">1</span><span class="tok-p">;</span>
+    <span class="tok-p">}</span>
+    <span class="tok-n">_</span> <span class="tok-o">=&gt;</span> <span class="tok-n">unreachable</span><span class="tok-o">!</span><span class="tok-p">(),</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>We&#8217;ll need to set <code>const LEVEL_SCREEN_WIDTH: i32 = 40</code> on top of the
+file and then it should compile.</p>
+</div>
+<div class="paragraph">
+<p>Now we can call <code>level_up</code> in the main loop (in <code>play_game</code>) after
+<code>tcod.root.flush()</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-c1">// level up if needed</span>
+<span class="tok-n">level_up</span><span class="tok-p">(</span><span class="tok-n">objects</span><span class="tok-p">,</span> <span class="tok-n">game</span><span class="tok-p">,</span> <span class="tok-n">tcod</span><span class="tok-p">);</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>TODO</p>
 </div>
 <div class="paragraph">
 <p>Here&#8217;s <a href="part-11-dungeon-progression.rs.txt">the complete code so far</a>.</p>
@@ -730,7 +985,7 @@ if it&#8217;s always visible and on an <code>explored</code> tile.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2016-04-03 22:37:52 CEST
+Last updated 2016-04-08 17:55:39 CEST
 </div>
 </div>
 </body>
