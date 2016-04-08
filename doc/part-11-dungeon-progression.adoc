@@ -204,9 +204,217 @@ And let's do the same for items, too! In `place_objects` before
 
 == Character progression
 
-todo
+With being able to go into deeper levels, the player character now
+feels a bit static. Let's track their experience and allow to
+level up. We'll put a new `xp` field into the `Fighter` struct:
+
+[source]
+----
+struct Fighter {
+    // ...
+    xp: i32,
+}
+----
+
+When setting the orc and trolls' `Fighter` component in
+`place_objects`, we'll add 35 and 100 `xp` respectively. Feel free to
+plug your own values here.
+
+We'll have to set player's XP in `new_game` to something as well.
+Let's put a `0` in and we'll use it to track player's experience.
 
 
+Now update `take_damage` to return the experience points when a
+monster is killed:
+
+[source]
+----
+pub fn take_damage(&mut self, damage: i32, game: &mut Game) -> Option<i32> {  // <1>
+    // apply damage if possible
+    if let Some(fighter) = self.fighter.as_mut() {
+        if damage > 0 {
+            fighter.hp -= damage;
+        }
+    }
+    // check for death, call the death function
+    if let Some(fighter) = self.fighter {
+        if fighter.hp <= 0 {
+            self.alive = false;
+            fighter.on_death.callback(self, game);
+            return Some(fighter.xp);  // <2>
+        }
+    }
+    None  // <3>
+}
+----
+<1> May return a number of XP if `take_damage` killed the monster
+<2> We did kill the monster, return it's XP
+<3> We did not kill the monster, don't return anything
+
+
+Now in `attack`, when an attacker kills its target, let's increase its
+xp by replacing the `target.take_damage(...)` call with:
+
+[source]
+----
+if let Some(xp) = target.take_damage(damage, game) {
+    // yield experience to the player
+    self.fighter.as_mut().unwrap().xp += xp;
+}
+----
+
+And we need to do the same in the two other places we're calling
+`take_damage`. First in `cast_lightning`:
+
+[source]
+----
+if let Some(xp) = objects[monster_id].take_damage(LIGHTNING_DAMAGE, game) {
+    objects[PLAYER].fighter.as_mut().unwrap().xp += xp;
+}
+----
+
+The `cast_fireball` function is going to be slightly trickier because
+we don't want to give the player XP for burning themself and we can't
+modify the player inside the loop because the `objects` Vec is already
+mutably borrowed.
+
+So, whenever we get some XP from `take_damage`, we'll add it to a
+variable and then give it all to the player afterwards:
+
+[source]
+----
+let mut xp_to_gain = 0;  // <1>
+for (id, obj) in objects.iter_mut().enumerate() {  // <2>
+    if obj.distance(x, y) <= FIREBALL_RADIUS as f32 && obj.fighter.is_some() {
+        game.log.add(format!("The {} gets burned for {} hit points.", obj.name, FIREBALL_DAMAGE),
+                     colors::ORANGE);
+        if let Some(xp) = obj.take_damage(FIREBALL_DAMAGE, game) {
+            // Don't reward the player for burning themself!
+            if id != PLAYER {  // <3>
+                xp_to_gain += xp;
+            }
+        }
+    }
+}
+objects[PLAYER].fighter.as_mut().unwrap().xp += xp_to_gain;  // <4>
+----
+<1> Keep track of all the XP player should receive
+<2> Use `enumerate` to get the object's index as well
+<3> Use the index to make sure we don't include the player's XP
+<4> Give all the accumulated XP to the player
+
+
+Ok, so what can the player do with all this experience they're getting
+now? Level up of course!
+
+First, we'll need to keep track of player's level. We'll add it as
+another field to `Object` (so that monsters and items can have levels
+too if we decide to use them later), but you could add it into `Game`
+just as easily.
+
+[source]
+----
+struct Object {
+    // ...
+    level: i32,
+}
+----
+
+And initialise it to `1` in Object's `new` method:
+
+[source]
+----
+    pub fn new(x: i32, y: i32, char: char, name: &str, color: Color, blocks: bool) -> Self {
+        Object {
+            // ...
+            level: 1,
+        }
+    }
+----
+
+Typically, you need more experience to level up the higher you get.
+Let's set the starting point to 350 xp and then require 150 for every
+new level. So the formula is `200 + player.level * 150`.
+
+Add constants so it can be easily tweaked later:
+
+[source]
+----
+// experience and level-ups
+const LEVEL_UP_BASE: i32 = 200;
+const LEVEL_UP_FACTOR: i32 = 150;
+----
+
+Now the function that level's the player up if they have enough
+experience:
+
+[source]
+----
+fn level_up(objects: &mut [Object], game: &mut Game, tcod: &mut Tcod) {
+    let player = &mut objects[PLAYER];
+    let level_up_xp = LEVEL_UP_BASE + player.level * LEVEL_UP_FACTOR;
+    // see if the player's experience is enough to level-up
+    if player.fighter.as_ref().map_or(0, |f| f.xp) >= level_up_xp {
+        // it is! level up
+        player.level += 1;
+        game.log.add(format!("Your battle skills grow stronger! You reached level {}!",
+                             player.level),
+                     colors::YELLOW);
+        // ... TODO increase players's stats!
+    }
+}
+----
+
+So, if the player has enough experience, we'll increase their level
+and print out a message.
+
+But let's give them an actual gameplay bonus. Using the `menu`
+function, we'll give them three choices: to increase the HP, attack or
+defense.
+
+Put this in place of the TODO comment:
+
+[source]
+----
+let fighter = player.fighter.as_mut().unwrap();
+let mut choice = None;
+while choice.is_none() {  // keep asking until a choice is made
+    choice = menu(
+        "Level up! Choose a stat to raise:\n",
+        &[format!("Constitution (+20 HP, from {})", fighter.max_hp),
+          format!("Strength (+1 attack, from {})", fighter.power),
+          format!("Agility (+1 defense, from {})", fighter.defense)],
+        LEVEL_SCREEN_WIDTH, &mut tcod.root);
+};
+fighter.xp -= level_up_xp;
+match choice.unwrap() {
+    0 => {
+        fighter.max_hp += 20;
+        fighter.hp += 20;
+    }
+    1 => {
+        fighter.power += 1;
+    }
+    2 => {
+        fighter.defense += 1;
+    }
+    _ => unreachable!(),
+}
+----
+
+We'll need to set `const LEVEL_SCREEN_WIDTH: i32 = 40` on top of the
+file and then it should compile.
+
+Now we can call `level_up` in the main loop (in `play_game`) after
+`tcod.root.flush()`:
+
+[source]
+----
+// level up if needed
+level_up(objects, game, tcod);
+----
+
+TODO
 
 
 Here's link:part-11-dungeon-progression.rs.txt[the complete code so far].
