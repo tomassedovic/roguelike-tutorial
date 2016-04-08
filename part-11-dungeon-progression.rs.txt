@@ -31,6 +31,7 @@ const MSG_X: i32 = BAR_WIDTH + 2;
 const MSG_WIDTH: i32 = SCREEN_WIDTH - BAR_WIDTH - 2;
 const MSG_HEIGHT: usize = PANEL_HEIGHT as usize - 1;
 const INVENTORY_WIDTH: i32 = 50;
+const CHARACTER_SCREEN_WIDTH: i32 = 30;
 const LEVEL_SCREEN_WIDTH: i32 = 40;
 
 //parameters for dungeon generator
@@ -1001,21 +1002,40 @@ fn handle_keys(key: Key, tcod: &mut Tcod, objects: &mut Vec<Object>, game: &mut 
         (Key { code: Escape, .. }, _) => Exit,  // exit game
 
         // movement keys
-        (Key { code: Up, .. }, true) => {
+        (Key { code: Up, .. }, true) | (Key { code: NumPad8, ..}, true) => {
             player_move_or_attack(0, -1, objects, game);
             TookTurn
         }
-        (Key { code: Down, .. }, true) => {
+        (Key { code: Down, .. }, true) | (Key { code: NumPad2, ..}, true) => {
             player_move_or_attack(0, 1, objects, game);
             TookTurn
         }
-        (Key { code: Left, .. }, true) => {
+        (Key { code: Left, .. }, true) | (Key { code: NumPad4, ..}, true) => {
             player_move_or_attack(-1, 0, objects, game);
             TookTurn
         }
-        (Key { code: Right, .. }, true) => {
+        (Key { code: Right, .. }, true) | (Key { code: NumPad6, ..}, true) => {
             player_move_or_attack(1, 0, objects, game);
             TookTurn
+        }
+        (Key { code: Home, .. }, true) | (Key { code: NumPad7, ..}, true) => {
+            player_move_or_attack(-1, -1, objects, game);
+            TookTurn
+        }
+        (Key { code: PageUp, .. }, true) | (Key { code: NumPad9, ..}, true) => {
+            player_move_or_attack(1, -1, objects, game);
+            TookTurn
+        }
+        (Key { code: End, .. }, true) | (Key { code: NumPad1, ..}, true) => {
+            player_move_or_attack(-1, 1, objects, game);
+            TookTurn
+        }
+        (Key { code: PageDown, .. }, true) | (Key { code: NumPad3, ..}, true) => {
+            player_move_or_attack(1, 1, objects, game);
+            TookTurn
+        }
+        (Key { code: NumPad5, .. }, true) => {
+            TookTurn  // do nothing, i.e. wait for the monster to come to you
         }
 
         (Key { printable: 'g', .. }, true) => {
@@ -1070,6 +1090,27 @@ fn handle_keys(key: Key, tcod: &mut Tcod, objects: &mut Vec<Object>, game: &mut 
             } else {
                 DidntTakeTurn
             }
+        }
+
+        (Key { printable: 'c', .. }, true) => {
+            // show character information
+            let player = &objects[PLAYER];
+            let level = player.level;
+            let level_up_xp = LEVEL_UP_BASE + player.level * LEVEL_UP_FACTOR;
+            if let Some(fighter) = player.fighter.as_ref() {
+                let msg = format!("Character information
+
+Level: {}
+Experience: {}
+Experience to level up: {}
+
+Maximum HP: {}
+Attack: {}
+Defense: {}", level, fighter.xp, level_up_xp, fighter.max_hp, fighter.power, fighter.defense);
+                msgbox(&msg, CHARACTER_SCREEN_WIDTH, &mut tcod.root);
+            }
+
+            DidntTakeTurn
         }
 
         _ => DidntTakeTurn,
@@ -1132,7 +1173,9 @@ fn player_death(player: &mut Object, game: &mut Game) {
 fn monster_death(monster: &mut Object, game: &mut Game) {
     // transform it into a nasty corpse! it doesn't block, can't be
     // attacked and doesn't move
-    game.log.add(format!("{} is dead!", monster.name), colors::ORANGE);
+    game.log.add(
+        format!("{} is dead! You gain {} experience points.",
+                monster.name, monster.fighter.unwrap().xp), colors::ORANGE);
     monster.char = '%';
     monster.color = colors::DARK_RED;
     monster.blocks = false;
