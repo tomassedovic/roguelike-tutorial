@@ -1,0 +1,15 @@
+= Monster and item progression
+:icons: font
+:source-highlighter: pygments
+:source-language: rust
+ifdef::env-github[:outfilesuffix: .adoc]
+
+
+<<index#,Back to the index.>>
+
+
+
+
+Here's link:part-12-monster-item-progression.rs.txt[the complete code so far].
+
+Continue to <<part-13-adventure-gear#,the next part>>.

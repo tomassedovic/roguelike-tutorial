@@ -193,7 +193,7 @@ Start your game right away by setting up the screen, printing the
   Let the player venture deeper into the dungeon and grow stronger,
   including experience gain, levels and raising stats!
 
-Part 12: Monster and item progression::
+<<part-12-monster-item-progression#,Part 12: Monster and item progression>>::
 
   Deeper dungeon levels become increasingly more difficult! Here we
   create tools for dealing with chances and making them vary with
