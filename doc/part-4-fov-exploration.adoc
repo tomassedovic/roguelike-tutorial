@@ -91,7 +91,7 @@ let mut previous_player_position = (-1, -1);
 (we're using `(-1, -1)` to make sure FOV gets computed on the first
 time through the loop)
 
-Then this right after `handle_keys` (which is where the player's
+Then this right before `handle_keys` (which is where the player's
 position could change)
 
 [source,rust]
