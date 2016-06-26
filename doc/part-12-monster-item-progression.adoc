@@ -168,7 +168,64 @@ code.
 
 == Monster and item progression
 
-TODO
+The only thing left is varying the contents of the dungeon (number of
+monsters and items, and their chances) according to the dungeon level.
+Instead of having fixed values, they could change with some formula,
+like the one we used to calculate how much xp is needed to level up.
+You're welcome to do this if you prefer; however in this section we
+will go down a slightly different path!
+
+I'd like to be able to say that the maximum number of items per room
+starts as 1 at level 1, and changes to 2 at level 4. Generally, I'd
+like to have a table of transition points. Each entry in the table
+says what the value changes to, and at what level. This should be
+easier to tune, since you can change the value of one level without
+affecting the values of the others!
+
+We can take a similar approach to the weighted randomness. Let's make
+a struct that defines the level and value:
+
+[source]
+----
+struct Transition {
+    level: i32,
+    value: u32,
+}
+----
+
+Then we can define a list of these transition points and have a
+function that picks the right value for the given level. For the
+example above, we would define: `[Transition{level: 1, value: 1},
+Transition{level: 4, value: 2}]`.
+
+To get the correct value for a given level, we'll use this simple
+function:
+
+[source]
+----
+/// Returns a value that depends on level. the table specifies what
+/// value occurs after each level, default is 0.
+fn from_dungeon_level(table: &[Transition], level: i32) -> u32 {
+    table.iter()
+        .rev()
+        .find(|transition| level >= transition.level)
+        .map_or(0, |transition| transition.value)
+}
+----
+
+It takes a list of transitions, goes through them in reverse order
+(using the `rev` iterator method) and as soon as it finds a transition
+that's of the same or lower level, returns its `value`.
+
+Note that for this to work, the table must be sorted by the levels. We
+could do the sort explicitly as part of the `from_dungeon_level`
+function.
+
+
+
+And now we have the tools needed to make the level progression more
+interesting!
+
 
 Here's link:part-12-monster-item-progression.rs.txt[the complete code so far].
 

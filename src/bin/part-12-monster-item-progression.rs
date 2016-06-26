@@ -680,6 +680,20 @@ fn make_map(objects: &mut Vec<Object>) -> Map {
     map
 }
 
+struct Transition {
+    level: i32,
+    value: u32,
+}
+
+/// Returns a value that depends on level. the table specifies what
+/// value occurs after each level, default is 0.
+fn from_dungeon_level(table: &[Transition], level: i32) -> u32 {
+    table.iter()
+        .rev()
+        .find(|transition| level >= transition.level)
+        .map_or(0, |transition| transition.value)
+}
+
 fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>) {
     use rand::distributions::{Weighted, WeightedChoice, IndependentSample};
 
