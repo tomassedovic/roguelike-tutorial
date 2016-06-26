@@ -8,7 +8,14 @@ ifdef::env-github[:outfilesuffix: .adoc]
 <<index#,Back to the index.>>
 
 
+== Random choices
 
+TODO
+
+
+== Monster and item progression
+
+TODO
 
 Here's link:part-12-monster-item-progression.rs.txt[the complete code so far].
 
