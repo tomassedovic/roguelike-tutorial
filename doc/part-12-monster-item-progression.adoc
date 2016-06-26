@@ -10,7 +10,160 @@ ifdef::env-github[:outfilesuffix: .adoc]
 
 == Random choices
 
-TODO
+Now that the player character can become stronger, the challenges that
+await should become harder too! It sure would be nice if the type and
+quantity of monsters would vary with the dungeon level, as well as the
+items. This discovery is a great way to entice the player to go
+forward, wondering if around the next corner is something he or she
+has never seen before!
+
+Before going further though, let's have a look at how we're deciding
+which item to place on the map:
+
+[source]
+----
+let dice = rand::random::<f32>();
+let mut item = if dice < 0.7 {
+    // create a healing potion (70% chance)
+    ...
+} else if dice < 0.7 + 0.1 {
+    // create a lightning bolt scroll (10% chance)
+    ...
+} else if dice < 0.7 + 0.1 + 0.1 {
+    // create a fireball scroll (10% chance)
+    ...
+} else {
+    // create a confuse scroll (10% chance)
+    ...
+};
+----
+
+As we add more items, this will be harder to maintain. Every time we
+add an item, we'll have to change the probabilities in all these `if`
+checks.
+
+It would be much nicer if we could define a _loot table_. Luckily, the
+`rand` crate supports this using the `WeightedChoice` distribution:
+
+https://doc.rust-lang.org/rand/rand/distributions/index.html
+
+First, we specify the random table as an array of `WeightedChoice`
+structs:
+
+[source]
+----
+// monster random table
+let monster_chances = &mut [
+    Weighted {weight: 80, item: "orc"},
+    Weighted {weight: 20, item: "troll"},
+];
+let monster_choice = WeightedChoice::new(monster_chances);
+----
+
+(put this in `place_objects`)
+
+We can now call `monster_choice.ind_sample(&mut rand::thread_rng())`
+and it will return "orc" 80% of the time and "troll" the rest.
+
+The numbers in `Weighted.weight` aren't percentages, though. We could
+have just as easily said `8` for `orc` and `2` for `troll` or even `4`
+and `1`. The number just means chances relative to each other so you
+can use whichever ratio you fancy.
+
+Anyway, as usual we need to import the new types and we need to bring
+the `IndependentSample` trait into scope as well:
+
+[source]
+----
+use rand::distributions::{Weighted, WeightedChoice, IndependentSample};
+----
+
+And now let's fix the monster random generation from a bunch of ifs to
+a neat `match` block:
+
+[source]
+----
+let mut monster = match monster_choice.ind_sample(&mut rand::thread_rng()) {
+    "orc" => {
+        // create an orc
+        ...
+    }
+    "troll" => {
+        // create a troll
+        ...
+    }
+    _ => unreachable!(),
+};
+----
+
+The `"orc"` and `"troll"` blocks will contain the same code as the
+`if/else` blocks before.
+
+The `_ => unreachable!()` unreachable branch is there before in Rust,
+all `match` statements must be exhaustive -- they must cover all the
+possibilities. Since we're matching on a string here, we need to
+handle the case when the string is neither "orc" nor "troll".
+
+We know that can't happen because we've only specified those two
+possibilities in `monster_chances`, but Rust can't figure that out.
+
+If you want to avoid this issue, you can define an enum for each
+monster type like we do with `ItemType` for items. Then we'd match on
+that enum instead of a string.
+
+So let's do items next to show that off! Again, we define the
+`item_chances` table:
+
+[source]
+----
+// item random table
+let item_chances = &mut [
+    Weighted {weight: 70, item: Item::Heal},
+    Weighted {weight: 10, item: Item::Lightning},
+    Weighted {weight: 10, item: Item::Fireball},
+    Weighted {weight: 10, item: Item::Confuse},
+];
+let item_choice = WeightedChoice::new(item_chances);
+----
+
+And again, update the `if/else` block to match on the item type
+instead:
+
+[source]
+----
+let mut item = match item_choice.ind_sample(&mut rand::thread_rng()) {
+    Item::Heal => {
+        // create a healing potion
+        ...
+    }
+    Item::Lightning => {
+        // create a lightning bolt scroll
+        ...
+    }
+    Item::Fireball => {
+        // create a fireball scroll
+        ...
+    }
+    Item::Confuse => {
+        // create a confuse scroll
+        ...
+    }
+};
+----
+
+and again just move the code from the if/else blocs here. And as you
+can see, we don't have to add a catch-all branch for items, because we
+handle all the variants of `Item`.
+
+
+A nice benefit of these choice tables is that we're keeping the logic
+for random chances separate from the one that actually generates the
+objects.
+
+So you can keep your random tables in a separate file that can be
+easily moddable, generate or modify it based on game options (e.g.
+difficulty), etc. without ever having to touch the object creation
+code.
 
 
 == Monster and item progression
