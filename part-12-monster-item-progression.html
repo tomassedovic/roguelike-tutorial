@@ -5,7 +5,7 @@
 <!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="generator" content="Asciidoctor 1.5.2">
-<title>Field-of-view and exploration</title>
+<title>Monster and item progression</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400">
 <style>
 /* Asciidoctor default stylesheet | MIT License | http://asciidoctor.org */
@@ -408,6 +408,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 .hide-for-print{display:none!important}
 .show-for-print{display:inherit!important}}
 </style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.2.0/css/font-awesome.min.css">
 <style>
 .listingblock .pygments .hll { background-color: #ffffcc }
 .listingblock .pygments  { background: #f8f8f8; }
@@ -476,7 +477,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </head>
 <body class="article">
 <div id="header">
-<h1>Field-of-view and exploration</h1>
+<h1>Monster and item progression</h1>
 </div>
 <div id="content">
 <div id="preamble">
@@ -487,279 +488,350 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect1">
-<h2 id="_field_of_view_fov">Field of View (FOV)</h2>
+<h2 id="_random_choices">Random choices</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The next step towards a complete roguelike is FOV. This adds a
-tactical element, and lets the player wonder what&#8217;s on the other side
-of every door and every corner! The FOV works like a light source
-where the player stands, casting light in every direction but not
-getting past any walls. Regions in shadow are invisible. You could
-code it yourself by casting rays outward from the player, but it&#8217;s
-much easier than that; libtcod has a whole module dedicated to it! It
-includes different methods with varying levels of precision, speed and
-other interesting properties. There&#8217;s an <a href="http://www.roguebasin.com/index.php?title=Comparative_study_of_field_of_view_algorithms_for_2D_grid_based_worlds">excellent study
-here</a> if you want to know more about them, including tables and images
-comparing the different algorithms.</p>
+<p>Now that the player character can become stronger, the challenges that
+await should become harder too! It sure would be nice if the type and
+quantity of monsters would vary with the dungeon level, as well as the
+items. This discovery is a great way to entice the player to go
+forward, wondering if around the next corner is something he or she
+has never seen before!</p>
 </div>
 <div class="paragraph">
-<p>We&#8217;ll define the chosen algorithm along with some other constants so
-they can be changed later. For now we&#8217;ll just use the default
-(<code>Basic</code>) algorithm. There&#8217;s also an option to light walls or not,
-this is a matter of preference. Another important constant is the
-maximum radius for FOV calculations, how far the player can see in the
-dungeon. (Whether this is due to the player&#8217;s sight range or the light
-from the player&#8217;s torch depends on how you choose to explain this to
-the player.)</p>
+<p>Before going further though, let&#8217;s have a look at how we&#8217;re deciding
+which item to place on the map:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span class="tok-kr">const</span> <span class="tok-n">FOV_ALGO</span><span class="tok-o">:</span> <span class="tok-n">FovAlgorithm</span> <span class="tok-o">=</span> <span class="tok-n">FovAlgorithm</span><span class="tok-o">::</span><span class="tok-n">Basic</span><span class="tok-p">;</span>
-<span class="tok-kr">const</span> <span class="tok-n">FOV_LIGHT_WALLS</span><span class="tok-o">:</span> <span class="tok-kt">bool</span> <span class="tok-o">=</span> <span class="tok-k">true</span><span class="tok-p">;</span>
-<span class="tok-kr">const</span> <span class="tok-n">TORCH_RADIUS</span><span class="tok-o">:</span> <span class="tok-kt">i32</span> <span class="tok-o">=</span> <span class="tok-mi">10</span><span class="tok-p">;</span></code></pre>
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-kd">let</span> <span class="tok-n">dice</span> <span class="tok-o">=</span> <span class="tok-n">rand</span><span class="tok-o">::</span><span class="tok-n">random</span><span class="tok-o">::&lt;</span><span class="tok-kt">f32</span><span class="tok-o">&gt;</span><span class="tok-p">();</span>
+<span class="tok-kd">let</span> <span class="tok-k">mut</span> <span class="tok-n">item</span> <span class="tok-o">=</span> <span class="tok-k">if</span> <span class="tok-n">dice</span> <span class="tok-o">&lt;</span> <span class="tok-mf">0.7</span> <span class="tok-p">{</span>
+    <span class="tok-c1">// create a healing potion (70% chance)</span>
+    <span class="tok-p">...</span>
+<span class="tok-p">}</span> <span class="tok-k">else</span> <span class="tok-k">if</span> <span class="tok-n">dice</span> <span class="tok-o">&lt;</span> <span class="tok-mf">0.7</span> <span class="tok-o">+</span> <span class="tok-mf">0.1</span> <span class="tok-p">{</span>
+    <span class="tok-c1">// create a lightning bolt scroll (10% chance)</span>
+    <span class="tok-p">...</span>
+<span class="tok-p">}</span> <span class="tok-k">else</span> <span class="tok-k">if</span> <span class="tok-n">dice</span> <span class="tok-o">&lt;</span> <span class="tok-mf">0.7</span> <span class="tok-o">+</span> <span class="tok-mf">0.1</span> <span class="tok-o">+</span> <span class="tok-mf">0.1</span> <span class="tok-p">{</span>
+    <span class="tok-c1">// create a fireball scroll (10% chance)</span>
+    <span class="tok-p">...</span>
+<span class="tok-p">}</span> <span class="tok-k">else</span> <span class="tok-p">{</span>
+    <span class="tok-c1">// create a confuse scroll (10% chance)</span>
+    <span class="tok-p">...</span>
+<span class="tok-p">};</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>And we need to add colours for the lit tiles:</p>
+<p>As we add more items, this will be harder to maintain. Every time we
+add an item, we&#8217;ll have to change the probabilities in all these <code>if</code>
+checks.</p>
+</div>
+<div class="paragraph">
+<p>It would be much nicer if we could define a <em>loot table</em>. Luckily, the
+<code>rand</code> crate supports this using the <code>WeightedChoice</code> distribution:</p>
+</div>
+<div class="paragraph">
+<p><a href="https://doc.rust-lang.org/rand/rand/distributions/index.html" class="bare">https://doc.rust-lang.org/rand/rand/distributions/index.html</a></p>
+</div>
+<div class="paragraph">
+<p>First, we specify the random table as an array of <code>WeightedChoice</code>
+structs:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span class="tok-kr">const</span> <span class="tok-n">COLOR_DARK_WALL</span><span class="tok-o">:</span> <span class="tok-n">Color</span> <span class="tok-o">=</span> <span class="tok-n">Color</span> <span class="tok-p">{</span> <span class="tok-n">r</span><span class="tok-o">:</span> <span class="tok-mi">0</span><span class="tok-p">,</span> <span class="tok-n">g</span><span class="tok-o">:</span> <span class="tok-mi">0</span><span class="tok-p">,</span> <span class="tok-n">b</span><span class="tok-o">:</span> <span class="tok-mi">100</span> <span class="tok-p">};</span>
-<span class="tok-kr">const</span> <span class="tok-n">COLOR_LIGHT_WALL</span><span class="tok-o">:</span> <span class="tok-n">Color</span> <span class="tok-o">=</span> <span class="tok-n">Color</span> <span class="tok-p">{</span> <span class="tok-n">r</span><span class="tok-o">:</span> <span class="tok-mi">130</span><span class="tok-p">,</span> <span class="tok-n">g</span><span class="tok-o">:</span> <span class="tok-mi">110</span><span class="tok-p">,</span> <span class="tok-n">b</span><span class="tok-o">:</span> <span class="tok-mi">50</span> <span class="tok-p">};</span>
-<span class="tok-kr">const</span> <span class="tok-n">COLOR_DARK_GROUND</span><span class="tok-o">:</span> <span class="tok-n">Color</span> <span class="tok-o">=</span> <span class="tok-n">Color</span> <span class="tok-p">{</span> <span class="tok-n">r</span><span class="tok-o">:</span> <span class="tok-mi">50</span><span class="tok-p">,</span> <span class="tok-n">g</span><span class="tok-o">:</span> <span class="tok-mi">50</span><span class="tok-p">,</span> <span class="tok-n">b</span><span class="tok-o">:</span> <span class="tok-mi">150</span> <span class="tok-p">};</span>
-<span class="tok-kr">const</span> <span class="tok-n">COLOR_LIGHT_GROUND</span><span class="tok-o">:</span> <span class="tok-n">Color</span> <span class="tok-o">=</span> <span class="tok-n">Color</span> <span class="tok-p">{</span> <span class="tok-n">r</span><span class="tok-o">:</span> <span class="tok-mi">200</span><span class="tok-p">,</span> <span class="tok-n">g</span><span class="tok-o">:</span> <span class="tok-mi">180</span><span class="tok-p">,</span> <span class="tok-n">b</span><span class="tok-o">:</span> <span class="tok-mi">50</span> <span class="tok-p">};</span></code></pre>
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-c1">// monster random table</span>
+<span class="tok-kd">let</span> <span class="tok-n">monster_chances</span> <span class="tok-o">=</span> <span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-p">[</span>
+    <span class="tok-n">Weighted</span> <span class="tok-p">{</span><span class="tok-n">weight</span><span class="tok-o">:</span> <span class="tok-mi">80</span><span class="tok-p">,</span> <span class="tok-n">item</span><span class="tok-o">:</span> <span class="tok-s">&quot;orc&quot;</span><span class="tok-p">},</span>
+    <span class="tok-n">Weighted</span> <span class="tok-p">{</span><span class="tok-n">weight</span><span class="tok-o">:</span> <span class="tok-mi">20</span><span class="tok-p">,</span> <span class="tok-n">item</span><span class="tok-o">:</span> <span class="tok-s">&quot;troll&quot;</span><span class="tok-p">},</span>
+<span class="tok-p">];</span>
+<span class="tok-kd">let</span> <span class="tok-n">monster_choice</span> <span class="tok-o">=</span> <span class="tok-n">WeightedChoice</span><span class="tok-o">::</span><span class="tok-n">new</span><span class="tok-p">(</span><span class="tok-n">monster_chances</span><span class="tok-p">);</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>The fov map object in <code>tcod</code> is called <code>Map</code>, which conflicts with our
-own dungeon map type. So we&#8217;ll rename the tcod&#8217;s one to <code>FovMap</code> on
-import:</p>
+<p>(put this in <code>place_objects</code>)</p>
+</div>
+<div class="paragraph">
+<p>We can now call <code>monster_choice.ind_sample(&amp;mut rand::thread_rng())</code>
+and it will return "orc" 80% of the time and "troll" the rest.</p>
+</div>
+<div class="paragraph">
+<p>The numbers in <code>Weighted.weight</code> aren&#8217;t percentages, though. We could
+have just as easily said <code>8</code> for <code>orc</code> and <code>2</code> for <code>troll</code> or even <code>4</code>
+and <code>1</code>. The number just means chances relative to each other so you
+can use whichever ratio you fancy.</p>
+</div>
+<div class="paragraph">
+<p>Anyway, as usual we need to import the new types and we need to bring
+the <code>IndependentSample</code> trait into scope as well:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span class="tok-kn">use</span> <span class="tok-n">tcod</span><span class="tok-o">::</span><span class="tok-n">map</span><span class="tok-o">::</span><span class="tok-p">{</span><span class="tok-nb">Map</span> <span class="tok-k">as</span> <span class="tok-n">FovMap</span><span class="tok-p">,</span> <span class="tok-n">FovAlgorithm</span><span class="tok-p">};</span></code></pre>
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-kn">use</span> <span class="tok-n">rand</span><span class="tok-o">::</span><span class="tok-n">distributions</span><span class="tok-o">::</span><span class="tok-p">{</span><span class="tok-n">Weighted</span><span class="tok-p">,</span> <span class="tok-n">WeightedChoice</span><span class="tok-p">,</span> <span class="tok-n">IndependentSample</span><span class="tok-p">};</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>The libtcod FOV module needs to know which tiles block sight. So, we
-create a map that libtcod can understand, and fill it with
-the appropriate values from the tiles' own <code>block_sight</code> and <code>blocked</code>
-properties. Well, actually, only <code>block_sight</code> will be used; the <code>blocked</code>
-value is completely irrelevant for FOV! It will be useful only for the
-pathfinding module, but it doesn&#8217;t hurt to provide that value anyway.
-Also, libtcod asks for values that are the opposite of what we
-defined, so we toggle them with the negation (<code>!</code>) operator. This goes in the
-main function, before entering the main game loop.</p>
+<p>And now let&#8217;s fix the monster random generation from a bunch of ifs to
+a neat <code>match</code> block:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span class="tok-kd">let</span> <span class="tok-k">mut</span> <span class="tok-n">fov_map</span> <span class="tok-o">=</span> <span class="tok-n">FovMap</span><span class="tok-o">::</span><span class="tok-n">new</span><span class="tok-p">(</span><span class="tok-n">MAP_WIDTH</span><span class="tok-p">,</span> <span class="tok-n">MAP_HEIGHT</span><span class="tok-p">);</span>
-<span class="tok-k">for</span> <span class="tok-n">y</span> <span class="tok-k">in</span> <span class="tok-mf">0.</span><span class="tok-p">.</span><span class="tok-n">MAP_HEIGHT</span> <span class="tok-p">{</span>
-    <span class="tok-k">for</span> <span class="tok-n">x</span> <span class="tok-k">in</span> <span class="tok-mf">0.</span><span class="tok-p">.</span><span class="tok-n">MAP_WIDTH</span> <span class="tok-p">{</span>
-        <span class="tok-n">fov_map</span><span class="tok-p">.</span><span class="tok-n">set</span><span class="tok-p">(</span><span class="tok-n">x</span><span class="tok-p">,</span> <span class="tok-n">y</span><span class="tok-p">,</span>
-                    <span class="tok-o">!</span><span class="tok-n">map</span><span class="tok-p">[</span><span class="tok-n">x</span> <span class="tok-k">as</span> <span class="tok-n">usize</span><span class="tok-p">][</span><span class="tok-n">y</span> <span class="tok-k">as</span> <span class="tok-n">usize</span><span class="tok-p">].</span><span class="tok-n">block_sight</span><span class="tok-p">,</span>
-                    <span class="tok-o">!</span><span class="tok-n">map</span><span class="tok-p">[</span><span class="tok-n">x</span> <span class="tok-k">as</span> <span class="tok-n">usize</span><span class="tok-p">][</span><span class="tok-n">y</span> <span class="tok-k">as</span> <span class="tok-n">usize</span><span class="tok-p">].</span><span class="tok-n">blocked</span><span class="tok-p">);</span>
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-kd">let</span> <span class="tok-k">mut</span> <span class="tok-n">monster</span> <span class="tok-o">=</span> <span class="tok-k">match</span> <span class="tok-n">monster_choice</span><span class="tok-p">.</span><span class="tok-n">ind_sample</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">rand</span><span class="tok-o">::</span><span class="tok-n">thread_rng</span><span class="tok-p">())</span> <span class="tok-p">{</span>
+    <span class="tok-s">&quot;orc&quot;</span> <span class="tok-o">=&gt;</span> <span class="tok-p">{</span>
+        <span class="tok-c1">// create an orc</span>
+        <span class="tok-p">...</span>
     <span class="tok-p">}</span>
-<span class="tok-p">}</span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>FOV needs to be recomputed&#8201;&#8212;&#8201;but only if the player moves or a tile
-changes. To that end, we&#8217;ll keep track of player&#8217;s position from the
-previous run of the game loop and compare it to the current position.</p>
-</div>
-<div class="paragraph">
-<p>Add this before the main game loop:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span class="tok-kd">let</span> <span class="tok-k">mut</span> <span class="tok-n">previous_player_position</span> <span class="tok-o">=</span> <span class="tok-p">(</span><span class="tok-o">-</span><span class="tok-mi">1</span><span class="tok-p">,</span> <span class="tok-o">-</span><span class="tok-mi">1</span><span class="tok-p">);</span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>(we&#8217;re using <code>(-1, -1)</code> to make sure FOV gets computed on the first
-time through the loop)</p>
-</div>
-<div class="paragraph">
-<p>Then this right before <code>handle_keys</code> (which is where the player&#8217;s
-position could change)</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span class="tok-n">previous_player_position</span> <span class="tok-o">=</span> <span class="tok-p">(</span><span class="tok-n">player</span><span class="tok-p">.</span><span class="tok-n">x</span><span class="tok-p">,</span> <span class="tok-n">player</span><span class="tok-p">.</span><span class="tok-n">y</span><span class="tok-p">);</span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>And lastly, replace the existing call to <code>render_all</code> with these two lines:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span class="tok-kd">let</span> <span class="tok-n">fov_recompute</span> <span class="tok-o">=</span> <span class="tok-n">previous_player_position</span> <span class="tok-o">!=</span> <span class="tok-p">(</span><span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-mi">0</span><span class="tok-p">].</span><span class="tok-n">x</span><span class="tok-p">,</span> <span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-mi">0</span><span class="tok-p">].</span><span class="tok-n">y</span><span class="tok-p">);</span>
-<span class="tok-n">render_all</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">root</span><span class="tok-p">,</span> <span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">con</span><span class="tok-p">,</span> <span class="tok-o">&amp;</span><span class="tok-n">objects</span><span class="tok-p">,</span> <span class="tok-o">&amp;</span><span class="tok-n">map</span><span class="tok-p">,</span> <span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">fov_map</span><span class="tok-p">,</span> <span class="tok-n">fov_recompute</span><span class="tok-p">);</span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Now we need to change the rendering code to actually recompute FOV and
-display the result. We&#8217;re doing it there, because if the FOV doesn&#8217;t
-need to be recomputed, we don&#8217;t need to render the map at all!</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span class="tok-k">if</span> <span class="tok-n">fov_recompute</span> <span class="tok-p">{</span>
-    <span class="tok-c1">// recompute FOV if needed (the player moved or something)</span>
-    <span class="tok-kd">let</span> <span class="tok-n">player</span> <span class="tok-o">=</span> <span class="tok-o">&amp;</span><span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-mi">0</span><span class="tok-p">];</span>
-    <span class="tok-n">fov_map</span><span class="tok-p">.</span><span class="tok-n">compute_fov</span><span class="tok-p">(</span><span class="tok-n">player</span><span class="tok-p">.</span><span class="tok-n">x</span><span class="tok-p">,</span> <span class="tok-n">player</span><span class="tok-p">.</span><span class="tok-n">y</span><span class="tok-p">,</span> <span class="tok-n">TORCH_RADIUS</span><span class="tok-p">,</span> <span class="tok-n">FOV_LIGHT_WALLS</span><span class="tok-p">,</span> <span class="tok-n">FOV_ALGO</span><span class="tok-p">);</span>
-<span class="tok-p">}</span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>As you can see, we&#8217;re using all the constants we defined earlier.
-Now move the code that renders the map at the end of that <code>if</code>. We&#8217;ll
-extend it to render the tiles in FOV with their <code>light</code> colours:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span class="tok-c1">// go through all tiles, and set their background color</span>
-<span class="tok-k">for</span> <span class="tok-n">y</span> <span class="tok-k">in</span> <span class="tok-mf">0.</span><span class="tok-p">.</span><span class="tok-n">MAP_HEIGHT</span> <span class="tok-p">{</span>
-    <span class="tok-k">for</span> <span class="tok-n">x</span> <span class="tok-k">in</span> <span class="tok-mf">0.</span><span class="tok-p">.</span><span class="tok-n">MAP_WIDTH</span> <span class="tok-p">{</span>
-        <span class="tok-kd">let</span> <span class="tok-n">visible</span> <span class="tok-o">=</span> <span class="tok-n">fov_map</span><span class="tok-p">.</span><span class="tok-n">is_in_fov</span><span class="tok-p">(</span><span class="tok-n">x</span><span class="tok-p">,</span> <span class="tok-n">y</span><span class="tok-p">);</span>
-        <span class="tok-kd">let</span> <span class="tok-n">wall</span> <span class="tok-o">=</span> <span class="tok-n">map</span><span class="tok-p">[</span><span class="tok-n">x</span> <span class="tok-k">as</span> <span class="tok-n">usize</span><span class="tok-p">][</span><span class="tok-n">y</span> <span class="tok-k">as</span> <span class="tok-n">usize</span><span class="tok-p">].</span><span class="tok-n">block_sight</span><span class="tok-p">;</span>
-        <span class="tok-kd">let</span> <span class="tok-n">color</span> <span class="tok-o">=</span> <span class="tok-k">match</span> <span class="tok-p">(</span><span class="tok-n">visible</span><span class="tok-p">,</span> <span class="tok-n">wall</span><span class="tok-p">)</span> <span class="tok-p">{</span>
-            <span class="tok-c1">// outside of field of view:</span>
-            <span class="tok-p">(</span><span class="tok-kc">false</span><span class="tok-p">,</span> <span class="tok-k">true</span><span class="tok-p">)</span> <span class="tok-o">=&gt;</span> <span class="tok-n">COLOR_DARK_WALL</span><span class="tok-p">,</span>
-            <span class="tok-p">(</span><span class="tok-kc">false</span><span class="tok-p">,</span> <span class="tok-kc">false</span><span class="tok-p">)</span> <span class="tok-o">=&gt;</span> <span class="tok-n">COLOR_DARK_GROUND</span><span class="tok-p">,</span>
-            <span class="tok-c1">// inside fov:</span>
-            <span class="tok-p">(</span><span class="tok-k">true</span><span class="tok-p">,</span> <span class="tok-k">true</span><span class="tok-p">)</span> <span class="tok-o">=&gt;</span> <span class="tok-n">COLOR_LIGHT_WALL</span><span class="tok-p">,</span>
-            <span class="tok-p">(</span><span class="tok-k">true</span><span class="tok-p">,</span> <span class="tok-kc">false</span><span class="tok-p">)</span> <span class="tok-o">=&gt;</span> <span class="tok-n">COLOR_LIGHT_GROUND</span><span class="tok-p">,</span>
-        <span class="tok-p">};</span>
-        <span class="tok-n">con</span><span class="tok-p">.</span><span class="tok-n">set_char_background</span><span class="tok-p">(</span><span class="tok-n">x</span><span class="tok-p">,</span> <span class="tok-n">y</span><span class="tok-p">,</span> <span class="tok-n">color</span><span class="tok-p">,</span> <span class="tok-n">BackgroundFlag</span><span class="tok-o">::</span><span class="tok-nb">Set</span><span class="tok-p">);</span>
+    <span class="tok-s">&quot;troll&quot;</span> <span class="tok-o">=&gt;</span> <span class="tok-p">{</span>
+        <span class="tok-c1">// create a troll</span>
+        <span class="tok-p">...</span>
     <span class="tok-p">}</span>
-<span class="tok-p">}</span></code></pre>
+    <span class="tok-n">_</span> <span class="tok-o">=&gt;</span> <span class="tok-n">unreachable</span><span class="tok-o">!</span><span class="tok-p">(),</span>
+<span class="tok-p">};</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>We&#8217;ve replaced our <code>if</code> with a <code>match</code>. As we&#8217;ve added another
-check (whether a tile is visible or not), we would have to use nested
-ifs and end up with four separate calls to <code>set_char_background</code>. But
-since the only thing we&#8217;re changing is the colour, we&#8217;ll just pattern
-match to get the right value and use it.</p>
+<p>The <code>"orc"</code> and <code>"troll"</code> blocks will contain the same code as the
+<code>if/else</code> blocks before.</p>
 </div>
 <div class="paragraph">
-<p>Finally, we&#8217;ll make sure we render only objects that are in the
-player&#8217;s FOV. Wrap the <code>object.draw</code> call in <code>render_all</code> in a FOV
-check:</p>
+<p>The <code>_ &#8658; unreachable!()</code> unreachable branch is there before in Rust,
+all <code>match</code> statements must be exhaustive&#8201;&#8212;&#8201;they must cover all the
+possibilities. Since we&#8217;re matching on a string here, we need to
+handle the case when the string is neither "orc" nor "troll".</p>
+</div>
+<div class="paragraph">
+<p>We know that can&#8217;t happen because we&#8217;ve only specified those two
+possibilities in <code>monster_chances</code>, but Rust can&#8217;t figure that out.</p>
+</div>
+<div class="paragraph">
+<p>If you want to avoid this issue, you can define an enum for each
+monster type like we do with <code>ItemType</code> for items. Then we&#8217;d match on
+that enum instead of a string.</p>
+</div>
+<div class="paragraph">
+<p>So let&#8217;s do items next to show that off! Again, we define the
+<code>item_chances</code> table:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span class="tok-k">if</span> <span class="tok-n">fov_map</span><span class="tok-p">.</span><span class="tok-n">is_in_fov</span><span class="tok-p">(</span><span class="tok-n">object</span><span class="tok-p">.</span><span class="tok-n">x</span><span class="tok-p">,</span> <span class="tok-n">object</span><span class="tok-p">.</span><span class="tok-n">y</span><span class="tok-p">)</span> <span class="tok-p">{</span>
-    <span class="tok-n">object</span><span class="tok-p">.</span><span class="tok-n">draw</span><span class="tok-p">(</span><span class="tok-n">con</span><span class="tok-p">);</span>
-<span class="tok-p">}</span></code></pre>
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-c1">// item random table</span>
+<span class="tok-kd">let</span> <span class="tok-n">item_chances</span> <span class="tok-o">=</span> <span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-p">[</span>
+    <span class="tok-n">Weighted</span> <span class="tok-p">{</span><span class="tok-n">weight</span><span class="tok-o">:</span> <span class="tok-mi">70</span><span class="tok-p">,</span> <span class="tok-n">item</span><span class="tok-o">:</span> <span class="tok-n">Item</span><span class="tok-o">::</span><span class="tok-n">Heal</span><span class="tok-p">},</span>
+    <span class="tok-n">Weighted</span> <span class="tok-p">{</span><span class="tok-n">weight</span><span class="tok-o">:</span> <span class="tok-mi">10</span><span class="tok-p">,</span> <span class="tok-n">item</span><span class="tok-o">:</span> <span class="tok-n">Item</span><span class="tok-o">::</span><span class="tok-n">Lightning</span><span class="tok-p">},</span>
+    <span class="tok-n">Weighted</span> <span class="tok-p">{</span><span class="tok-n">weight</span><span class="tok-o">:</span> <span class="tok-mi">10</span><span class="tok-p">,</span> <span class="tok-n">item</span><span class="tok-o">:</span> <span class="tok-n">Item</span><span class="tok-o">::</span><span class="tok-n">Fireball</span><span class="tok-p">},</span>
+    <span class="tok-n">Weighted</span> <span class="tok-p">{</span><span class="tok-n">weight</span><span class="tok-o">:</span> <span class="tok-mi">10</span><span class="tok-p">,</span> <span class="tok-n">item</span><span class="tok-o">:</span> <span class="tok-n">Item</span><span class="tok-o">::</span><span class="tok-n">Confuse</span><span class="tok-p">},</span>
+<span class="tok-p">];</span>
+<span class="tok-kd">let</span> <span class="tok-n">item_choice</span> <span class="tok-o">=</span> <span class="tok-n">WeightedChoice</span><span class="tok-o">::</span><span class="tok-n">new</span><span class="tok-p">(</span><span class="tok-n">item_chances</span><span class="tok-p">);</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>We&#8217;ve shuffled a lot of code around, but we haven&#8217;t changed much,
-conceptually. Just track whether the player moved, update FOV and
-render the map if they did, use lit vs. dark colours and only render
-visible objects.</p>
+<p>And again, update the <code>if/else</code> block to match on the item type
+instead:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-kd">let</span> <span class="tok-k">mut</span> <span class="tok-n">item</span> <span class="tok-o">=</span> <span class="tok-k">match</span> <span class="tok-n">item_choice</span><span class="tok-p">.</span><span class="tok-n">ind_sample</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">rand</span><span class="tok-o">::</span><span class="tok-n">thread_rng</span><span class="tok-p">())</span> <span class="tok-p">{</span>
+    <span class="tok-n">Item</span><span class="tok-o">::</span><span class="tok-n">Heal</span> <span class="tok-o">=&gt;</span> <span class="tok-p">{</span>
+        <span class="tok-c1">// create a healing potion</span>
+        <span class="tok-p">...</span>
+    <span class="tok-p">}</span>
+    <span class="tok-n">Item</span><span class="tok-o">::</span><span class="tok-n">Lightning</span> <span class="tok-o">=&gt;</span> <span class="tok-p">{</span>
+        <span class="tok-c1">// create a lightning bolt scroll</span>
+        <span class="tok-p">...</span>
+    <span class="tok-p">}</span>
+    <span class="tok-n">Item</span><span class="tok-o">::</span><span class="tok-n">Fireball</span> <span class="tok-o">=&gt;</span> <span class="tok-p">{</span>
+        <span class="tok-c1">// create a fireball scroll</span>
+        <span class="tok-p">...</span>
+    <span class="tok-p">}</span>
+    <span class="tok-n">Item</span><span class="tok-o">::</span><span class="tok-n">Confuse</span> <span class="tok-o">=&gt;</span> <span class="tok-p">{</span>
+        <span class="tok-c1">// create a confuse scroll</span>
+        <span class="tok-p">...</span>
+    <span class="tok-p">}</span>
+<span class="tok-p">};</span></code></pre>
+</div>
 </div>
 <div class="paragraph">
-<p>And look how much better it looks now!</p>
+<p>and again just move the code from the if/else blocs here. And as you
+can see, we don&#8217;t have to add a catch-all branch for items, because we
+handle all the variants of <code>Item</code>.</p>
 </div>
 <div class="paragraph">
-<p><a href="part-4a-fov.rs.txt">The whole code for this section is here</a>.</p>
+<p>A nice benefit of these choice tables is that we&#8217;re keeping the logic
+for random chances separate from the one that actually generates the
+objects.</p>
+</div>
+<div class="paragraph">
+<p>So you can keep your random tables in a separate file that can be
+easily moddable, generate or modify it based on game options (e.g.
+difficulty), etc. without ever having to touch the object creation
+code.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_exploration">Exploration</h2>
+<h2 id="_monster_and_item_progression">Monster and item progression</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The last detail after FOV is exploration, a.k.a Fog of War. You made
-it this far, so this will be a piece of cake! What, you may say, fog
-of war can&#8217;t possibly be the easiest thing to code in a roguelike!
-Well, it is. Wait and see.</p>
+<p>The only thing left is varying the contents of the dungeon (number of
+monsters and items, and their chances) according to the dungeon level.
+Instead of having fixed values, they could change with some formula,
+like the one we used to calculate how much xp is needed to level up.
+You&#8217;re welcome to do this if you prefer; however in this section we
+will go down a slightly different path!</p>
 </div>
 <div class="paragraph">
-<p>First, all tiles will store whether they&#8217;re explored or not. They
-start unexplored. Put this in the definition of the <code>Tile</code> struct:</p>
+<p>What we&#8217;d like to be able to say is that the maximum number of items
+per room starts as 1 at level 1, and changes to 2 at level 4. We&#8217;ll
+create a table of transition points. Each entry in the table says what
+the value changes to, and at what level. This should be easier to
+tune, since you can change the value of one level without affecting
+the values of the others!</p>
+</div>
+<div class="paragraph">
+<p>We can take a similar approach to the weighted randomness. Let&#8217;s make
+a struct that defines the level and value:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span class="tok-n">explored</span><span class="tok-o">:</span> <span class="tok-kt">bool</span><span class="tok-p">,</span></code></pre>
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-k">struct</span> <span class="tok-n">Transition</span> <span class="tok-p">{</span>
+    <span class="tok-n">level</span><span class="tok-o">:</span> <span class="tok-kt">u32</span><span class="tok-p">,</span>
+    <span class="tok-n">value</span><span class="tok-o">:</span> <span class="tok-kt">u32</span><span class="tok-p">,</span>
+<span class="tok-p">}</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>And you need to update the <code>Tile::empty</code> and <code>Tile::wall</code> bodies:</p>
+<p>Then we can define a list of these transition points and have a
+function that picks the right value for the given level. For the
+example above, we would define: <code>[Transition{level: 1, value: 1},
+Transition{level: 4, value: 2}]</code>.</p>
+</div>
+<div class="paragraph">
+<p>To get the correct value for a given level, we&#8217;ll use this simple
+function:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span class="tok-k">pub</span> <span class="tok-k">fn</span> <span class="tok-n">empty</span><span class="tok-p">()</span> <span class="tok-o">-&gt;</span> <span class="tok-n">Self</span> <span class="tok-p">{</span>
-    <span class="tok-n">Tile</span><span class="tok-p">{</span><span class="tok-n">blocked</span><span class="tok-o">:</span> <span class="tok-kc">false</span><span class="tok-p">,</span> <span class="tok-n">explored</span><span class="tok-o">:</span> <span class="tok-kc">false</span><span class="tok-p">,</span> <span class="tok-n">block_sight</span><span class="tok-o">:</span> <span class="tok-kc">false</span><span class="tok-p">}</span>
-<span class="tok-p">}</span>
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-c-Doc">/// Returns a value that depends on level. the table specifies what</span>
+<span class="tok-c-Doc">/// value occurs after each level, default is 0.</span>
+<span class="tok-k">fn</span> <span class="tok-n">from_dungeon_level</span><span class="tok-p">(</span><span class="tok-n">table</span><span class="tok-o">:</span> <span class="tok-o">&amp;</span><span class="tok-p">[</span><span class="tok-n">Transition</span><span class="tok-p">],</span> <span class="tok-n">level</span><span class="tok-o">:</span> <span class="tok-kt">u32</span><span class="tok-p">)</span> <span class="tok-o">-&gt;</span> <span class="tok-kt">u32</span> <span class="tok-p">{</span>
+    <span class="tok-n">table</span><span class="tok-p">.</span><span class="tok-n">iter</span><span class="tok-p">()</span>
+        <span class="tok-p">.</span><span class="tok-n">rev</span><span class="tok-p">()</span>
+        <span class="tok-p">.</span><span class="tok-n">find</span><span class="tok-p">(</span><span class="tok-o">|</span><span class="tok-n">transition</span><span class="tok-o">|</span> <span class="tok-n">level</span> <span class="tok-o">&gt;=</span> <span class="tok-n">transition</span><span class="tok-p">.</span><span class="tok-n">level</span><span class="tok-p">)</span>
+        <span class="tok-p">.</span><span class="tok-n">map_or</span><span class="tok-p">(</span><span class="tok-mi">0</span><span class="tok-p">,</span> <span class="tok-o">|</span><span class="tok-n">transition</span><span class="tok-o">|</span> <span class="tok-n">transition</span><span class="tok-p">.</span><span class="tok-n">value</span><span class="tok-p">)</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It takes a list of transitions, goes through them in reverse order
+(using the <code>rev</code> iterator method) and as soon as it finds a transition
+that&#8217;s of the same or lower level, returns its <code>value</code>.</p>
+</div>
+<div class="paragraph">
+<p>Note that for this to work, the table must be sorted by the levels. We
+could do the sort explicitly as part of the <code>from_dungeon_level</code>
+function.</p>
+</div>
+<div class="paragraph">
+<p>And now we have the tools needed to make the level progression more
+interesting! Let&#8217;s change the number of monsters and items and their
+chances. In <code>place_objects</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-kd">let</span> <span class="tok-n">max_monsters</span> <span class="tok-o">=</span> <span class="tok-n">from_dungeon_level</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-p">[</span>
+    <span class="tok-n">Transition</span> <span class="tok-p">{</span><span class="tok-n">level</span><span class="tok-o">:</span> <span class="tok-mi">1</span><span class="tok-p">,</span> <span class="tok-n">value</span><span class="tok-o">:</span> <span class="tok-mi">2</span><span class="tok-p">},</span>
+    <span class="tok-n">Transition</span> <span class="tok-p">{</span><span class="tok-n">level</span><span class="tok-o">:</span> <span class="tok-mi">4</span><span class="tok-p">,</span> <span class="tok-n">value</span><span class="tok-o">:</span> <span class="tok-mi">3</span><span class="tok-p">},</span>
+    <span class="tok-n">Transition</span> <span class="tok-p">{</span><span class="tok-n">level</span><span class="tok-o">:</span> <span class="tok-mi">6</span><span class="tok-p">,</span> <span class="tok-n">value</span><span class="tok-o">:</span> <span class="tok-mi">5</span><span class="tok-p">},</span>
+<span class="tok-p">],</span> <span class="tok-n">level</span><span class="tok-p">);</span>
 
-<span class="tok-k">pub</span> <span class="tok-k">fn</span> <span class="tok-n">wall</span><span class="tok-p">()</span> <span class="tok-o">-&gt;</span> <span class="tok-n">Self</span> <span class="tok-p">{</span>
-    <span class="tok-n">Tile</span><span class="tok-p">{</span><span class="tok-n">blocked</span><span class="tok-o">:</span> <span class="tok-k">true</span><span class="tok-p">,</span> <span class="tok-n">explored</span><span class="tok-o">:</span> <span class="tok-kc">false</span><span class="tok-p">,</span> <span class="tok-n">block_sight</span><span class="tok-o">:</span> <span class="tok-k">true</span><span class="tok-p">}</span>
-<span class="tok-p">}</span></code></pre>
+<span class="tok-c1">// choose random number of monsters</span>
+<span class="tok-kd">let</span> <span class="tok-n">num_monsters</span> <span class="tok-o">=</span> <span class="tok-n">rand</span><span class="tok-o">::</span><span class="tok-n">thread_rng</span><span class="tok-p">().</span><span class="tok-n">gen_range</span><span class="tok-p">(</span><span class="tok-mi">0</span><span class="tok-p">,</span> <span class="tok-n">max_monsters</span> <span class="tok-o">+</span> <span class="tok-mi">1</span><span class="tok-p">);</span>
+
+<span class="tok-c1">// monster random table</span>
+<span class="tok-kd">let</span> <span class="tok-n">troll_chance</span> <span class="tok-o">=</span> <span class="tok-n">from_dungeon_level</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-p">[</span>
+    <span class="tok-n">Transition</span> <span class="tok-p">{</span><span class="tok-n">level</span><span class="tok-o">:</span> <span class="tok-mi">3</span><span class="tok-p">,</span> <span class="tok-n">value</span><span class="tok-o">:</span> <span class="tok-mi">15</span><span class="tok-p">},</span>
+    <span class="tok-n">Transition</span> <span class="tok-p">{</span><span class="tok-n">level</span><span class="tok-o">:</span> <span class="tok-mi">5</span><span class="tok-p">,</span> <span class="tok-n">value</span><span class="tok-o">:</span> <span class="tok-mi">30</span><span class="tok-p">},</span>
+    <span class="tok-n">Transition</span> <span class="tok-p">{</span><span class="tok-n">level</span><span class="tok-o">:</span> <span class="tok-mi">7</span><span class="tok-p">,</span> <span class="tok-n">value</span><span class="tok-o">:</span> <span class="tok-mi">60</span><span class="tok-p">},</span>
+<span class="tok-p">],</span> <span class="tok-n">level</span><span class="tok-p">);</span>
+
+<span class="tok-kd">let</span> <span class="tok-n">monster_chances</span> <span class="tok-o">=</span> <span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-p">[</span>
+    <span class="tok-n">Weighted</span> <span class="tok-p">{</span><span class="tok-n">weight</span><span class="tok-o">:</span> <span class="tok-mi">80</span><span class="tok-p">,</span> <span class="tok-n">item</span><span class="tok-o">:</span> <span class="tok-s">&quot;orc&quot;</span><span class="tok-p">},</span>
+    <span class="tok-n">Weighted</span> <span class="tok-p">{</span><span class="tok-n">weight</span><span class="tok-o">:</span> <span class="tok-n">troll_chance</span><span class="tok-p">,</span> <span class="tok-n">item</span><span class="tok-o">:</span> <span class="tok-s">&quot;troll&quot;</span><span class="tok-p">},</span>
+<span class="tok-p">];</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Now, in the <code>render_all</code> function, after the <code>(visible, wall)</code> match
-make sure the visible tiles are explored and only render those that
-are:</p>
+<p>We define a transition table for the maximum number of monsters and we
+modify the chances of the troll showing up.</p>
+</div>
+<div class="paragraph">
+<p>Now for items a little lower down:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span class="tok-kd">let</span> <span class="tok-n">explored</span> <span class="tok-o">=</span> <span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">map</span><span class="tok-p">[</span><span class="tok-n">x</span> <span class="tok-k">as</span> <span class="tok-n">usize</span><span class="tok-p">][</span><span class="tok-n">y</span> <span class="tok-k">as</span> <span class="tok-n">usize</span><span class="tok-p">].</span><span class="tok-n">explored</span><span class="tok-p">;</span>
-<span class="tok-k">if</span> <span class="tok-n">visible</span> <span class="tok-p">{</span>
-    <span class="tok-c1">// since it&#39;s visible, explore it</span>
-    <span class="tok-o">*</span><span class="tok-n">explored</span> <span class="tok-o">=</span> <span class="tok-k">true</span><span class="tok-p">;</span>
-<span class="tok-p">}</span>
-<span class="tok-k">if</span> <span class="tok-o">*</span><span class="tok-n">explored</span> <span class="tok-p">{</span>
-    <span class="tok-c1">// show explored tiles only (any visible tile is explored already)</span>
-    <span class="tok-n">con</span><span class="tok-p">.</span><span class="tok-n">set_char_background</span><span class="tok-p">(</span><span class="tok-n">x</span><span class="tok-p">,</span> <span class="tok-n">y</span><span class="tok-p">,</span> <span class="tok-n">color</span><span class="tok-p">,</span> <span class="tok-n">BackgroundFlag</span><span class="tok-o">::</span><span class="tok-nb">Set</span><span class="tok-p">);</span>
-<span class="tok-p">}</span></code></pre>
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-c1">// maximum number of items per room</span>
+<span class="tok-kd">let</span> <span class="tok-n">max_items</span> <span class="tok-o">=</span> <span class="tok-n">from_dungeon_level</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-p">[</span>
+    <span class="tok-n">Transition</span> <span class="tok-p">{</span><span class="tok-n">level</span><span class="tok-o">:</span> <span class="tok-mi">1</span><span class="tok-p">,</span> <span class="tok-n">value</span><span class="tok-o">:</span> <span class="tok-mi">1</span><span class="tok-p">},</span>
+    <span class="tok-n">Transition</span> <span class="tok-p">{</span><span class="tok-n">level</span><span class="tok-o">:</span> <span class="tok-mi">4</span><span class="tok-p">,</span> <span class="tok-n">value</span><span class="tok-o">:</span> <span class="tok-mi">2</span><span class="tok-p">},</span>
+<span class="tok-p">],</span> <span class="tok-n">level</span><span class="tok-p">);</span>
+
+<span class="tok-c1">// item random table</span>
+<span class="tok-kd">let</span> <span class="tok-n">item_chances</span> <span class="tok-o">=</span> <span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-p">[</span>
+    <span class="tok-c1">// healing potion always shows up, even if all other items have 0 chance</span>
+    <span class="tok-n">Weighted</span> <span class="tok-p">{</span><span class="tok-n">weight</span><span class="tok-o">:</span> <span class="tok-mi">35</span><span class="tok-p">,</span> <span class="tok-n">item</span><span class="tok-o">:</span> <span class="tok-n">Item</span><span class="tok-o">::</span><span class="tok-n">Heal</span><span class="tok-p">},</span>
+    <span class="tok-n">Weighted</span> <span class="tok-p">{</span><span class="tok-n">weight</span><span class="tok-o">:</span> <span class="tok-n">from_dungeon_level</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-p">[</span><span class="tok-n">Transition</span><span class="tok-p">{</span><span class="tok-n">level</span><span class="tok-o">:</span> <span class="tok-mi">4</span><span class="tok-p">,</span> <span class="tok-n">value</span><span class="tok-o">:</span> <span class="tok-mi">25</span><span class="tok-p">}],</span> <span class="tok-n">level</span><span class="tok-p">),</span>
+              <span class="tok-n">item</span><span class="tok-o">:</span> <span class="tok-n">Item</span><span class="tok-o">::</span><span class="tok-n">Lightning</span><span class="tok-p">},</span>
+    <span class="tok-n">Weighted</span> <span class="tok-p">{</span><span class="tok-n">weight</span><span class="tok-o">:</span> <span class="tok-n">from_dungeon_level</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-p">[</span><span class="tok-n">Transition</span><span class="tok-p">{</span><span class="tok-n">level</span><span class="tok-o">:</span> <span class="tok-mi">6</span><span class="tok-p">,</span> <span class="tok-n">value</span><span class="tok-o">:</span> <span class="tok-mi">25</span><span class="tok-p">}],</span> <span class="tok-n">level</span><span class="tok-p">),</span>
+              <span class="tok-n">item</span><span class="tok-o">:</span> <span class="tok-n">Item</span><span class="tok-o">::</span><span class="tok-n">Fireball</span><span class="tok-p">},</span>
+    <span class="tok-n">Weighted</span> <span class="tok-p">{</span><span class="tok-n">weight</span><span class="tok-o">:</span> <span class="tok-n">from_dungeon_level</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-p">[</span><span class="tok-n">Transition</span><span class="tok-p">{</span><span class="tok-n">level</span><span class="tok-o">:</span> <span class="tok-mi">2</span><span class="tok-p">,</span> <span class="tok-n">value</span><span class="tok-o">:</span> <span class="tok-mi">10</span><span class="tok-p">}],</span> <span class="tok-n">level</span><span class="tok-p">),</span>
+              <span class="tok-n">item</span><span class="tok-o">:</span> <span class="tok-n">Item</span><span class="tok-o">::</span><span class="tok-n">Confuse</span><span class="tok-p">},</span>
+<span class="tok-p">];</span>
+
+<span class="tok-p">...</span>
+
+<span class="tok-c1">// choose random number of items</span>
+<span class="tok-kd">let</span> <span class="tok-n">num_items</span> <span class="tok-o">=</span> <span class="tok-n">rand</span><span class="tok-o">::</span><span class="tok-n">thread_rng</span><span class="tok-p">().</span><span class="tok-n">gen_range</span><span class="tok-p">(</span><span class="tok-mi">0</span><span class="tok-p">,</span> <span class="tok-n">max_items</span> <span class="tok-o">+</span> <span class="tok-mi">1</span><span class="tok-p">);</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>(we take a mutable reference to the <code>explored</code> field so we don&#8217;t have
-to write the full <code>map[x as usize][y as usize].explored</code> bit twice)</p>
+<p>You can now remove the <code>MAX_ROOM_MONSTERS</code> and <code>MAX_ROOM_ITEMS</code>
+constants (which the compiler will remind you to do) and change some
+of the stats to make the game more balanced:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>HEAL_AMOUNT = 40</p>
+</li>
+<li>
+<p>LIGHTNING_DAMAGE = 40</p>
+</li>
+<li>
+<p>FIREBALL_DAMAGE = 25</p>
+</li>
+</ul>
 </div>
 <div class="paragraph">
-<p>And finally, since we&#8217;re now actually modifying the <code>map</code>, we&#8217;ll need
-to pass a <em>mutable</em> reference to <code>render_all</code>.</p>
+<p>For the player, set <code>hp</code> and <code>max_hp</code> to 100, <code>defense</code> to 1 and
+<code>power</code> to 4. For the orcs: <code>hp=20</code>, <code>defense=0</code> and <code>power=4</code>. And
+for the trolls: <code>hp=30</code>, <code>defense=2</code> and <code>power=8</code>.</p>
 </div>
 <div class="paragraph">
-<p>And that&#8217;s that! If you run the game now, you start in mostly black
-space except for your immediate surroundings and the map fills in as
-you explore.</p>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<div class="title">Note</div>
-</td>
-<td class="content">
-One might argue that that <code>render_all</code> should not actually
-modify anything and that the FOV/exploration code belongs somewhere
-else. They wouldn&#8217;t necessarily be wrong. But let&#8217;s just roll with it
-for now.
-</td>
-</tr>
-</table>
+<p>And that&#8217;s it. Try playing it for a bit. It will be challenging and
+you can&#8217;t just bash your way through. Try to reach the level 10 or so.
+It&#8217;s pretty fun already despite only having a couple of monsters and a
+few items. And it should be fairly straightforward to add more.</p>
 </div>
 <div class="paragraph">
-<p>Here&#8217;s <a href="part-4b-exploration.rs.txt">the complete code so far</a>.</p>
+<p>Here&#8217;s <a href="part-12-monster-item-progression.rs.txt">the complete code so far</a>.</p>
 </div>
 <div class="paragraph">
-<p>Continue to <a href="part-5-combat.html">the next part</a>.</p>
+<p>Continue to <a href="part-13-adventure-gear.html">the next part</a>.</p>
 </div>
 </div>
 </div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2016-06-26 11:27:17 CEST
+Last updated 2016-06-27 23:05:46 CEST
 </div>
 </div>
 </body>
