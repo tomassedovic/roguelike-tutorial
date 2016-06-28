@@ -1,0 +1,29 @@
+= Adventure gear
+:icons: font
+:source-highlighter: pygments
+:source-language: rust
+ifdef::env-github[:outfilesuffix: .adoc]
+
+
+<<index#,Back to the index.>>
+
+
+== Simplifying
+
+TODO
+
+== Basic equipment
+
+TODO
+
+== Equipment polish
+
+TODO
+
+== Bonus round
+
+TODO
+
+
+
+Here's link:part-13-adventure-gear.rs.txt[the complete code].

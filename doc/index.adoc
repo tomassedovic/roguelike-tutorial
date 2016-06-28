@@ -199,7 +199,7 @@ Start your game right away by setting up the screen, printing the
   create tools for dealing with chances and making them vary with
   level.
 
-Part 13: Adventure gear::
+<<part-13-adventure-gear#,Part 13: Adventure gear>>::
 
   Swords, shields and other equipment can now help the player by
   granting hefty bonuses. The bonus system can also be used for all
