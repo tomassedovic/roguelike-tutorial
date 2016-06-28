@@ -5,7 +5,7 @@
 <!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="generator" content="Asciidoctor 1.5.2">
-<title>Field-of-view and exploration</title>
+<title>Adventure gear</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400">
 <style>
 /* Asciidoctor default stylesheet | MIT License | http://asciidoctor.org */
@@ -408,6 +408,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 .hide-for-print{display:none!important}
 .show-for-print{display:inherit!important}}
 </style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.2.0/css/font-awesome.min.css">
 <style>
 .listingblock .pygments .hll { background-color: #ffffcc }
 .listingblock .pygments  { background: #f8f8f8; }
@@ -476,7 +477,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </head>
 <body class="article">
 <div id="header">
-<h1>Field-of-view and exploration</h1>
+<h1>Adventure gear</h1>
 </div>
 <div id="content">
 <div id="preamble">
@@ -487,279 +488,44 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect1">
-<h2 id="_field_of_view_fov">Field of View (FOV)</h2>
+<h2 id="_simplifying">Simplifying</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The next step towards a complete roguelike is FOV. This adds a
-tactical element, and lets the player wonder what&#8217;s on the other side
-of every door and every corner! The FOV works like a light source
-where the player stands, casting light in every direction but not
-getting past any walls. Regions in shadow are invisible. You could
-code it yourself by casting rays outward from the player, but it&#8217;s
-much easier than that; libtcod has a whole module dedicated to it! It
-includes different methods with varying levels of precision, speed and
-other interesting properties. There&#8217;s an <a href="http://www.roguebasin.com/index.php?title=Comparative_study_of_field_of_view_algorithms_for_2D_grid_based_worlds">excellent study
-here</a> if you want to know more about them, including tables and images
-comparing the different algorithms.</p>
-</div>
-<div class="paragraph">
-<p>We&#8217;ll define the chosen algorithm along with some other constants so
-they can be changed later. For now we&#8217;ll just use the default
-(<code>Basic</code>) algorithm. There&#8217;s also an option to light walls or not,
-this is a matter of preference. Another important constant is the
-maximum radius for FOV calculations, how far the player can see in the
-dungeon. (Whether this is due to the player&#8217;s sight range or the light
-from the player&#8217;s torch depends on how you choose to explain this to
-the player.)</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span class="tok-kr">const</span> <span class="tok-n">FOV_ALGO</span><span class="tok-o">:</span> <span class="tok-n">FovAlgorithm</span> <span class="tok-o">=</span> <span class="tok-n">FovAlgorithm</span><span class="tok-o">::</span><span class="tok-n">Basic</span><span class="tok-p">;</span>
-<span class="tok-kr">const</span> <span class="tok-n">FOV_LIGHT_WALLS</span><span class="tok-o">:</span> <span class="tok-kt">bool</span> <span class="tok-o">=</span> <span class="tok-k">true</span><span class="tok-p">;</span>
-<span class="tok-kr">const</span> <span class="tok-n">TORCH_RADIUS</span><span class="tok-o">:</span> <span class="tok-kt">i32</span> <span class="tok-o">=</span> <span class="tok-mi">10</span><span class="tok-p">;</span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>And we need to add colours for the lit tiles:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span class="tok-kr">const</span> <span class="tok-n">COLOR_DARK_WALL</span><span class="tok-o">:</span> <span class="tok-n">Color</span> <span class="tok-o">=</span> <span class="tok-n">Color</span> <span class="tok-p">{</span> <span class="tok-n">r</span><span class="tok-o">:</span> <span class="tok-mi">0</span><span class="tok-p">,</span> <span class="tok-n">g</span><span class="tok-o">:</span> <span class="tok-mi">0</span><span class="tok-p">,</span> <span class="tok-n">b</span><span class="tok-o">:</span> <span class="tok-mi">100</span> <span class="tok-p">};</span>
-<span class="tok-kr">const</span> <span class="tok-n">COLOR_LIGHT_WALL</span><span class="tok-o">:</span> <span class="tok-n">Color</span> <span class="tok-o">=</span> <span class="tok-n">Color</span> <span class="tok-p">{</span> <span class="tok-n">r</span><span class="tok-o">:</span> <span class="tok-mi">130</span><span class="tok-p">,</span> <span class="tok-n">g</span><span class="tok-o">:</span> <span class="tok-mi">110</span><span class="tok-p">,</span> <span class="tok-n">b</span><span class="tok-o">:</span> <span class="tok-mi">50</span> <span class="tok-p">};</span>
-<span class="tok-kr">const</span> <span class="tok-n">COLOR_DARK_GROUND</span><span class="tok-o">:</span> <span class="tok-n">Color</span> <span class="tok-o">=</span> <span class="tok-n">Color</span> <span class="tok-p">{</span> <span class="tok-n">r</span><span class="tok-o">:</span> <span class="tok-mi">50</span><span class="tok-p">,</span> <span class="tok-n">g</span><span class="tok-o">:</span> <span class="tok-mi">50</span><span class="tok-p">,</span> <span class="tok-n">b</span><span class="tok-o">:</span> <span class="tok-mi">150</span> <span class="tok-p">};</span>
-<span class="tok-kr">const</span> <span class="tok-n">COLOR_LIGHT_GROUND</span><span class="tok-o">:</span> <span class="tok-n">Color</span> <span class="tok-o">=</span> <span class="tok-n">Color</span> <span class="tok-p">{</span> <span class="tok-n">r</span><span class="tok-o">:</span> <span class="tok-mi">200</span><span class="tok-p">,</span> <span class="tok-n">g</span><span class="tok-o">:</span> <span class="tok-mi">180</span><span class="tok-p">,</span> <span class="tok-n">b</span><span class="tok-o">:</span> <span class="tok-mi">50</span> <span class="tok-p">};</span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>The fov map object in <code>tcod</code> is called <code>Map</code>, which conflicts with our
-own dungeon map type. So we&#8217;ll rename the tcod&#8217;s one to <code>FovMap</code> on
-import:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span class="tok-kn">use</span> <span class="tok-n">tcod</span><span class="tok-o">::</span><span class="tok-n">map</span><span class="tok-o">::</span><span class="tok-p">{</span><span class="tok-nb">Map</span> <span class="tok-k">as</span> <span class="tok-n">FovMap</span><span class="tok-p">,</span> <span class="tok-n">FovAlgorithm</span><span class="tok-p">};</span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>The libtcod FOV module needs to know which tiles block sight. So, we
-create a map that libtcod can understand, and fill it with
-the appropriate values from the tiles' own <code>block_sight</code> and <code>blocked</code>
-properties. Well, actually, only <code>block_sight</code> will be used; the <code>blocked</code>
-value is completely irrelevant for FOV! It will be useful only for the
-pathfinding module, but it doesn&#8217;t hurt to provide that value anyway.
-Also, libtcod asks for values that are the opposite of what we
-defined, so we toggle them with the negation (<code>!</code>) operator. This goes in the
-main function, before entering the main game loop.</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span class="tok-kd">let</span> <span class="tok-k">mut</span> <span class="tok-n">fov_map</span> <span class="tok-o">=</span> <span class="tok-n">FovMap</span><span class="tok-o">::</span><span class="tok-n">new</span><span class="tok-p">(</span><span class="tok-n">MAP_WIDTH</span><span class="tok-p">,</span> <span class="tok-n">MAP_HEIGHT</span><span class="tok-p">);</span>
-<span class="tok-k">for</span> <span class="tok-n">y</span> <span class="tok-k">in</span> <span class="tok-mf">0.</span><span class="tok-p">.</span><span class="tok-n">MAP_HEIGHT</span> <span class="tok-p">{</span>
-    <span class="tok-k">for</span> <span class="tok-n">x</span> <span class="tok-k">in</span> <span class="tok-mf">0.</span><span class="tok-p">.</span><span class="tok-n">MAP_WIDTH</span> <span class="tok-p">{</span>
-        <span class="tok-n">fov_map</span><span class="tok-p">.</span><span class="tok-n">set</span><span class="tok-p">(</span><span class="tok-n">x</span><span class="tok-p">,</span> <span class="tok-n">y</span><span class="tok-p">,</span>
-                    <span class="tok-o">!</span><span class="tok-n">map</span><span class="tok-p">[</span><span class="tok-n">x</span> <span class="tok-k">as</span> <span class="tok-n">usize</span><span class="tok-p">][</span><span class="tok-n">y</span> <span class="tok-k">as</span> <span class="tok-n">usize</span><span class="tok-p">].</span><span class="tok-n">block_sight</span><span class="tok-p">,</span>
-                    <span class="tok-o">!</span><span class="tok-n">map</span><span class="tok-p">[</span><span class="tok-n">x</span> <span class="tok-k">as</span> <span class="tok-n">usize</span><span class="tok-p">][</span><span class="tok-n">y</span> <span class="tok-k">as</span> <span class="tok-n">usize</span><span class="tok-p">].</span><span class="tok-n">blocked</span><span class="tok-p">);</span>
-    <span class="tok-p">}</span>
-<span class="tok-p">}</span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>FOV needs to be recomputed&#8201;&#8212;&#8201;but only if the player moves or a tile
-changes. To that end, we&#8217;ll keep track of player&#8217;s position from the
-previous run of the game loop and compare it to the current position.</p>
-</div>
-<div class="paragraph">
-<p>Add this before the main game loop:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span class="tok-kd">let</span> <span class="tok-k">mut</span> <span class="tok-n">previous_player_position</span> <span class="tok-o">=</span> <span class="tok-p">(</span><span class="tok-o">-</span><span class="tok-mi">1</span><span class="tok-p">,</span> <span class="tok-o">-</span><span class="tok-mi">1</span><span class="tok-p">);</span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>(we&#8217;re using <code>(-1, -1)</code> to make sure FOV gets computed on the first
-time through the loop)</p>
-</div>
-<div class="paragraph">
-<p>Then this right before <code>handle_keys</code> (which is where the player&#8217;s
-position could change)</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span class="tok-n">previous_player_position</span> <span class="tok-o">=</span> <span class="tok-p">(</span><span class="tok-n">player</span><span class="tok-p">.</span><span class="tok-n">x</span><span class="tok-p">,</span> <span class="tok-n">player</span><span class="tok-p">.</span><span class="tok-n">y</span><span class="tok-p">);</span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>And lastly, replace the existing call to <code>render_all</code> with these two lines:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span class="tok-kd">let</span> <span class="tok-n">fov_recompute</span> <span class="tok-o">=</span> <span class="tok-n">previous_player_position</span> <span class="tok-o">!=</span> <span class="tok-p">(</span><span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-mi">0</span><span class="tok-p">].</span><span class="tok-n">x</span><span class="tok-p">,</span> <span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-mi">0</span><span class="tok-p">].</span><span class="tok-n">y</span><span class="tok-p">);</span>
-<span class="tok-n">render_all</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">root</span><span class="tok-p">,</span> <span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">con</span><span class="tok-p">,</span> <span class="tok-o">&amp;</span><span class="tok-n">objects</span><span class="tok-p">,</span> <span class="tok-o">&amp;</span><span class="tok-n">map</span><span class="tok-p">,</span> <span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">fov_map</span><span class="tok-p">,</span> <span class="tok-n">fov_recompute</span><span class="tok-p">);</span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Now we need to change the rendering code to actually recompute FOV and
-display the result. We&#8217;re doing it there, because if the FOV doesn&#8217;t
-need to be recomputed, we don&#8217;t need to render the map at all!</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span class="tok-k">if</span> <span class="tok-n">fov_recompute</span> <span class="tok-p">{</span>
-    <span class="tok-c1">// recompute FOV if needed (the player moved or something)</span>
-    <span class="tok-kd">let</span> <span class="tok-n">player</span> <span class="tok-o">=</span> <span class="tok-o">&amp;</span><span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-mi">0</span><span class="tok-p">];</span>
-    <span class="tok-n">fov_map</span><span class="tok-p">.</span><span class="tok-n">compute_fov</span><span class="tok-p">(</span><span class="tok-n">player</span><span class="tok-p">.</span><span class="tok-n">x</span><span class="tok-p">,</span> <span class="tok-n">player</span><span class="tok-p">.</span><span class="tok-n">y</span><span class="tok-p">,</span> <span class="tok-n">TORCH_RADIUS</span><span class="tok-p">,</span> <span class="tok-n">FOV_LIGHT_WALLS</span><span class="tok-p">,</span> <span class="tok-n">FOV_ALGO</span><span class="tok-p">);</span>
-<span class="tok-p">}</span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>As you can see, we&#8217;re using all the constants we defined earlier.
-Now move the code that renders the map at the end of that <code>if</code>. We&#8217;ll
-extend it to render the tiles in FOV with their <code>light</code> colours:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span class="tok-c1">// go through all tiles, and set their background color</span>
-<span class="tok-k">for</span> <span class="tok-n">y</span> <span class="tok-k">in</span> <span class="tok-mf">0.</span><span class="tok-p">.</span><span class="tok-n">MAP_HEIGHT</span> <span class="tok-p">{</span>
-    <span class="tok-k">for</span> <span class="tok-n">x</span> <span class="tok-k">in</span> <span class="tok-mf">0.</span><span class="tok-p">.</span><span class="tok-n">MAP_WIDTH</span> <span class="tok-p">{</span>
-        <span class="tok-kd">let</span> <span class="tok-n">visible</span> <span class="tok-o">=</span> <span class="tok-n">fov_map</span><span class="tok-p">.</span><span class="tok-n">is_in_fov</span><span class="tok-p">(</span><span class="tok-n">x</span><span class="tok-p">,</span> <span class="tok-n">y</span><span class="tok-p">);</span>
-        <span class="tok-kd">let</span> <span class="tok-n">wall</span> <span class="tok-o">=</span> <span class="tok-n">map</span><span class="tok-p">[</span><span class="tok-n">x</span> <span class="tok-k">as</span> <span class="tok-n">usize</span><span class="tok-p">][</span><span class="tok-n">y</span> <span class="tok-k">as</span> <span class="tok-n">usize</span><span class="tok-p">].</span><span class="tok-n">block_sight</span><span class="tok-p">;</span>
-        <span class="tok-kd">let</span> <span class="tok-n">color</span> <span class="tok-o">=</span> <span class="tok-k">match</span> <span class="tok-p">(</span><span class="tok-n">visible</span><span class="tok-p">,</span> <span class="tok-n">wall</span><span class="tok-p">)</span> <span class="tok-p">{</span>
-            <span class="tok-c1">// outside of field of view:</span>
-            <span class="tok-p">(</span><span class="tok-kc">false</span><span class="tok-p">,</span> <span class="tok-k">true</span><span class="tok-p">)</span> <span class="tok-o">=&gt;</span> <span class="tok-n">COLOR_DARK_WALL</span><span class="tok-p">,</span>
-            <span class="tok-p">(</span><span class="tok-kc">false</span><span class="tok-p">,</span> <span class="tok-kc">false</span><span class="tok-p">)</span> <span class="tok-o">=&gt;</span> <span class="tok-n">COLOR_DARK_GROUND</span><span class="tok-p">,</span>
-            <span class="tok-c1">// inside fov:</span>
-            <span class="tok-p">(</span><span class="tok-k">true</span><span class="tok-p">,</span> <span class="tok-k">true</span><span class="tok-p">)</span> <span class="tok-o">=&gt;</span> <span class="tok-n">COLOR_LIGHT_WALL</span><span class="tok-p">,</span>
-            <span class="tok-p">(</span><span class="tok-k">true</span><span class="tok-p">,</span> <span class="tok-kc">false</span><span class="tok-p">)</span> <span class="tok-o">=&gt;</span> <span class="tok-n">COLOR_LIGHT_GROUND</span><span class="tok-p">,</span>
-        <span class="tok-p">};</span>
-        <span class="tok-n">con</span><span class="tok-p">.</span><span class="tok-n">set_char_background</span><span class="tok-p">(</span><span class="tok-n">x</span><span class="tok-p">,</span> <span class="tok-n">y</span><span class="tok-p">,</span> <span class="tok-n">color</span><span class="tok-p">,</span> <span class="tok-n">BackgroundFlag</span><span class="tok-o">::</span><span class="tok-nb">Set</span><span class="tok-p">);</span>
-    <span class="tok-p">}</span>
-<span class="tok-p">}</span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>We&#8217;ve replaced our <code>if</code> with a <code>match</code>. As we&#8217;ve added another
-check (whether a tile is visible or not), we would have to use nested
-ifs and end up with four separate calls to <code>set_char_background</code>. But
-since the only thing we&#8217;re changing is the colour, we&#8217;ll just pattern
-match to get the right value and use it.</p>
-</div>
-<div class="paragraph">
-<p>Finally, we&#8217;ll make sure we render only objects that are in the
-player&#8217;s FOV. Wrap the <code>object.draw</code> call in <code>render_all</code> in a FOV
-check:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span class="tok-k">if</span> <span class="tok-n">fov_map</span><span class="tok-p">.</span><span class="tok-n">is_in_fov</span><span class="tok-p">(</span><span class="tok-n">object</span><span class="tok-p">.</span><span class="tok-n">x</span><span class="tok-p">,</span> <span class="tok-n">object</span><span class="tok-p">.</span><span class="tok-n">y</span><span class="tok-p">)</span> <span class="tok-p">{</span>
-    <span class="tok-n">object</span><span class="tok-p">.</span><span class="tok-n">draw</span><span class="tok-p">(</span><span class="tok-n">con</span><span class="tok-p">);</span>
-<span class="tok-p">}</span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>We&#8217;ve shuffled a lot of code around, but we haven&#8217;t changed much,
-conceptually. Just track whether the player moved, update FOV and
-render the map if they did, use lit vs. dark colours and only render
-visible objects.</p>
-</div>
-<div class="paragraph">
-<p>And look how much better it looks now!</p>
-</div>
-<div class="paragraph">
-<p><a href="part-4a-fov.rs.txt">The whole code for this section is here</a>.</p>
+<p>TODO</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_exploration">Exploration</h2>
+<h2 id="_basic_equipment">Basic equipment</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The last detail after FOV is exploration, a.k.a Fog of War. You made
-it this far, so this will be a piece of cake! What, you may say, fog
-of war can&#8217;t possibly be the easiest thing to code in a roguelike!
-Well, it is. Wait and see.</p>
+<p>TODO</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_equipment_polish">Equipment polish</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>TODO</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_bonus_round">Bonus round</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>TODO</p>
 </div>
 <div class="paragraph">
-<p>First, all tiles will store whether they&#8217;re explored or not. They
-start unexplored. Put this in the definition of the <code>Tile</code> struct:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span class="tok-n">explored</span><span class="tok-o">:</span> <span class="tok-kt">bool</span><span class="tok-p">,</span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>And you need to update the <code>Tile::empty</code> and <code>Tile::wall</code> bodies:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span class="tok-k">pub</span> <span class="tok-k">fn</span> <span class="tok-n">empty</span><span class="tok-p">()</span> <span class="tok-o">-&gt;</span> <span class="tok-n">Self</span> <span class="tok-p">{</span>
-    <span class="tok-n">Tile</span><span class="tok-p">{</span><span class="tok-n">blocked</span><span class="tok-o">:</span> <span class="tok-kc">false</span><span class="tok-p">,</span> <span class="tok-n">explored</span><span class="tok-o">:</span> <span class="tok-kc">false</span><span class="tok-p">,</span> <span class="tok-n">block_sight</span><span class="tok-o">:</span> <span class="tok-kc">false</span><span class="tok-p">}</span>
-<span class="tok-p">}</span>
-
-<span class="tok-k">pub</span> <span class="tok-k">fn</span> <span class="tok-n">wall</span><span class="tok-p">()</span> <span class="tok-o">-&gt;</span> <span class="tok-n">Self</span> <span class="tok-p">{</span>
-    <span class="tok-n">Tile</span><span class="tok-p">{</span><span class="tok-n">blocked</span><span class="tok-o">:</span> <span class="tok-k">true</span><span class="tok-p">,</span> <span class="tok-n">explored</span><span class="tok-o">:</span> <span class="tok-kc">false</span><span class="tok-p">,</span> <span class="tok-n">block_sight</span><span class="tok-o">:</span> <span class="tok-k">true</span><span class="tok-p">}</span>
-<span class="tok-p">}</span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Now, in the <code>render_all</code> function, after the <code>(visible, wall)</code> match
-make sure the visible tiles are explored and only render those that
-are:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span class="tok-kd">let</span> <span class="tok-n">explored</span> <span class="tok-o">=</span> <span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">map</span><span class="tok-p">[</span><span class="tok-n">x</span> <span class="tok-k">as</span> <span class="tok-n">usize</span><span class="tok-p">][</span><span class="tok-n">y</span> <span class="tok-k">as</span> <span class="tok-n">usize</span><span class="tok-p">].</span><span class="tok-n">explored</span><span class="tok-p">;</span>
-<span class="tok-k">if</span> <span class="tok-n">visible</span> <span class="tok-p">{</span>
-    <span class="tok-c1">// since it&#39;s visible, explore it</span>
-    <span class="tok-o">*</span><span class="tok-n">explored</span> <span class="tok-o">=</span> <span class="tok-k">true</span><span class="tok-p">;</span>
-<span class="tok-p">}</span>
-<span class="tok-k">if</span> <span class="tok-o">*</span><span class="tok-n">explored</span> <span class="tok-p">{</span>
-    <span class="tok-c1">// show explored tiles only (any visible tile is explored already)</span>
-    <span class="tok-n">con</span><span class="tok-p">.</span><span class="tok-n">set_char_background</span><span class="tok-p">(</span><span class="tok-n">x</span><span class="tok-p">,</span> <span class="tok-n">y</span><span class="tok-p">,</span> <span class="tok-n">color</span><span class="tok-p">,</span> <span class="tok-n">BackgroundFlag</span><span class="tok-o">::</span><span class="tok-nb">Set</span><span class="tok-p">);</span>
-<span class="tok-p">}</span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>(we take a mutable reference to the <code>explored</code> field so we don&#8217;t have
-to write the full <code>map[x as usize][y as usize].explored</code> bit twice)</p>
-</div>
-<div class="paragraph">
-<p>And finally, since we&#8217;re now actually modifying the <code>map</code>, we&#8217;ll need
-to pass a <em>mutable</em> reference to <code>render_all</code>.</p>
-</div>
-<div class="paragraph">
-<p>And that&#8217;s that! If you run the game now, you start in mostly black
-space except for your immediate surroundings and the map fills in as
-you explore.</p>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<div class="title">Note</div>
-</td>
-<td class="content">
-One might argue that that <code>render_all</code> should not actually
-modify anything and that the FOV/exploration code belongs somewhere
-else. They wouldn&#8217;t necessarily be wrong. But let&#8217;s just roll with it
-for now.
-</td>
-</tr>
-</table>
-</div>
-<div class="paragraph">
-<p>Here&#8217;s <a href="part-4b-exploration.rs.txt">the complete code so far</a>.</p>
-</div>
-<div class="paragraph">
-<p>Continue to <a href="part-5-combat.html">the next part</a>.</p>
+<p>Here&#8217;s <a href="part-13-adventure-gear.rs.txt">the complete code</a>.</p>
 </div>
 </div>
 </div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2016-06-27 23:33:10 CEST
+Last updated 2016-06-28 10:43:01 CEST
 </div>
 </div>
 </body>
