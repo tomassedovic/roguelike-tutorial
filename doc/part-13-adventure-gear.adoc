@@ -8,9 +8,14 @@ ifdef::env-github[:outfilesuffix: .adoc]
 <<index#,Back to the index.>>
 
 
-== Simplifying
+So now we have a dungeon full of monsters and scrolls, but it's still
+somewhat lacking in variety. Where are all the swords, shields, staves
+and so on?
 
-TODO
+We need equipment. It differs from the items we have in two ways: you
+can only equip it in limited slots and it enhances your abilities
+while it's being worn. Unlike our items which are one-use-only (though
+they don't have to be!).
 
 == Basic equipment
 
