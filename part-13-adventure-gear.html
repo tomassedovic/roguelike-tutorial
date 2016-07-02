@@ -485,13 +485,16 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div class="paragraph">
 <p><a href="index.html">Back to the index.</a></p>
 </div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_simplifying">Simplifying</h2>
-<div class="sectionbody">
 <div class="paragraph">
-<p>TODO</p>
+<p>So now we have a dungeon full of monsters and scrolls, but it&#8217;s still
+somewhat lacking in variety. Where are all the swords, shields, staves
+and so on?</p>
+</div>
+<div class="paragraph">
+<p>We need equipment. It differs from the items we have in two ways: you
+can only equip it in limited slots and it enhances your abilities
+while it&#8217;s being worn. Unlike our items which are one-use-only (though
+they don&#8217;t have to be!).</p>
 </div>
 </div>
 </div>
@@ -499,13 +502,294 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <h2 id="_basic_equipment">Basic equipment</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>TODO</p>
+<p>Let&#8217;s create an <code>Equipment</code> component. It will know whether it&#8217;s
+equipped or not and it will also have a <code>slot</code> such as "hand" for
+weapons or "head" for helmets.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-cp">#[derive(Clone, Copy, Debug, PartialEq, RustcDecodable, RustcEncodable)]</span>
+<span class="tok-c-Doc">/// An object that can be equipped, yielding bonuses.</span>
+<span class="tok-k">struct</span> <span class="tok-n">Equipment</span> <span class="tok-p">{</span>
+    <span class="tok-n">slot</span><span class="tok-o">:</span> <span class="tok-n">Slot</span><span class="tok-p">,</span>
+    <span class="tok-n">equipped</span><span class="tok-o">:</span> <span class="tok-kt">bool</span><span class="tok-p">,</span>
+<span class="tok-p">}</span>
+
+<span class="tok-cp">#[derive(Clone, Copy, Debug, PartialEq, RustcDecodable, RustcEncodable)]</span>
+<span class="tok-k">enum</span> <span class="tok-n">Slot</span> <span class="tok-p">{</span>
+    <span class="tok-n">LeftHand</span><span class="tok-p">,</span>
+    <span class="tok-n">RightHand</span><span class="tok-p">,</span>
+    <span class="tok-n">Head</span><span class="tok-p">,</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+We&#8217;re using <code>enum</code> for the equipment slots to stay safe from
+typos and forgetting to handle a new case in a <code>match</code>. You can just
+use a string instead, though.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>We&#8217;ll add this new component to our <code>Object</code> and its <code>new</code> method:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-k">struct</span> <span class="tok-n">Object</span> <span class="tok-p">{</span>
+    <span class="tok-p">...</span>
+    <span class="tok-n">equipment</span><span class="tok-o">:</span> <span class="tok-nb">Option</span><span class="tok-o">&lt;</span><span class="tok-n">Equipment</span><span class="tok-o">&gt;</span><span class="tok-p">,</span>
+<span class="tok-p">}</span>
+
+
+<span class="tok-k">impl</span> <span class="tok-n">Object</span> <span class="tok-p">{</span>
+    <span class="tok-k">pub</span> <span class="tok-k">fn</span> <span class="tok-n">new</span><span class="tok-p">(</span><span class="tok-n">x</span><span class="tok-o">:</span> <span class="tok-kt">i32</span><span class="tok-p">,</span> <span class="tok-n">y</span><span class="tok-o">:</span> <span class="tok-kt">i32</span><span class="tok-p">,</span> <span class="tok-n">char</span><span class="tok-o">:</span> <span class="tok-n">char</span><span class="tok-p">,</span> <span class="tok-n">name</span><span class="tok-o">:</span> <span class="tok-o">&amp;</span><span class="tok-kt">str</span><span class="tok-p">,</span> <span class="tok-n">color</span><span class="tok-o">:</span> <span class="tok-n">Color</span><span class="tok-p">,</span> <span class="tok-n">blocks</span><span class="tok-o">:</span> <span class="tok-kt">bool</span><span class="tok-p">)</span> <span class="tok-o">-&gt;</span> <span class="tok-n">Self</span> <span class="tok-p">{</span>
+        <span class="tok-n">Object</span> <span class="tok-p">{</span>
+            <span class="tok-p">...</span>
+            <span class="tok-n">equipment</span><span class="tok-o">:</span> <span class="tok-nb">None</span><span class="tok-p">,</span>
+        <span class="tok-p">}</span>
+    <span class="tok-p">}</span>
+    <span class="tok-p">...</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>And let&#8217;s add a couple of new <code>Object</code> methods for putting the
+equipment on and off:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-c-Doc">/// Equip object and show a message about it</span>
+<span class="tok-k">pub</span> <span class="tok-k">fn</span> <span class="tok-n">equip</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-bp">self</span><span class="tok-p">,</span> <span class="tok-n">log</span><span class="tok-o">:</span> <span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">Vec</span><span class="tok-o">&lt;</span><span class="tok-p">(</span><span class="tok-n">String</span><span class="tok-p">,</span> <span class="tok-n">Color</span><span class="tok-p">)</span><span class="tok-o">&gt;</span><span class="tok-p">)</span> <span class="tok-p">{</span>
+    <span class="tok-k">if</span> <span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">item</span><span class="tok-p">.</span><span class="tok-n">is_none</span><span class="tok-p">()</span> <span class="tok-p">{</span>
+        <span class="tok-n">log</span><span class="tok-p">.</span><span class="tok-n">add</span><span class="tok-p">(</span><span class="tok-n">format</span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-s">&quot;Can&#39;t equip {:?} because it&#39;s not an Item.&quot;</span><span class="tok-p">,</span> <span class="tok-bp">self</span><span class="tok-p">),</span>
+                <span class="tok-n">colors</span><span class="tok-o">::</span><span class="tok-n">RED</span><span class="tok-p">);</span>
+        <span class="tok-k">return</span>
+    <span class="tok-p">};</span>
+    <span class="tok-k">if</span> <span class="tok-kd">let</span> <span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-k">ref</span> <span class="tok-k">mut</span> <span class="tok-n">equipment</span><span class="tok-p">)</span> <span class="tok-o">=</span> <span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">equipment</span> <span class="tok-p">{</span>
+        <span class="tok-k">if</span> <span class="tok-o">!</span><span class="tok-n">equipment</span><span class="tok-p">.</span><span class="tok-n">equipped</span> <span class="tok-p">{</span>
+            <span class="tok-n">equipment</span><span class="tok-p">.</span><span class="tok-n">equipped</span> <span class="tok-o">=</span> <span class="tok-k">true</span><span class="tok-p">;</span>
+            <span class="tok-n">log</span><span class="tok-p">.</span><span class="tok-n">add</span><span class="tok-p">(</span><span class="tok-n">format</span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-s">&quot;Equipped {} on {:?}.&quot;</span><span class="tok-p">,</span> <span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">name</span><span class="tok-p">,</span> <span class="tok-n">equipment</span><span class="tok-p">.</span><span class="tok-n">slot</span><span class="tok-p">),</span>
+                    <span class="tok-n">colors</span><span class="tok-o">::</span><span class="tok-n">LIGHT_GREEN</span><span class="tok-p">);</span>
+        <span class="tok-p">}</span>
+    <span class="tok-p">}</span> <span class="tok-k">else</span> <span class="tok-p">{</span>
+        <span class="tok-n">log</span><span class="tok-p">.</span><span class="tok-n">add</span><span class="tok-p">(</span><span class="tok-n">format</span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-s">&quot;Can&#39;t equip {:?} because it&#39;s not an Equipment.&quot;</span><span class="tok-p">,</span> <span class="tok-bp">self</span><span class="tok-p">),</span>
+                <span class="tok-n">colors</span><span class="tok-o">::</span><span class="tok-n">RED</span><span class="tok-p">);</span>
+    <span class="tok-p">}</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The meat of the method is in its middle: we take the equipment
+component, mark its <code>equipped</code> value as true and print a message. The
+checks before and after are there to make sure that the <code>Object</code> we&#8217;re
+calling is indeed an <code>Equipment</code> and also an <code>Item</code>.</p>
+</div>
+<div class="paragraph">
+<p>We could just ignore that since all equipments should be items (i.e.
+they can be carried in the inventory and dropped on the floor), it&#8217;s
+better to see when the unexpected happens.</p>
+</div>
+<div class="paragraph">
+<p>Dequip works similarly:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-c-Doc">/// Dequip object and show a message about it</span>
+<span class="tok-k">pub</span> <span class="tok-k">fn</span> <span class="tok-n">dequip</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-bp">self</span><span class="tok-p">,</span> <span class="tok-n">log</span><span class="tok-o">:</span> <span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">Vec</span><span class="tok-o">&lt;</span><span class="tok-p">(</span><span class="tok-n">String</span><span class="tok-p">,</span> <span class="tok-n">Color</span><span class="tok-p">)</span><span class="tok-o">&gt;</span><span class="tok-p">)</span> <span class="tok-p">{</span>
+    <span class="tok-k">if</span> <span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">item</span><span class="tok-p">.</span><span class="tok-n">is_none</span><span class="tok-p">()</span> <span class="tok-p">{</span>
+        <span class="tok-n">log</span><span class="tok-p">.</span><span class="tok-n">add</span><span class="tok-p">(</span><span class="tok-n">format</span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-s">&quot;Can&#39;t dequip {:?} because it&#39;s not an Item.&quot;</span><span class="tok-p">,</span> <span class="tok-bp">self</span><span class="tok-p">),</span>
+                <span class="tok-n">colors</span><span class="tok-o">::</span><span class="tok-n">RED</span><span class="tok-p">);</span>
+        <span class="tok-k">return</span>
+    <span class="tok-p">};</span>
+    <span class="tok-k">if</span> <span class="tok-kd">let</span> <span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-k">ref</span> <span class="tok-k">mut</span> <span class="tok-n">equipment</span><span class="tok-p">)</span> <span class="tok-o">=</span> <span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">equipment</span> <span class="tok-p">{</span>
+        <span class="tok-k">if</span> <span class="tok-n">equipment</span><span class="tok-p">.</span><span class="tok-n">equipped</span> <span class="tok-p">{</span>
+            <span class="tok-n">equipment</span><span class="tok-p">.</span><span class="tok-n">equipped</span> <span class="tok-o">=</span> <span class="tok-kc">false</span><span class="tok-p">;</span>
+            <span class="tok-n">log</span><span class="tok-p">.</span><span class="tok-n">add</span><span class="tok-p">(</span><span class="tok-n">format</span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-s">&quot;Dequipped {} from {:?}.&quot;</span><span class="tok-p">,</span> <span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">name</span><span class="tok-p">,</span> <span class="tok-n">equipment</span><span class="tok-p">.</span><span class="tok-n">slot</span><span class="tok-p">),</span>
+                    <span class="tok-n">colors</span><span class="tok-o">::</span><span class="tok-n">LIGHT_YELLOW</span><span class="tok-p">);</span>
+        <span class="tok-p">}</span>
+    <span class="tok-p">}</span> <span class="tok-k">else</span> <span class="tok-p">{</span>
+        <span class="tok-n">log</span><span class="tok-p">.</span><span class="tok-n">add</span><span class="tok-p">(</span><span class="tok-n">format</span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-s">&quot;Can&#39;t dequip {:?} because it&#39;s not an Equipment.&quot;</span><span class="tok-p">,</span> <span class="tok-bp">self</span><span class="tok-p">),</span>
+                <span class="tok-n">colors</span><span class="tok-o">::</span><span class="tok-n">RED</span><span class="tok-p">);</span>
+    <span class="tok-p">}</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+You may have noticed that we&#8217;re passing the message log
+(<code>Vec&lt;(String, Color)&gt;</code>) directly instead of the full <code>Game</code> struct
+like in other <code>Object</code> methods such as <code>attack</code> or <code>take_damage</code>. This
+is to avoid a double mutable borrow later. Try passing <code>game: &amp;mut
+Game</code> here instead and you&#8217;ll see the problem when we get to
+<code>toggle_equip</code>.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>How do we equip our items? We can rely on the existing <code>Item</code>
+mechanism&#8201;&#8212;&#8201;when you try to "use" or "cast" an equipment (which you
+can do since it&#8217;s an <code>Item</code>, too), we&#8217;ll equip or dequip it.</p>
+</div>
+<div class="paragraph">
+<p>First, let&#8217;s add a new Item type:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-k">enum</span> <span class="tok-n">Item</span> <span class="tok-p">{</span>
+    <span class="tok-n">Heal</span><span class="tok-p">,</span>
+    <span class="tok-n">Lightning</span><span class="tok-p">,</span>
+    <span class="tok-n">Confuse</span><span class="tok-p">,</span>
+    <span class="tok-n">Fireball</span><span class="tok-p">,</span>
+    <span class="tok-n">Equipment</span><span class="tok-p">,</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+We&#8217;ll just group all equipments under a single item type. We can
+always split them out later.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Then in the callback match in <code>use_item</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-kd">let</span> <span class="tok-n">on_use</span><span class="tok-o">:</span> <span class="tok-p">...</span> <span class="tok-o">=</span> <span class="tok-k">match</span> <span class="tok-n">item</span> <span class="tok-p">{</span>
+    <span class="tok-n">Heal</span> <span class="tok-o">=&gt;</span> <span class="tok-n">cast_heal</span><span class="tok-p">,</span>
+    <span class="tok-n">Lightning</span> <span class="tok-o">=&gt;</span> <span class="tok-n">cast_lightning</span><span class="tok-p">,</span>
+    <span class="tok-n">Fireball</span> <span class="tok-o">=&gt;</span> <span class="tok-n">cast_fireball</span><span class="tok-p">,</span>
+    <span class="tok-n">Confuse</span> <span class="tok-o">=&gt;</span> <span class="tok-n">cast_confuse</span><span class="tok-p">,</span>
+    <span class="tok-n">Equipment</span> <span class="tok-o">=&gt;</span> <span class="tok-n">toggle_equipment</span><span class="tok-p">,</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>We have to create the <code>toggle_equipment</code> function:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-k">fn</span> <span class="tok-n">toggle_equipment</span><span class="tok-p">(</span><span class="tok-n">inventory_id</span><span class="tok-o">:</span> <span class="tok-n">usize</span><span class="tok-p">,</span> <span class="tok-n">_objects</span><span class="tok-o">:</span> <span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-p">[</span><span class="tok-n">Object</span><span class="tok-p">],</span> <span class="tok-n">game</span><span class="tok-o">:</span> <span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">Game</span><span class="tok-p">,</span> <span class="tok-n">_tcod</span><span class="tok-o">:</span> <span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">Tcod</span><span class="tok-p">)</span>
+             <span class="tok-o">-&gt;</span> <span class="tok-n">UseResult</span>
+<span class="tok-p">{</span>
+    <span class="tok-kd">let</span> <span class="tok-n">equipment</span> <span class="tok-o">=</span> <span class="tok-k">match</span> <span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">inventory</span><span class="tok-p">[</span><span class="tok-n">inventory_id</span><span class="tok-p">].</span><span class="tok-n">equipment</span> <span class="tok-p">{</span>
+        <span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">equipment</span><span class="tok-p">)</span> <span class="tok-o">=&gt;</span> <span class="tok-n">equipment</span><span class="tok-p">,</span>
+        <span class="tok-nb">None</span> <span class="tok-o">=&gt;</span> <span class="tok-k">return</span> <span class="tok-n">UseResult</span><span class="tok-o">::</span><span class="tok-n">Cancelled</span><span class="tok-p">,</span>
+    <span class="tok-p">};</span>
+    <span class="tok-k">if</span> <span class="tok-n">equipment</span><span class="tok-p">.</span><span class="tok-n">equipped</span> <span class="tok-p">{</span>
+        <span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">inventory</span><span class="tok-p">[</span><span class="tok-n">inventory_id</span><span class="tok-p">].</span><span class="tok-n">dequip</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">log</span><span class="tok-p">);</span>
+    <span class="tok-p">}</span> <span class="tok-k">else</span> <span class="tok-p">{</span>
+        <span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">inventory</span><span class="tok-p">[</span><span class="tok-n">inventory_id</span><span class="tok-p">].</span><span class="tok-n">equip</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">log</span><span class="tok-p">);</span>
+    <span class="tok-p">}</span>
+    <span class="tok-n">UseResult</span><span class="tok-o">::</span><span class="tok-n">UsedAndKept</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>We&#8217;re returning a new <code>UseResult</code> value here: one that says we have
+used the item (so it&#8217;s the monsters' turn now), but we don&#8217;t want the
+item to disappear!</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Here is why we have to pass <code>&amp;mut game.log</code> to <code>equip</code> instead
+of the full <code>&amp;mut game</code>: in the same statement we look up the
+equipment Object in <code>game.inventory</code>, which will make <code>game</code> mutably
+borrowed for the duration of the <code>equip</code> call. So we can&#8217;t borrow it
+second time. However, since we&#8217;re only borrowing <code>game.inventory</code>, we
+<em>can</em> borrow <code>game.log</code> separately! If you don&#8217;t like this, you could
+turn the <code>equip</code> and <code>dequip</code> methods into standalone functions that
+would take <code>inventory_id</code> and <code>&amp;mut game</code>.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>We need to add the new value to the <code>UseResult</code> enum and handle the
+new case in <code>use_item</code> (as always, the compiler will complain so you
+can rely on it to tell you where to look):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-k">match</span> <span class="tok-n">on_use</span><span class="tok-p">(</span><span class="tok-n">inventory_id</span><span class="tok-p">,</span> <span class="tok-n">objects</span><span class="tok-p">,</span> <span class="tok-n">game</span><span class="tok-p">,</span> <span class="tok-n">tcod</span><span class="tok-p">)</span> <span class="tok-p">{</span>
+    <span class="tok-n">UseResult</span><span class="tok-o">::</span><span class="tok-n">UsedUp</span> <span class="tok-o">=&gt;</span> <span class="tok-p">{</span>
+        <span class="tok-p">...</span>
+    <span class="tok-p">}</span>
+    <span class="tok-n">UseResult</span><span class="tok-o">::</span><span class="tok-n">UsedAndKept</span> <span class="tok-o">=&gt;</span> <span class="tok-p">{},</span> <span class="tok-c1">// do nothing</span>
+    <span class="tok-n">UseResult</span><span class="tok-o">::</span><span class="tok-n">Cancelled</span> <span class="tok-o">=&gt;</span> <span class="tok-p">{</span>
+        <span class="tok-p">...</span>
+    <span class="tok-p">}</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>And finally, we need to update the item chances for this new
+<code>Equipment</code> type and add one to the game!</p>
+</div>
+<div class="paragraph">
+<p>Add this to the <code>item_chances</code> in <code>place_objects</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-n">Weighted</span> <span class="tok-p">{</span><span class="tok-n">weight</span><span class="tok-o">:</span> <span class="tok-mi">1000</span><span class="tok-p">,</span> <span class="tok-n">item</span><span class="tok-o">:</span> <span class="tok-n">Item</span><span class="tok-o">::</span><span class="tok-n">Equipment</span><span class="tok-p">},</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>And then this sword later on where we generate the items:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-n">Item</span><span class="tok-o">::</span><span class="tok-n">Equipment</span> <span class="tok-o">=&gt;</span> <span class="tok-p">{</span>
+    <span class="tok-c1">// create a sword</span>
+    <span class="tok-kd">let</span> <span class="tok-k">mut</span> <span class="tok-n">object</span> <span class="tok-o">=</span> <span class="tok-n">Object</span><span class="tok-o">::</span><span class="tok-n">new</span><span class="tok-p">(</span><span class="tok-n">x</span><span class="tok-p">,</span> <span class="tok-n">y</span><span class="tok-p">,</span> <span class="tok-sc">&#39;/&#39;</span><span class="tok-p">,</span> <span class="tok-s">&quot;sword&quot;</span><span class="tok-p">,</span> <span class="tok-n">colors</span><span class="tok-o">::</span><span class="tok-n">SKY</span><span class="tok-p">,</span> <span class="tok-kc">false</span><span class="tok-p">);</span>
+    <span class="tok-n">object</span><span class="tok-p">.</span><span class="tok-n">item</span> <span class="tok-o">=</span> <span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">Item</span><span class="tok-o">::</span><span class="tok-n">Equipment</span><span class="tok-p">);</span>
+    <span class="tok-n">object</span><span class="tok-p">.</span><span class="tok-n">equipment</span> <span class="tok-o">=</span> <span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">Equipment</span><span class="tok-p">{</span><span class="tok-n">equipped</span><span class="tok-o">:</span> <span class="tok-kc">false</span><span class="tok-p">,</span> <span class="tok-n">slot</span><span class="tok-o">:</span> <span class="tok-n">Slot</span><span class="tok-o">::</span><span class="tok-n">RightHand</span><span class="tok-p">});</span>
+    <span class="tok-n">object</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>As you can see, we&#8217;ve the weighted chances really don&#8217;t have to be
+percentages. By setting the sword&#8217;s value to <code>1000</code>, it&#8217;s much more
+likely to appear as any other item so we can find it early in the game
+and test it!</p>
+</div>
+<div class="paragraph">
+<p>We will set it back to something more reasonable later on.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_equipment_polish">Equipment polish</h2>
 <div class="sectionbody">
+<div class="paragraph">
+<p>TODO: impl Display for Slot so it&#8217;s nice &amp; readable</p>
+</div>
 <div class="paragraph">
 <p>TODO</p>
 </div>
@@ -525,7 +809,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2016-06-28 10:43:01 CEST
+Last updated 2016-07-02 17:55:06 CEST
 </div>
 </div>
 </body>
