@@ -19,9 +19,234 @@ they don't have to be!).
 
 == Basic equipment
 
-TODO
+Let's create an `Equipment` component. It will know whether it's
+equipped or not and it will also have a `slot` such as "hand" for
+weapons or "head" for helmets.
+
+[source]
+----
+#[derive(Clone, Copy, Debug, PartialEq, RustcDecodable, RustcEncodable)]
+/// An object that can be equipped, yielding bonuses.
+struct Equipment {
+    slot: Slot,
+    equipped: bool,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, RustcDecodable, RustcEncodable)]
+enum Slot {
+    LeftHand,
+    RightHand,
+    Head,
+}
+----
+
+NOTE: We're using `enum` for the equipment slots to stay safe from
+typos and forgetting to handle a new case in a `match`. You can just
+use a string instead, though.
+
+We'll add this new component to our `Object` and its `new` method:
+
+[source]
+----
+struct Object {
+    ...
+    equipment: Option<Equipment>,
+}
+
+
+impl Object {
+    pub fn new(x: i32, y: i32, char: char, name: &str, color: Color, blocks: bool) -> Self {
+        Object {
+            ...
+            equipment: None,
+        }
+    }
+    ...
+}
+----
+
+And let's add a couple of new `Object` methods for putting the
+equipment on and off:
+
+[source]
+----
+/// Equip object and show a message about it
+pub fn equip(&mut self, log: &mut Vec<(String, Color)>) {
+    if self.item.is_none() {
+        log.add(format!("Can't equip {:?} because it's not an Item.", self),
+                colors::RED);
+        return
+    };
+    if let Some(ref mut equipment) = self.equipment {
+        if !equipment.equipped {
+            equipment.equipped = true;
+            log.add(format!("Equipped {} on {:?}.", self.name, equipment.slot),
+                    colors::LIGHT_GREEN);
+        }
+    } else {
+        log.add(format!("Can't equip {:?} because it's not an Equipment.", self),
+                colors::RED);
+    }
+}
+----
+
+The meat of the method is in its middle: we take the equipment
+component, mark its `equipped` value as true and print a message. The
+checks before and after are there to make sure that the `Object` we're
+calling is indeed an `Equipment` and also an `Item`.
+
+We could just ignore that since all equipments should be items (i.e.
+they can be carried in the inventory and dropped on the floor), it's
+better to see when the unexpected happens.
+
+Dequip works similarly:
+
+[source]
+----
+/// Dequip object and show a message about it
+pub fn dequip(&mut self, log: &mut Vec<(String, Color)>) {
+    if self.item.is_none() {
+        log.add(format!("Can't dequip {:?} because it's not an Item.", self),
+                colors::RED);
+        return
+    };
+    if let Some(ref mut equipment) = self.equipment {
+        if equipment.equipped {
+            equipment.equipped = false;
+            log.add(format!("Dequipped {} from {:?}.", self.name, equipment.slot),
+                    colors::LIGHT_YELLOW);
+        }
+    } else {
+        log.add(format!("Can't dequip {:?} because it's not an Equipment.", self),
+                colors::RED);
+    }
+}
+----
+
+NOTE: You may have noticed that we're passing the message log
+(`Vec<(String, Color)>`) directly instead of the full `Game` struct
+like in other `Object` methods such as `attack` or `take_damage`. This
+is to avoid a double mutable borrow later. Try passing `game: &mut
+Game` here instead and you'll see the problem when we get to
+`toggle_equip`.
+
+How do we equip our items? We can rely on the existing `Item`
+mechanism -- when you try to "use" or "cast" an equipment (which you
+can do since it's an `Item`, too), we'll equip or dequip it.
+
+First, let's add a new Item type:
+
+[source]
+----
+enum Item {
+    Heal,
+    Lightning,
+    Confuse,
+    Fireball,
+    Equipment,
+}
+----
+
+NOTE: We'll just group all equipments under a single item type. We can
+always split them out later.
+
+Then in the callback match in `use_item`:
+
+[source]
+----
+let on_use: ... = match item {
+    Heal => cast_heal,
+    Lightning => cast_lightning,
+    Fireball => cast_fireball,
+    Confuse => cast_confuse,
+    Equipment => toggle_equipment,
+}
+----
+
+We have to create the `toggle_equipment` function:
+
+[source]
+----
+fn toggle_equipment(inventory_id: usize, _objects: &mut [Object], game: &mut Game, _tcod: &mut Tcod)
+             -> UseResult
+{
+    let equipment = match game.inventory[inventory_id].equipment {
+        Some(equipment) => equipment,
+        None => return UseResult::Cancelled,
+    };
+    if equipment.equipped {
+        game.inventory[inventory_id].dequip(&mut game.log);
+    } else {
+        game.inventory[inventory_id].equip(&mut game.log);
+    }
+    UseResult::UsedAndKept
+}
+----
+
+We're returning a new `UseResult` value here: one that says we have
+used the item (so it's the monsters' turn now), but we don't want the
+item to disappear!
+
+NOTE: Here is why we have to pass `&mut game.log` to `equip` instead
+of the full `&mut game`: in the same statement we look up the
+equipment Object in `game.inventory`, which will make `game` mutably
+borrowed for the duration of the `equip` call. So we can't borrow it
+second time. However, since we're only borrowing `game.inventory`, we
+_can_ borrow `game.log` separately! If you don't like this, you could
+turn the `equip` and `dequip` methods into standalone functions that
+would take `inventory_id` and `&mut game`.
+
+We need to add the new value to the `UseResult` enum and handle the
+new case in `use_item` (as always, the compiler will complain so you
+can rely on it to tell you where to look):
+
+[source]
+----
+match on_use(inventory_id, objects, game, tcod) {
+    UseResult::UsedUp => {
+        ...
+    }
+    UseResult::UsedAndKept => {}, // do nothing
+    UseResult::Cancelled => {
+        ...
+    }
+}
+----
+
+And finally, we need to update the item chances for this new
+`Equipment` type and add one to the game!
+
+Add this to the `item_chances` in `place_objects`:
+
+[source]
+----
+Weighted {weight: 1000, item: Item::Equipment},
+----
+
+And then this sword later on where we generate the items:
+
+[source]
+----
+Item::Equipment => {
+    // create a sword
+    let mut object = Object::new(x, y, '/', "sword", colors::SKY, false);
+    object.item = Some(Item::Equipment);
+    object.equipment = Some(Equipment{equipped: false, slot: Slot::RightHand});
+    object
+}
+----
+
+As you can see, we've the weighted chances really don't have to be
+percentages. By setting the sword's value to `1000`, it's much more
+likely to appear as any other item so we can find it early in the game
+and test it!
+
+We will set it back to something more reasonable later on.
+
 
 == Equipment polish
+
+TODO: impl Display for Slot so it's nice & readable
 
 TODO
 
