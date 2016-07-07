@@ -213,7 +213,10 @@ match on_use(inventory_id, objects, game, tcod) {
 }
 ----
 
-And finally, we need to update the item chances for this new
+And hey! Now we can have regular items that don't disappear upon use
+-- such as wands, spellbooks, lockpicks, etc.
+
+Finally, we need to update the item chances for this new
 `Equipment` type and add one to the game!
 
 Add this to the `item_chances` in `place_objects`:
@@ -236,9 +239,9 @@ Item::Equipment => {
 }
 ----
 
-As you can see, we've the weighted chances really don't have to be
+As you can see, the weighted chances really don't have to be
 percentages. By setting the sword's value to `1000`, it's much more
-likely to appear as any other item so we can find it early in the game
+likely to appear than any other item so we can find it early in the game
 and test it!
 
 We will set it back to something more reasonable later on.
