@@ -390,7 +390,21 @@ And now the equipment-related messages look much nicer!
 
 == Bonus round
 
-TODO
+The last bit is to make equipment useful, by letting it change the
+player's stats when equipped. We could simply add the bonus value to a
+stat (say, attack power) when the item is equipped, and subtract it
+when dequipped. This is brittle because any tiny mistake will
+permanently change the player's stats!
+
+A more reliable approach is to calculate on-the-fly the player's stats
+when they are needed, based on the original stat and any bonuses. This
+way there's no room for inconsistencies -- the stat is truly based on
+whatever bonuses apply at the moment.
+
+Other languages have different ways of dealing with this (e.g.
+Python's properties), but in Rust we have to rely on functions and
+methods.
+
 
 
 
