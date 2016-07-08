@@ -304,6 +304,15 @@ fn pick_item_up(object_id: usize, objects: &mut Vec<Object>, game: &mut Game) {
     }
 }
 
+fn get_equipped_in_slot(slot: Slot, inventory: &[Object]) -> Option<usize> {
+    for (inventory_id, item) in inventory.iter().enumerate() {
+        if item.equipment.as_ref().map_or(false, |e| e.equipped && e.slot == slot) {
+            return Some(inventory_id)
+        }
+    }
+    None
+}
+
 fn is_blocked(x: i32, y: i32, map: &Map, objects: &[Object]) -> bool {
     // first test the map tile
     if map[x as usize][y as usize].blocked {
