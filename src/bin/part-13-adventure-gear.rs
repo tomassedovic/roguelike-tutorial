@@ -630,16 +630,13 @@ fn cast_fireball(_inventory_id: usize, objects: &mut [Object], game: &mut Game, 
 fn toggle_equipment(inventory_id: usize, _objects: &mut [Object], game: &mut Game, _tcod: &mut Tcod)
              -> UseResult
 {
-    println!("Toggling equip.");
     let equipment = match game.inventory[inventory_id].equipment {
         Some(equipment) => equipment,
         None => return UseResult::Cancelled,
     };
     if equipment.equipped {
-        println!("dequipping");
         game.inventory[inventory_id].dequip(&mut game.log);
     } else {
-        println!("equipping");
         game.inventory[inventory_id].equip(&mut game.log);
     }
     UseResult::UsedAndKept
