@@ -249,9 +249,144 @@ We will set it back to something more reasonable later on.
 
 == Equipment polish
 
-TODO: impl Display for Slot so it's nice & readable
+Now that we have the equipment basics in place, let's finish it up.
+First, we only want to have one item equipped in any given slot.
+Here's a function that returns an equipment that occupies a given slot
+(if it exists):
 
-TODO
+[source]
+----
+fn get_equipped_in_slot(slot: Slot, inventory: &[Object]) -> Option<usize> {
+    for (inventory_id, item) in inventory.iter().enumerate() {
+        if item.equipment.as_ref().map_or(false, |e| e.equipped && e.slot == slot) {
+            return Some(inventory_id)
+        }
+    }
+    None
+}
+----
+
+We can use it to prevent a second item in the same slot, or better
+yet: dequip the old item to make room for the new one. In
+`toggle_equipment`:
+
+[source]
+----
+// if the slot is already being used, dequip whatever is there first
+if let Some(old_equipment) = get_equipped_in_slot(equipment.slot, &game.inventory) {
+    game.inventory[old_equipment].dequip(&mut game.log);
+}
+----
+
+Another nice behavior is to automatically equip picked up items, if
+their slots are available. In the `pick_item_up` function, in the
+`else` branch:
+
+[source]
+----
+let item = objects.swap_remove(object_id);
+game.log.add(format!("You picked up a {}!", item.name), colors::GREEN);
+let index = game.inventory.len();
+let slot = item.equipment.map(|e| e.slot);
+game.inventory.push(item);
+
+// automatically equip, if the corresponding equipment slot is unused
+if let Some(slot) = slot {
+    if get_equipped_in_slot(slot, &game.inventory).is_none() {
+        game.inventory[index].equip(&mut game.log);
+    }
+}
+----
+
+We take the inventory index of the picked up item and an `Option` of
+the equipment slot (it's `None` if the item is not an equipment).
+
+Then we check whether that slot is occupied, and if not, equip the new
+item.
+
+We also need to de-equip an item if we're dropping it. In `drop_item`
+right after the `game.inventory.remove` line:
+
+[source]
+----
+if item.equipment.is_some() {
+    item.dequip(&mut game.log);
+}
+----
+
+It would also be nice if we could show which items are equipped in the
+inventory screen. Replace the `inventory.iter().map(...)` line in
+`inventory_menu` with:
+
+[source]
+----
+inventory.iter().map(|item| {
+    // show additional information, in case it's equipped
+    match item.equipment {
+        Some(equipment) if equipment.equipped => {
+            format!("{} (on {:?})", item.name, equipment.slot)
+        }
+        _ => item.name.clone()
+    }
+}).collect()
+----
+
+We just replace the closure passed to `map` to report the equipped
+slot if available and the item name otherwise.
+
+You can check the equipment's state in the inventory screen, and it
+changes correctly as you pick up, drop, equip and dequip various
+items!
+
+One last thing to do here: the message log shows the equipment slot as
+capitalised:
+
+----
+Equipped sword on RightHand.
+----
+
+This is because the slots are enums and this is their `Debug`
+representation -- if they didn't have `#[derive(Debug)]`, we wouldn't
+be able to print them at all.
+
+It would be nice if we could override the output somehow. Or better
+yet, leave the debug output as is but provide a human-readable
+alternative!
+
+:display: https://doc.rust-lang.org/std/fmt/trait.Display.html
+
+The way to provide a user facing output in Rust is to implement the
+{display}[Display] trait.
+
+Let's give it a go:
+
+[source]
+----
+impl std::fmt::Display for Slot {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match *self {
+            Slot::LeftHand => write!(f, "left hand"),
+            Slot::RightHand => write!(f, "right hand"),
+            Slot::Head => write!(f, "head"),
+        }
+    }
+}
+----
+
+The `write!` macro is similar to `format!` or `println!` but it writes
+to a `std::fmt::Formatter` struct.
+
+We can now use this new formatting by replacing `{:?}` to `{}` every
+time we print out a `Slot`. So in `inventory_menu`:
+
+[source]
+----
+format!("{} (on {})", item.name, equipment.slot)
+----
+
+and then the "Equipped on" and "Dequipped on" messages in `equip` and `dequip`.
+
+And now the equipment-related messages look much nicer!
 
 == Bonus round
 
