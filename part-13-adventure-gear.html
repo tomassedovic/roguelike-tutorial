@@ -748,7 +748,10 @@ can rely on it to tell you where to look):</p>
 </div>
 </div>
 <div class="paragraph">
-<p>And finally, we need to update the item chances for this new
+<p>And hey! Now we can have regular items that don&#8217;t disappear upon use&#8201;&#8212;&#8201;such as wands, spellbooks, lockpicks, etc.</p>
+</div>
+<div class="paragraph">
+<p>Finally, we need to update the item chances for this new
 <code>Equipment</code> type and add one to the game!</p>
 </div>
 <div class="paragraph">
@@ -774,9 +777,9 @@ can rely on it to tell you where to look):</p>
 </div>
 </div>
 <div class="paragraph">
-<p>As you can see, we&#8217;ve the weighted chances really don&#8217;t have to be
+<p>As you can see, the weighted chances really don&#8217;t have to be
 percentages. By setting the sword&#8217;s value to <code>1000</code>, it&#8217;s much more
-likely to appear as any other item so we can find it early in the game
+likely to appear than any other item so we can find it early in the game
 and test it!</p>
 </div>
 <div class="paragraph">
@@ -788,10 +791,160 @@ and test it!</p>
 <h2 id="_equipment_polish">Equipment polish</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>TODO: impl Display for Slot so it&#8217;s nice &amp; readable</p>
+<p>Now that we have the equipment basics in place, let&#8217;s finish it up.
+First, we only want to have one item equipped in any given slot.
+Here&#8217;s a function that returns an equipment that occupies a given slot
+(if it exists):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-k">fn</span> <span class="tok-n">get_equipped_in_slot</span><span class="tok-p">(</span><span class="tok-n">slot</span><span class="tok-o">:</span> <span class="tok-n">Slot</span><span class="tok-p">,</span> <span class="tok-n">inventory</span><span class="tok-o">:</span> <span class="tok-o">&amp;</span><span class="tok-p">[</span><span class="tok-n">Object</span><span class="tok-p">])</span> <span class="tok-o">-&gt;</span> <span class="tok-nb">Option</span><span class="tok-o">&lt;</span><span class="tok-n">usize</span><span class="tok-o">&gt;</span> <span class="tok-p">{</span>
+    <span class="tok-k">for</span> <span class="tok-p">(</span><span class="tok-n">inventory_id</span><span class="tok-p">,</span> <span class="tok-n">item</span><span class="tok-p">)</span> <span class="tok-k">in</span> <span class="tok-n">inventory</span><span class="tok-p">.</span><span class="tok-n">iter</span><span class="tok-p">().</span><span class="tok-n">enumerate</span><span class="tok-p">()</span> <span class="tok-p">{</span>
+        <span class="tok-k">if</span> <span class="tok-n">item</span><span class="tok-p">.</span><span class="tok-n">equipment</span><span class="tok-p">.</span><span class="tok-n">as_ref</span><span class="tok-p">().</span><span class="tok-n">map_or</span><span class="tok-p">(</span><span class="tok-kc">false</span><span class="tok-p">,</span> <span class="tok-o">|</span><span class="tok-n">e</span><span class="tok-o">|</span> <span class="tok-n">e</span><span class="tok-p">.</span><span class="tok-n">equipped</span> <span class="tok-o">&amp;&amp;</span> <span class="tok-n">e</span><span class="tok-p">.</span><span class="tok-n">slot</span> <span class="tok-o">==</span> <span class="tok-n">slot</span><span class="tok-p">)</span> <span class="tok-p">{</span>
+            <span class="tok-k">return</span> <span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">inventory_id</span><span class="tok-p">)</span>
+        <span class="tok-p">}</span>
+    <span class="tok-p">}</span>
+    <span class="tok-nb">None</span>
+<span class="tok-p">}</span></code></pre>
+</div>
 </div>
 <div class="paragraph">
-<p>TODO</p>
+<p>We can use it to prevent a second item in the same slot, or better
+yet: dequip the old item to make room for the new one. In
+<code>toggle_equipment</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-c1">// if the slot is already being used, dequip whatever is there first</span>
+<span class="tok-k">if</span> <span class="tok-kd">let</span> <span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">old_equipment</span><span class="tok-p">)</span> <span class="tok-o">=</span> <span class="tok-n">get_equipped_in_slot</span><span class="tok-p">(</span><span class="tok-n">equipment</span><span class="tok-p">.</span><span class="tok-n">slot</span><span class="tok-p">,</span> <span class="tok-o">&amp;</span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">inventory</span><span class="tok-p">)</span> <span class="tok-p">{</span>
+    <span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">inventory</span><span class="tok-p">[</span><span class="tok-n">old_equipment</span><span class="tok-p">].</span><span class="tok-n">dequip</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">log</span><span class="tok-p">);</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Another nice behavior is to automatically equip picked up items, if
+their slots are available. In the <code>pick_item_up</code> function, in the
+<code>else</code> branch:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-kd">let</span> <span class="tok-n">item</span> <span class="tok-o">=</span> <span class="tok-n">objects</span><span class="tok-p">.</span><span class="tok-n">swap_remove</span><span class="tok-p">(</span><span class="tok-n">object_id</span><span class="tok-p">);</span>
+<span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">log</span><span class="tok-p">.</span><span class="tok-n">add</span><span class="tok-p">(</span><span class="tok-n">format</span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-s">&quot;You picked up a {}!&quot;</span><span class="tok-p">,</span> <span class="tok-n">item</span><span class="tok-p">.</span><span class="tok-n">name</span><span class="tok-p">),</span> <span class="tok-n">colors</span><span class="tok-o">::</span><span class="tok-n">GREEN</span><span class="tok-p">);</span>
+<span class="tok-kd">let</span> <span class="tok-n">index</span> <span class="tok-o">=</span> <span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">inventory</span><span class="tok-p">.</span><span class="tok-n">len</span><span class="tok-p">();</span>
+<span class="tok-kd">let</span> <span class="tok-n">slot</span> <span class="tok-o">=</span> <span class="tok-n">item</span><span class="tok-p">.</span><span class="tok-n">equipment</span><span class="tok-p">.</span><span class="tok-n">map</span><span class="tok-p">(</span><span class="tok-o">|</span><span class="tok-n">e</span><span class="tok-o">|</span> <span class="tok-n">e</span><span class="tok-p">.</span><span class="tok-n">slot</span><span class="tok-p">);</span>
+<span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">inventory</span><span class="tok-p">.</span><span class="tok-n">push</span><span class="tok-p">(</span><span class="tok-n">item</span><span class="tok-p">);</span>
+
+<span class="tok-c1">// automatically equip, if the corresponding equipment slot is unused</span>
+<span class="tok-k">if</span> <span class="tok-kd">let</span> <span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">slot</span><span class="tok-p">)</span> <span class="tok-o">=</span> <span class="tok-n">slot</span> <span class="tok-p">{</span>
+    <span class="tok-k">if</span> <span class="tok-n">get_equipped_in_slot</span><span class="tok-p">(</span><span class="tok-n">slot</span><span class="tok-p">,</span> <span class="tok-o">&amp;</span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">inventory</span><span class="tok-p">).</span><span class="tok-n">is_none</span><span class="tok-p">()</span> <span class="tok-p">{</span>
+        <span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">inventory</span><span class="tok-p">[</span><span class="tok-n">index</span><span class="tok-p">].</span><span class="tok-n">equip</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">log</span><span class="tok-p">);</span>
+    <span class="tok-p">}</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>We take the inventory index of the picked up item and an <code>Option</code> of
+the equipment slot (it&#8217;s <code>None</code> if the item is not an equipment).</p>
+</div>
+<div class="paragraph">
+<p>Then we check whether that slot is occupied, and if not, equip the new
+item.</p>
+</div>
+<div class="paragraph">
+<p>We also need to de-equip an item if we&#8217;re dropping it. In <code>drop_item</code>
+right after the <code>game.inventory.remove</code> line:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-k">if</span> <span class="tok-n">item</span><span class="tok-p">.</span><span class="tok-n">equipment</span><span class="tok-p">.</span><span class="tok-n">is_some</span><span class="tok-p">()</span> <span class="tok-p">{</span>
+    <span class="tok-n">item</span><span class="tok-p">.</span><span class="tok-n">dequip</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">log</span><span class="tok-p">);</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It would also be nice if we could show which items are equipped in the
+inventory screen. Replace the <code>inventory.iter().map(&#8230;&#8203;)</code> line in
+<code>inventory_menu</code> with:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-n">inventory</span><span class="tok-p">.</span><span class="tok-n">iter</span><span class="tok-p">().</span><span class="tok-n">map</span><span class="tok-p">(</span><span class="tok-o">|</span><span class="tok-n">item</span><span class="tok-o">|</span> <span class="tok-p">{</span>
+    <span class="tok-c1">// show additional information, in case it&#39;s equipped</span>
+    <span class="tok-k">match</span> <span class="tok-n">item</span><span class="tok-p">.</span><span class="tok-n">equipment</span> <span class="tok-p">{</span>
+        <span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">equipment</span><span class="tok-p">)</span> <span class="tok-k">if</span> <span class="tok-n">equipment</span><span class="tok-p">.</span><span class="tok-n">equipped</span> <span class="tok-o">=&gt;</span> <span class="tok-p">{</span>
+            <span class="tok-n">format</span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-s">&quot;{} (on {:?})&quot;</span><span class="tok-p">,</span> <span class="tok-n">item</span><span class="tok-p">.</span><span class="tok-n">name</span><span class="tok-p">,</span> <span class="tok-n">equipment</span><span class="tok-p">.</span><span class="tok-n">slot</span><span class="tok-p">)</span>
+        <span class="tok-p">}</span>
+        <span class="tok-n">_</span> <span class="tok-o">=&gt;</span> <span class="tok-n">item</span><span class="tok-p">.</span><span class="tok-n">name</span><span class="tok-p">.</span><span class="tok-n">clone</span><span class="tok-p">()</span>
+    <span class="tok-p">}</span>
+<span class="tok-p">}).</span><span class="tok-n">collect</span><span class="tok-p">()</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>We just replace the closure passed to <code>map</code> to report the equipped
+slot if available and the item name otherwise.</p>
+</div>
+<div class="paragraph">
+<p>You can check the equipment&#8217;s state in the inventory screen, and it
+changes correctly as you pick up, drop, equip and dequip various
+items!</p>
+</div>
+<div class="paragraph">
+<p>One last thing to do here: the message log shows the equipment slot as
+capitalised:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>Equipped sword on RightHand.</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This is because the slots are enums and this is their <code>Debug</code>
+representation&#8201;&#8212;&#8201;if they didn&#8217;t have <code>#[derive(Debug)]</code>, we wouldn&#8217;t
+be able to print them at all.</p>
+</div>
+<div class="paragraph">
+<p>It would be nice if we could override the output somehow. Or better
+yet, leave the debug output as is but provide a human-readable
+alternative!</p>
+</div>
+<div class="paragraph">
+<p>The way to provide a user facing output in Rust is to implement the
+<a href="https://doc.rust-lang.org/std/fmt/trait.Display.html">Display</a> trait.</p>
+</div>
+<div class="paragraph">
+<p>Let&#8217;s give it a go:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-k">impl</span> <span class="tok-n">std</span><span class="tok-o">::</span><span class="tok-n">fmt</span><span class="tok-o">::</span><span class="tok-n">Display</span> <span class="tok-k">for</span> <span class="tok-n">Slot</span> <span class="tok-p">{</span>
+    <span class="tok-k">fn</span> <span class="tok-n">fmt</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-bp">self</span><span class="tok-p">,</span> <span class="tok-n">f</span><span class="tok-o">:</span> <span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">std</span><span class="tok-o">::</span><span class="tok-n">fmt</span><span class="tok-o">::</span><span class="tok-n">Formatter</span><span class="tok-p">)</span> <span class="tok-o">-&gt;</span> <span class="tok-n">std</span><span class="tok-o">::</span><span class="tok-n">fmt</span><span class="tok-o">::</span><span class="tok-nb">Result</span> <span class="tok-p">{</span>
+        <span class="tok-k">match</span> <span class="tok-o">*</span><span class="tok-bp">self</span> <span class="tok-p">{</span>
+            <span class="tok-n">Slot</span><span class="tok-o">::</span><span class="tok-n">LeftHand</span> <span class="tok-o">=&gt;</span> <span class="tok-n">write</span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-n">f</span><span class="tok-p">,</span> <span class="tok-s">&quot;left hand&quot;</span><span class="tok-p">),</span>
+            <span class="tok-n">Slot</span><span class="tok-o">::</span><span class="tok-n">RightHand</span> <span class="tok-o">=&gt;</span> <span class="tok-n">write</span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-n">f</span><span class="tok-p">,</span> <span class="tok-s">&quot;right hand&quot;</span><span class="tok-p">),</span>
+            <span class="tok-n">Slot</span><span class="tok-o">::</span><span class="tok-n">Head</span> <span class="tok-o">=&gt;</span> <span class="tok-n">write</span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-n">f</span><span class="tok-p">,</span> <span class="tok-s">&quot;head&quot;</span><span class="tok-p">),</span>
+        <span class="tok-p">}</span>
+    <span class="tok-p">}</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>write!</code> macro is similar to <code>format!</code> or <code>println!</code> but it writes
+to a <code>std::fmt::Formatter</code> struct.</p>
+</div>
+<div class="paragraph">
+<p>We can now use this new formatting by replacing <code>{:?}</code> to <code>{}</code> every
+time we print out a <code>Slot</code>. So in <code>inventory_menu</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-n">format</span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-s">&quot;{} (on {})&quot;</span><span class="tok-p">,</span> <span class="tok-n">item</span><span class="tok-p">.</span><span class="tok-n">name</span><span class="tok-p">,</span> <span class="tok-n">equipment</span><span class="tok-p">.</span><span class="tok-n">slot</span><span class="tok-p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and then the "Equipped on" and "Dequipped on" messages in <code>equip</code> and <code>dequip</code>.</p>
+</div>
+<div class="paragraph">
+<p>And now the equipment-related messages look much nicer!</p>
 </div>
 </div>
 </div>
@@ -799,7 +952,22 @@ and test it!</p>
 <h2 id="_bonus_round">Bonus round</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>TODO</p>
+<p>The last bit is to make equipment useful, by letting it change the
+player&#8217;s stats when equipped. We could simply add the bonus value to a
+stat (say, attack power) when the item is equipped, and subtract it
+when dequipped. This is brittle because any tiny mistake will
+permanently change the player&#8217;s stats!</p>
+</div>
+<div class="paragraph">
+<p>A more reliable approach is to calculate on-the-fly the player&#8217;s stats
+when they are needed, based on the original stat and any bonuses. This
+way there&#8217;s no room for inconsistencies&#8201;&#8212;&#8201;the stat is truly based on
+whatever bonuses apply at the moment.</p>
+</div>
+<div class="paragraph">
+<p>Other languages have different ways of dealing with this (e.g.
+Python&#8217;s properties), but in Rust we have to rely on functions and
+methods.</p>
 </div>
 <div class="paragraph">
 <p>Here&#8217;s <a href="part-13-adventure-gear.rs.txt">the complete code</a>.</p>
@@ -809,7 +977,7 @@ and test it!</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2016-07-02 17:55:06 CEST
+Last updated 2016-07-08 18:01:31 CEST
 </div>
 </div>
 </body>
