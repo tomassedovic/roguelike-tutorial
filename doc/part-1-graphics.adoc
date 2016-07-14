@@ -28,7 +28,7 @@ $ cargo new --bin roguelike
 $ cd roguelike/
 ----
 
-It will create two files: `Cargo.toml` and `main.rs` in the `src`
+This will create two files: `Cargo.toml` and `main.rs` in the `src`
 directory. `Cargo.toml` contains metadata for the project and any
 dependencies you're going to need (such as libtcod).
 
@@ -62,13 +62,13 @@ Hello, world!
 ....
 
 Rust will first compile `main.rs` and any other files it needs (there
-are none yet). The resulting binary program will called `roguelike`
+are none yet). The resulting binary program will be called `roguelike`
 and placed in the `target/release` directory.
 
 Cargo will then run the program which will print `Hello, world!`.
 
 NOTE: Rust (and Cargo) can compile programs in two modes: _with
-optimisations_ and _without_. Code compiled without opmimisations is
+optimisations_ and _without_. Code compiled without optimisations is
 *really slow*, but it's easier to work with under a debugger. We will
 be using the optimised mode in the tutorial (with the `--release`
 option), to make sure no one is making speed claims without
@@ -120,7 +120,7 @@ the asterisk (`*`) as the name means to import everything under
 `BackgroundFlag`, etc.
 
 
-Now we'll add some constants so we're don't end up littering the
+Now we'll add some constants so we don't end up littering the
 source code with a bunch of opaque numbers:
 
 [source,rust]
@@ -145,7 +145,7 @@ the `println!` macro with code that sets up the libtcod window and
 renders a character on it.
 
 To create a window we call `Root::initializer(). ... .init()`.
-In-between go custom settings. Default values are going to be used for
+In between go custom settings. Default values are going to be used for
 any option that's not specified.
 
 [source,rust]
@@ -179,7 +179,7 @@ let mut root: Root = Root::initializer(). ... .init();
 Now let's have a look at the window options we're passing in.
 
 First, we're setting up a font. Libtcod uses bitmap fonts of various
-formats. Calling the `font` methods let's us set our own font using a
+formats. Calling the `font` methods lets us set our own font using a
 file name and a font layout. `font_type` is another option for loading
 a font.
 
@@ -224,7 +224,7 @@ The next line sets a default _foreground_ colour to white. This is the
 colour everything will be drawn with unless specified otherwise.
 
 The `tcod::colors` module contains values for common colours as well
-as the `Color` struct that let's you use your own.
+as the `Color` struct that lets you use your own.
 
 Next we draw the `@` character at the coordinates `1, 1` on the
 screen. The `0, 0` coordinate is at the top left corner of the window.
@@ -232,7 +232,7 @@ screen. The `0, 0` coordinate is at the top left corner of the window.
 Using `BackgroundFlag::None` says to ignore the default _background_
 colour.
 
-Calling `flush`, which will draw everything on the window at once.
+Calling `flush` will draw everything on the window at once.
 
 And finally, we also need to call `wait_for_keypress` even though
 we're not processing keyboard input yet. This is because libtcod
@@ -282,11 +282,11 @@ fn handle_keys(root: &mut Root, player_x: &mut i32, player_y: &mut i32) -> bool 
 ----
 
 A function signature in Rust is `fn function_name(parameter:
-type, ...) -> return_type`. Here we call our function `handle_keys`,
+type, ...) -> return_type`. Here we call our function `handle_keys`;
 it accepts three parameters -- the root console (of type
 `tcod::console::Root`), the x coordinate and the y coordinate (of type
-`i32`) and it returns a boolean value. `true` says "exit the game",
-`false` means "keep going"
+`i32`) -- and it returns a boolean value. `true` says "exit the game",
+`false` means "keep going".
 
 The &mut` bits before the types are borrowing operators. You can read
 about them (and the ownership they're strongly tied to) in the Rust
@@ -304,7 +304,7 @@ could only read their values but it could not change them. Since we
 want to update them based on the key the player pressed, we'll get
 them as mutable references. Then we can assign a new value using the
 dereference operator (e.g. `*player_x = 10`) and that will show up
-back in the caller code.
+back in the calling scope.
 
 Right now, the function's body is empty, except that it always returns
 `false` (which means, keep the game going). Let's add the keyboard
@@ -338,7 +338,7 @@ there are others for `alt`, `ctrl`, etc.
 
 The two dots at the end mean "I don't care about the other fields".
 If it wasn't there, it would not compile until you specified values
-fore every field of the `Key` struct.
+for every field of the `Key` struct.
 
 Rust requires that `match` arms are _exhaustive_. That means you have
 to specify all the possible values. However, as we don't care about
@@ -375,7 +375,7 @@ use tcod::input::KeyCode::*;
 ----
 
 Now, we could put it on top of the file next to the existing imports,
-but: Rust lets you place them in individual functions as well, which
+but Rust lets you place them in individual functions as well, which
 will make them available only for that function. Since we'll contain
 our keyboard-handling code in `handle_keys`, let's make it the first
 thing there.
@@ -404,7 +404,7 @@ Now update our drawing function to use the player coordinates:
 root.put_char(player_x, player_y, '@', BackgroundFlag::None);
 ----
 
-And we also need to clear the _previous_ position position --
+And we also need to clear the _previous_ player position --
 otherwise we'd leave a trail of `@` on the screen! Put this right
 before the `let exit = handle_keys(...)` call:
 

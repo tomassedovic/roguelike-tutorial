@@ -244,7 +244,7 @@ pub fn take_damage(&mut self, damage: i32, game: &mut Game) -> Option<i32> {  //
 }
 ----
 <1> May return a number of XP if `take_damage` killed the monster
-<2> We did kill the monster, return it's XP
+<2> We did kill the monster, return its XP
 <3> We did not kill the monster, don't return anything
 
 
