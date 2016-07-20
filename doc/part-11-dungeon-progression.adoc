@@ -55,10 +55,8 @@ onto it. We'll also heal the player because we're feeling generous!
 /// Advance to the next level
 fn next_level(tcod: &mut Tcod, objects: &mut Vec<Object>, game: &mut Game) {
     game.log.add("You take a moment to rest, and recover your strength.", colors::VIOLET);
-    objects[PLAYER].fighter.as_mut().map(|f| {
-        let heal_hp = f.max_hp / 2;
-        f.heal(heal_hp);
-    });
+    let heal_hp = objects[PLAYER].fighter.map_or(0, |f| f.max_hp / 2);
+    objects[PLAYER].heal(heal_hp);
 
     game.log.add("After a rare moment of peace, you descend deeper into \
                   the heart of the dungeon...", colors::RED);

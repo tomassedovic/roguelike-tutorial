@@ -203,6 +203,16 @@ impl Object {
                          colors::WHITE);
         }
     }
+
+    /// heal by the given amount, without going over the maximum
+    pub fn heal(&mut self, amount: i32) {
+        if let Some(mut fighter) = self.fighter {
+            fighter.hp += amount;
+            if fighter.hp > fighter.max_hp {
+                fighter.hp = fighter.max_hp;
+            }
+        }
+    }
 }
 
 /// move by the given amount, if the destination is not blocked
@@ -271,16 +281,6 @@ struct Fighter {
     defense: i32,
     power: i32,
     on_death: DeathCallback,
-}
-
-impl Fighter {
-    fn heal(&mut self, amount: i32) {
-        // heal by the given amount, without going over the maximum
-        self.hp += amount;
-        if self.hp > self.max_hp {
-            self.hp = self.max_hp;
-        }
-    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, RustcDecodable, RustcEncodable)]
@@ -481,13 +481,13 @@ fn cast_heal(_inventory_id: usize, objects: &mut [Object], game: &mut Game, _tco
              -> UseResult
 {
     // heal the player
-    if let Some(fighter) = objects[PLAYER].fighter.as_mut() {
+    if let Some(fighter) = objects[PLAYER].fighter {
         if fighter.hp == fighter.max_hp {
             game.log.add("You are already at full health.", colors::RED);
             return UseResult::Cancelled;
         }
         game.log.add("Your wounds start to fill better!", colors::LIGHT_VIOLET);
-        fighter.heal(HEAL_AMOUNT);
+        objects[PLAYER].heal(HEAL_AMOUNT);
         return UseResult::UsedUp;
     }
     UseResult::Cancelled

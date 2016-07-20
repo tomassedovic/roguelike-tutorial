@@ -438,13 +438,13 @@ Now let's add `cast_heal` for our potions to have effect!
 ----
 fn cast_heal(_inventory_id: usize, objects: &mut [Object], messages: &mut Messages) -> UseResult {
     // heal the player
-    if let Some(fighter) = objects[PLAYER].fighter.as_mut() {
+    if let Some(fighter) = objects[PLAYER].fighter {
         if fighter.hp == fighter.max_hp {
             message(messages, "You are already at full health.", colors::RED);
             return UseResult::Cancelled;
         }
         message(messages, "Your wounds start to fill better!", colors::LIGHT_VIOLET);
-        fighter.heal(HEAL_AMOUNT);
+        objects[PLAYER].heal(HEAL_AMOUNT);
         return UseResult::UsedUp;
     }
     UseResult::Cancelled
@@ -453,16 +453,16 @@ fn cast_heal(_inventory_id: usize, objects: &mut [Object], messages: &mut Messag
 
 The `heal` method is very simple too; still, it's handy to keep it
 since it will probably be used multiple times. The constant
-`HEAL_AMOUNT = 4` is defined at the top.
+`HEAL_AMOUNT = 4` is defined at the top. In `impl Object`:
 
 [source]
 ----
-impl Fighter {
-    fn heal(&mut self, amount: i32) {
-        // heal by the given amount, without going over the maximum
-        self.hp += amount;
-        if self.hp > self.base_max_hp {
-            self.hp = self.base_max_hp;
+/// heal by the given amount, without going over the maximum
+pub fn heal(&mut self, amount: i32) {
+    if let Some(mut fighter) = self.fighter {
+        fighter.hp += amount;
+        if fighter.hp > fighter.max_hp {
+            fighter.hp = fighter.max_hp;
         }
     }
 }
