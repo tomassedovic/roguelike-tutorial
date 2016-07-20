@@ -540,10 +540,8 @@ onto it. We&#8217;ll also heal the player because we&#8217;re feeling generous!<
 <pre class="pygments highlight"><code data-lang="rust"><span class="tok-c-Doc">/// Advance to the next level</span>
 <span class="tok-k">fn</span> <span class="tok-n">next_level</span><span class="tok-p">(</span><span class="tok-n">tcod</span><span class="tok-o">:</span> <span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">Tcod</span><span class="tok-p">,</span> <span class="tok-n">objects</span><span class="tok-o">:</span> <span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">Vec</span><span class="tok-o">&lt;</span><span class="tok-n">Object</span><span class="tok-o">&gt;</span><span class="tok-p">,</span> <span class="tok-n">game</span><span class="tok-o">:</span> <span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">Game</span><span class="tok-p">)</span> <span class="tok-p">{</span>
     <span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">log</span><span class="tok-p">.</span><span class="tok-n">add</span><span class="tok-p">(</span><span class="tok-s">&quot;You take a moment to rest, and recover your strength.&quot;</span><span class="tok-p">,</span> <span class="tok-n">colors</span><span class="tok-o">::</span><span class="tok-n">VIOLET</span><span class="tok-p">);</span>
-    <span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-n">PLAYER</span><span class="tok-p">].</span><span class="tok-n">fighter</span><span class="tok-p">.</span><span class="tok-n">as_mut</span><span class="tok-p">().</span><span class="tok-n">map</span><span class="tok-p">(</span><span class="tok-o">|</span><span class="tok-n">f</span><span class="tok-o">|</span> <span class="tok-p">{</span>
-        <span class="tok-kd">let</span> <span class="tok-n">heal_hp</span> <span class="tok-o">=</span> <span class="tok-n">f</span><span class="tok-p">.</span><span class="tok-n">max_hp</span> <span class="tok-o">/</span> <span class="tok-mi">2</span><span class="tok-p">;</span>
-        <span class="tok-n">f</span><span class="tok-p">.</span><span class="tok-n">heal</span><span class="tok-p">(</span><span class="tok-n">heal_hp</span><span class="tok-p">);</span>
-    <span class="tok-p">});</span>
+    <span class="tok-kd">let</span> <span class="tok-n">heal_hp</span> <span class="tok-o">=</span> <span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-n">PLAYER</span><span class="tok-p">].</span><span class="tok-n">fighter</span><span class="tok-p">.</span><span class="tok-n">map_or</span><span class="tok-p">(</span><span class="tok-mi">0</span><span class="tok-p">,</span> <span class="tok-o">|</span><span class="tok-n">f</span><span class="tok-o">|</span> <span class="tok-n">f</span><span class="tok-p">.</span><span class="tok-n">max_hp</span> <span class="tok-o">/</span> <span class="tok-mi">2</span><span class="tok-p">);</span>
+    <span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-n">PLAYER</span><span class="tok-p">].</span><span class="tok-n">heal</span><span class="tok-p">(</span><span class="tok-n">heal_hp</span><span class="tok-p">);</span>
 
     <span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">log</span><span class="tok-p">.</span><span class="tok-n">add</span><span class="tok-p">(</span><span class="tok-s">&quot;After a rare moment of peace, you descend deeper into \</span>
 <span class="tok-s">                  the heart of the dungeon...&quot;</span><span class="tok-p">,</span> <span class="tok-n">colors</span><span class="tok-o">::</span><span class="tok-n">RED</span><span class="tok-p">);</span>
@@ -1080,7 +1078,7 @@ let you skip a turn and have the monster come to you.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2016-07-02 21:15:41 CEST
+Last updated 2016-07-20 22:45:27 CEST
 </div>
 </div>
 </body>
