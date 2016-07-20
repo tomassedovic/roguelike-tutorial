@@ -626,8 +626,32 @@ player.fighter = Some(Fighter{max_hp: 100, hp: 100, defense: 1, base_power: 4, x
 ----
 <1> `fighter.power` -> `fighter.base_power`
 
-Now let's do the same for `defense` and `max_hp`, renaming the
-`Fighter` properties to `base_defense` and `base_max_hp`.
+Doing `defense` is exactly analogous: just rename `defense` to
+`base_defense` in `Fighter`, add `defense_bonus` to `Equipment` and
+fix the compilation errors.
+
+[source]
+----
+pub fn defense(&self, game: &Game) -> i32 {
+    let base_defense = self.fighter.map_or(0, |f| f.base_defense);
+    let bonus = self.get_all_equipped(game).iter().fold(0, |sum, e| sum + e.defense_bonus);
+    base_defense + bonus
+}
+----
+
+For example, here's the final damage formula in `attack`:
+
+[source]
+----
+let damage = self.power(game) - target.defense(game);
+----
+
+
+The case for `max_hp` is a little complicated by the fact that we use
+it in more places (`heal` and `cast_heal`). The beginning is the same,
+though: rename `max_hp` in `Fighter` to `base_max_hp`, add
+`bonus_max_hp` to `Equipment` and update monsters and equipment in
+`place_objects`.
 
 So the final `Fighter` struct looks like this:
 
@@ -643,24 +667,6 @@ struct Fighter {
 }
 ----
 
-And the `defense` and `max_hp` methods:
-
-[source]
-----
-
-    pub fn defense(&self, game: &Game) -> i32 {
-        let base_defense = self.fighter.map_or(0, |f| f.base_defense);
-        let bonus = self.get_all_equipped(game).iter().fold(0, |sum, e| sum + e.defense_bonus);
-        base_defense + bonus
-    }
-
-    pub fn max_hp(&self, game: &Game) -> i32 {
-        let base_max_hp = self.fighter.map_or(0, |f| f.base_max_hp);
-        let bonus = self.get_all_equipped(game).iter().fold(0, |sum, e| sum + e.max_hp_bonus);
-        base_max_hp + bonus
-    }
-----
-
 The `Equipment` struct:
 
 [source]
@@ -674,12 +680,72 @@ struct Equipment {
 }
 ----
 
-The final damage formula:
+And the and `max_hp` method on `Object`:
 
 [source]
 ----
-let damage = self.power(game) - target.defense(game);
+pub fn max_hp(&self, game: &Game) -> i32 {
+    let base_max_hp = self.fighter.map_or(0, |f| f.base_max_hp);
+    let bonus = self.get_all_equipped(game).iter().fold(0, |sum, e| sum + e.max_hp_bonus);
+    base_max_hp + bonus
+}
 ----
+
+We'll have to modify the `heal` method to pass in `Game`:
+
+[source]
+----
+/// heal by the given amount, without going over the maximum
+pub fn heal(&mut self, amount: i32, game: &Game) {  // <1>
+    let max_hp = self.max_hp(game);  // <2>
+    if let Some(mut fighter) = self.fighter {
+        fighter.hp += amount;
+        if fighter.hp > max_hp {  // <3>
+            fighter.hp = max_hp;  // <4>
+        }
+    }
+}
+----
+<1> Pass `&Game` because it's required by the `max_hp` method
+<2> Get the maximum HP count including bonuses
+<3> Use the `max_hp` variable here
+<4> And here
+
+And we need to fix `cast_heal` as well:
+
+[source]
+----
+fn cast_heal(_inventory_id: usize, objects: &mut [Object], game: &mut Game, _tcod: &mut Tcod)
+             -> UseResult
+{
+    // heal the player
+    let player = &mut objects[PLAYER];
+    if let Some(fighter) = player.fighter {
+        if fighter.hp == player.max_hp(game) {  // <1>
+            game.log.add("You are already at full health.", colors::RED);
+            return UseResult::Cancelled;
+        }
+        game.log.add("Your wounds start to feel better!", colors::LIGHT_VIOLET);
+        player.heal(HEAL_AMOUNT, game);  // <2>
+        return UseResult::UsedUp;
+    }
+    UseResult::Cancelled
+}
+----
+<1> check HP against the `max_hp` method
+<2> `heal` requires `&Game` now
+
+And the healing at the beginning of `next_level` is now:
+
+[source]
+----
+let heal_hp = objects[PLAYER].max_hp(game) / 2;
+objects[PLAYER].heal(heal_hp, game);
+----
+
+And that's it. The game should now compile, but we're not actually
+using any bonuses! So let's fix that.
+
 
 
 

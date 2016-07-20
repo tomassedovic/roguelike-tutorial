@@ -220,11 +220,12 @@ impl Object {
     }
 
     /// heal by the given amount, without going over the maximum
-    pub fn heal(&mut self, amount: i32) {
+    pub fn heal(&mut self, amount: i32, game: &Game) {
+        let max_hp = self.max_hp(game);
         if let Some(mut fighter) = self.fighter {
             fighter.hp += amount;
-            if fighter.hp > fighter.max_hp {
-                fighter.hp = fighter.max_hp;
+            if fighter.hp > max_hp {
+                fighter.hp = max_hp;
             }
         }
     }
@@ -279,11 +280,11 @@ impl Object {
         base_defense + bonus
     }
 
-    // pub fn max_hp(&self, game: &Game) -> i32 {
-    //     let base_max_hp = self.fighter.map_or(0, |f| f.base_max_hp);
-    //     let bonus = self.get_all_equipped(game).iter().fold(0, |sum, e| sum + e.max_hp_bonus);
-    //     base_max_hp + bonus
-    // }
+    pub fn max_hp(&self, game: &Game) -> i32 {
+        let base_max_hp = self.fighter.map_or(0, |f| f.base_max_hp);
+        let bonus = self.get_all_equipped(game).iter().fold(0, |sum, e| sum + e.max_hp_bonus);
+        base_max_hp + bonus
+    }
 
     /// returns a list of equipped items
     pub fn get_all_equipped(&self, game: &Game) -> Vec<Equipment> {
@@ -381,8 +382,7 @@ fn is_blocked(x: i32, y: i32, map: &Map, objects: &[Object]) -> bool {
 #[derive(Clone, Copy, Debug, PartialEq, RustcDecodable, RustcEncodable)]
 struct Fighter {
     hp: i32,
-    max_hp: i32,
-    //base_max_hp: i32,
+    base_max_hp: i32,
     base_defense: i32,
     base_power: i32,
     xp: i32,
@@ -594,13 +594,14 @@ fn cast_heal(_inventory_id: usize, objects: &mut [Object], game: &mut Game, _tco
              -> UseResult
 {
     // heal the player
-    if let Some(fighter) = objects[PLAYER].fighter {
-        if fighter.hp == fighter.max_hp {
+    let player = &mut objects[PLAYER];
+    if let Some(fighter) = player.fighter {
+        if fighter.hp == player.max_hp(game) {
             game.log.add("You are already at full health.", colors::RED);
             return UseResult::Cancelled;
         }
         game.log.add("Your wounds start to feel better!", colors::LIGHT_VIOLET);
-        objects[PLAYER].heal(HEAL_AMOUNT);
+        player.heal(HEAL_AMOUNT, game);
         return UseResult::UsedUp;
     }
     UseResult::Cancelled
@@ -706,7 +707,7 @@ fn toggle_equipment(inventory_id: usize, _objects: &mut [Object], game: &mut Gam
 struct Equipment {
     slot: Slot,
     equipped: bool,
-    //max_hp_bonus: i32,
+    max_hp_bonus: i32,
     defense_bonus: i32,
     power_bonus: i32,
 }
@@ -894,7 +895,7 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>, level: u32) {
                 "orc" => {
                     // create an orc
                     let mut orc = Object::new(x, y, 'o', "orc", colors::DESATURATED_GREEN, true);
-                    orc.fighter = Some(Fighter{max_hp: 20, hp: 20, base_defense: 0, base_power: 4, xp: 35,
+                    orc.fighter = Some(Fighter{base_max_hp: 20, hp: 20, base_defense: 0, base_power: 4, xp: 35,
                                                on_death: DeathCallback::Monster});
                     orc.ai = Some(Ai::Basic);
                     orc
@@ -902,7 +903,7 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>, level: u32) {
                 "troll" => {
                     // create a troll
                     let mut troll = Object::new(x, y, 'T', "troll", colors::DARKER_GREEN, true);
-                    troll.fighter = Some(Fighter{max_hp: 30, hp: 30, base_defense: 2, base_power: 8, xp: 100,
+                    troll.fighter = Some(Fighter{base_max_hp: 30, hp: 30, base_defense: 2, base_power: 8, xp: 100,
                                                  on_death: DeathCallback::Monster});
                     troll.ai = Some(Ai::Basic);
                     troll
@@ -955,7 +956,7 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>, level: u32) {
                     // create a sword
                     let mut object = Object::new(x, y, '/', "sword", colors::SKY, false);
                     object.item = Some(Item::Equipment);
-                    object.equipment = Some(Equipment{equipped: false, slot: Slot::RightHand, defense_bonus: 0, power_bonus: 0});
+                    object.equipment = Some(Equipment{equipped: false, slot: Slot::RightHand, max_hp_bonus: 0, defense_bonus: 0, power_bonus: 0});
                     object
                 }
             };
@@ -968,8 +969,8 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>, level: u32) {
 /// Advance to the next level
 fn next_level(tcod: &mut Tcod, objects: &mut Vec<Object>, game: &mut Game) {
     game.log.add("You take a moment to rest, and recover your strength.", colors::VIOLET);
-    let heal_hp = objects[PLAYER].fighter.map_or(0, |f| f.max_hp / 2);
-    objects[PLAYER].heal(heal_hp);
+    let heal_hp = objects[PLAYER].max_hp(game) / 2;
+    objects[PLAYER].heal(heal_hp, game);
 
     game.log.add("After a rare moment of peace, you descend deeper into \
                   the heart of the dungeon...", colors::RED);
@@ -1090,7 +1091,7 @@ fn render_all(tcod: &mut Tcod, objects: &[Object], game: &mut Game, fov_recomput
 
     // show the player's stats
     let hp = objects[PLAYER].fighter.map_or(0, |f| f.hp);
-    let max_hp = objects[PLAYER].fighter.map_or(0, |f| f.max_hp);
+    let max_hp = objects[PLAYER].max_hp(game);
     render_bar(&mut tcod.panel, 1, 1, BAR_WIDTH, "HP", hp, max_hp, colors::LIGHT_RED, colors::DARKER_RED);
 
     tcod.panel.print_ex(1, 3, BackgroundFlag::None, TextAlignment::Left,
@@ -1326,7 +1327,7 @@ Experience to level up: {}
 
 Maximum HP: {}
 Attack: {}
-Defense: {}", level, fighter.xp, level_up_xp, fighter.max_hp, player.power(game), player.defense(game));
+Defense: {}", level, fighter.xp, level_up_xp, player.max_hp(game), player.power(game), player.defense(game));
                 msgbox(&msg, CHARACTER_SCREEN_WIDTH, &mut tcod.root);
             }
 
@@ -1352,7 +1353,7 @@ fn level_up(objects: &mut [Object], game: &mut Game, tcod: &mut Tcod) {
         while choice.is_none() {  // keep asking until a choice is made
             choice = menu(
                 "Level up! Choose a stat to raise:\n",
-                &[format!("Constitution (+20 HP, from {})", fighter.max_hp),
+                &[format!("Constitution (+20 HP, from {})", fighter.base_max_hp),
                   format!("Strength (+1 attack, from {})", fighter.base_power),
                   format!("Agility (+1 defense, from {})", fighter.base_defense)],
                 LEVEL_SCREEN_WIDTH, &mut tcod.root);
@@ -1360,7 +1361,7 @@ fn level_up(objects: &mut [Object], game: &mut Game, tcod: &mut Tcod) {
         fighter.xp -= level_up_xp;
         match choice.unwrap() {
             0 => {
-                fighter.max_hp += 20;
+                fighter.base_max_hp += 20;
                 fighter.hp += 20;
             }
             1 => {
@@ -1434,7 +1435,7 @@ fn new_game(tcod: &mut Tcod) -> (Vec<Object>, Game) {
     // create object representing the player
     let mut player = Object::new(0, 0, '@', "player", colors::WHITE, true);
     player.alive = true;
-    player.fighter = Some(Fighter{max_hp: 100, hp: 100, base_defense: 1, base_power: 4, xp: 0,
+    player.fighter = Some(Fighter{base_max_hp: 100, hp: 100, base_defense: 1, base_power: 4, xp: 0,
                                   on_death: DeathCallback::Player});
 
     // the list of objects with just the player
