@@ -496,7 +496,7 @@ fn cast_heal(_inventory_id: usize, objects: &mut [Object], messages: &mut Messag
             message(messages, "You are already at full health.", colors::RED);
             return UseResult::Cancelled;
         }
-        message(messages, "Your wounds start to fill better!", colors::LIGHT_VIOLET);
+        message(messages, "Your wounds start to feel better!", colors::LIGHT_VIOLET);
         objects[PLAYER].heal(HEAL_AMOUNT);
         return UseResult::UsedUp;
     }
