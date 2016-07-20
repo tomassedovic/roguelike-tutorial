@@ -746,7 +746,118 @@ objects[PLAYER].heal(heal_hp, game);
 And that's it. The game should now compile, but we're not actually
 using any bonuses! So let's fix that.
 
+The values here are basically tuning the gameplay. Feel free to set them
+to whatever you wish.
 
+We'll set sword's `power_bonus` to `3` and leave the rest set to `0`.
 
+Next, we'll add a shield which has a defense bonus of `1`.
+
+Let's rename the `Equipment` item type to `Sword` and add a new one
+called `Shield`:
+
+[source]
+----
+enum Item {
+    Heal,
+    Lightning,
+    Confuse,
+    Fireball,
+    Sword,  // <1>
+    Shield,  // <2>
+}
+----
+<1> `Equipment` -> `Sword`
+<2> This is new
+
+and in `use_item`:
+
+[source]
+----
+let on_use: ... = match item {
+    Heal => cast_heal,
+    Lightning => cast_lightning,
+    Confuse => cast_confuse,
+    Fireball => cast_fireball,
+    Sword => toggle_equipment,  // <1>
+    Shield => toggle_equipment,  // <2>
+};
+----
+<1> `Equipment` -> `Sword`
+<2> This is new
+
+And assign them chances in `place_objects`. We'll use our
+`from_dungeon_level` method here to only show these items later in the game:
+
+[source]
+----
+// item random table
+let item_chances = &mut [
+    // healing potion always shows up, even if all other items have 0 chance
+    Weighted {weight: 35, item: Item::Heal},
+    Weighted {weight: from_dungeon_level(&[Transition{level: 4, value: 25}], level),
+              item: Item::Lightning},
+    Weighted {weight: from_dungeon_level(&[Transition{level: 6, value: 25}], level),
+              item: Item::Fireball},
+    Weighted {weight: from_dungeon_level(&[Transition{level: 2, value: 10}], level),
+              item: Item::Confuse},
+    Weighted {weight: from_dungeon_level(&[Transition{level: 4, value: 5}], level),  // <1>
+              item: Item::Sword},
+    Weighted {weight: from_dungeon_level(&[Transition{level: 8, value: 15}], level),  // <2>
+              item: Item::Shield},
+];
+----
+<1> This replaces `Item::Equipment`
+<2> This is new
+
+and further down in the `match` expression we'll actually create the
+shield:
+
+[source]
+----
+Item::Shield => {
+    // create a shield
+    let mut object = Object::new(x, y, '[', "shield", colors::DARKER_ORANGE, false);
+    object.item = Some(Item::Shield);
+    object.equipment = Some(Equipment{equipped: false, slot: Slot::LeftHand, max_hp_bonus: 0, defense_bonus: 1, power_bonus: 0});
+    object
+}
+----
+
+And finally, let's give our player something to start with. They can't
+go into the dungeon unarmed, after all!
+
+So in `new_game` after we initialise the `Game` struct:
+
+[source]
+----
+// initial equipment: a dagger
+let mut dagger = Object::new(0, 0, '-', "dagger", colors::SKY, false);
+dagger.item = Some(Item::Sword);
+dagger.equipment = Some(Equipment {
+    equipped: true,
+    slot: Slot::LeftHand,
+    max_hp_bonus: 0,
+    defense_bonus: 0,
+    power_bonus: 2
+});
+game.inventory.push(dagger);
+----
+
+But let's also decrease player's initial power to `2` since this _is_
+a dungeon of doom after all!
+
+[source]
+----
+player.fighter = Some(Fighter{base_max_hp: 100, hp: 100, base_defense: 1, base_power: 2, xp: 0,
+                              on_death: DeathCallback::Player});
+----
+
+And that's it. We've got a bonus system that's generic enough for all
+kinds of crazy equipment. So: play the game, add stuff, change stuff,
+modify it to your heart's content or write something completely new
+from scratch.
+
+*Have fun!*
 
 Here's link:part-13-adventure-gear.rs.txt[the complete code].
