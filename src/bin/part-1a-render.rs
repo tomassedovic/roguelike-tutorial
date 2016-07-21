@@ -24,5 +24,6 @@ fn main() {
         root.set_default_foreground(colors::WHITE);
         root.put_char(1, 1, '@', BackgroundFlag::None);
         root.flush();
+        root.wait_for_keypress(true);
     }
 }

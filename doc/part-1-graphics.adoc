@@ -209,6 +209,7 @@ while !root.window_closed() {
     root.set_default_foreground(colors::WHITE);
     root.put_char(1, 1, '@', BackgroundFlag::None);
     root.flush();
+    root.wait_for_keypress(true);
 }
 ----
 
@@ -231,18 +232,19 @@ screen. The `0, 0` coordinate is at the top left corner of the window.
 Using `BackgroundFlag::None` says to ignore the default _background_
 colour.
 
-And finally we call `flush`, which will actually draw everything on
-the window at once.
+Calling `flush`, which will draw everything on the window at once.
+
+And finally, we also need to call `wait_for_keypress` even though
+we're not processing keyboard input yet. This is because libtcod
+handles the window manager's events (including your request to close
+the window) in the input processing code.
+
+If we didn't call it, `window_close` would not work properly and the
+game would crash or hang.
 
 
 You can now run it with `cargo run --release` and bask in your
 creation. It's almost a game now!
-
-Unfortunately, closing the window may hang the whole thing instead.
-This is because libtcod handles the window manager's events (including
-your request to close the window) in the input processing code which
-we haven't added yet. You may have to forcefully close the process,
-for now.
 
 We will look at input next.
 
