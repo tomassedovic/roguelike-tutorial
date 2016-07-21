@@ -437,7 +437,7 @@ fn target_tile(tcod: &mut Tcod,
 
         // accept the target if the player clicked in FOV, and in case a range
         // is specified, if it's in that range
-        let in_fov = tcod.fov.is_in_fov(x, y);
+        let in_fov = (x < MAP_WIDTH) && (y < MAP_HEIGHT) && tcod.fov.is_in_fov(x, y);
         let in_range = max_range.map_or(
             true, |range| objects[PLAYER].distance(x, y) <= range);
         if tcod.mouse.lbutton_pressed && in_fov && in_range {
