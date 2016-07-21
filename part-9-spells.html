@@ -1177,13 +1177,17 @@ would still be visible).</p>
 <div class="content">
 <pre class="pygments highlight"><code data-lang="rust">    <span class="tok-c1">// accept the target if the player clicked in FOV, and in case a range</span>
     <span class="tok-c1">// is specified, if it&#39;s in that range</span>
-    <span class="tok-kd">let</span> <span class="tok-n">in_fov</span> <span class="tok-o">=</span> <span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">fov</span><span class="tok-p">.</span><span class="tok-n">is_in_fov</span><span class="tok-p">(</span><span class="tok-n">x</span><span class="tok-p">,</span> <span class="tok-n">y</span><span class="tok-p">);</span>
+    <span class="tok-kd">let</span> <span class="tok-n">in_fov</span> <span class="tok-o">=</span> <span class="tok-p">(</span><span class="tok-n">x</span> <span class="tok-o">&lt;</span> <span class="tok-n">MAP_WIDTH</span><span class="tok-p">)</span> <span class="tok-o">&amp;&amp;</span> <span class="tok-p">(</span><span class="tok-n">y</span> <span class="tok-o">&lt;</span> <span class="tok-n">MAP_HEIGHT</span><span class="tok-p">)</span> <span class="tok-o">&amp;&amp;</span> <span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">fov</span><span class="tok-p">.</span><span class="tok-n">is_in_fov</span><span class="tok-p">(</span><span class="tok-n">x</span><span class="tok-p">,</span> <span class="tok-n">y</span><span class="tok-p">);</span>
     <span class="tok-kd">let</span> <span class="tok-n">in_range</span> <span class="tok-o">=</span> <span class="tok-n">max_range</span><span class="tok-p">.</span><span class="tok-n">map_or</span><span class="tok-p">(</span>
         <span class="tok-k">true</span><span class="tok-p">,</span> <span class="tok-o">|</span><span class="tok-nb">range</span><span class="tok-o">|</span> <span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-n">PLAYER</span><span class="tok-p">].</span><span class="tok-n">distance</span><span class="tok-p">(</span><span class="tok-n">x</span><span class="tok-p">,</span> <span class="tok-n">y</span><span class="tok-p">)</span> <span class="tok-o">&lt;=</span> <span class="tok-nb">range</span><span class="tok-p">);</span>
     <span class="tok-k">if</span> <span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">mouse</span><span class="tok-p">.</span><span class="tok-n">lbutton_pressed</span> <span class="tok-o">&amp;&amp;</span> <span class="tok-n">in_fov</span> <span class="tok-o">&amp;&amp;</span> <span class="tok-n">in_range</span> <span class="tok-p">{</span>
         <span class="tok-k">return</span> <span class="tok-nb">Some</span><span class="tok-p">((</span><span class="tok-n">x</span><span class="tok-p">,</span> <span class="tok-n">y</span><span class="tok-p">))</span>
     <span class="tok-p">}</span></code></pre>
 </div>
+</div>
+<div class="paragraph">
+<p>The <code>is_in_fov</code> method expects that <code>x</code> and <code>y</code> are within the map&#8217;s
+bounds so we need to check for that.</p>
 </div>
 <div class="paragraph">
 <p>If the <code>max_range</code> is none, we allow any range (so we make
@@ -1448,10 +1452,8 @@ the chosen item. Add this to <code>handle_keys</code>, after the inventory key:<
         <span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">root</span><span class="tok-p">);</span>
     <span class="tok-k">if</span> <span class="tok-kd">let</span> <span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">inventory_index</span><span class="tok-p">)</span> <span class="tok-o">=</span> <span class="tok-n">inventory_index</span> <span class="tok-p">{</span>
         <span class="tok-n">drop_item</span><span class="tok-p">(</span><span class="tok-n">inventory_index</span><span class="tok-p">,</span> <span class="tok-n">inventory</span><span class="tok-p">,</span> <span class="tok-n">objects</span><span class="tok-p">,</span> <span class="tok-n">messages</span><span class="tok-p">);</span>
-        <span class="tok-n">TookTurn</span>
-    <span class="tok-p">}</span> <span class="tok-k">else</span> <span class="tok-p">{</span>
-        <span class="tok-n">DidntTakeTurn</span>
     <span class="tok-p">}</span>
+    <span class="tok-n">DidntTakeTurn</span>
 <span class="tok-p">}</span></code></pre>
 </div>
 </div>
@@ -1471,7 +1473,7 @@ much more interesting!</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2016-07-09 18:56:23 CEST
+Last updated 2016-07-21 14:07:59 CEST
 </div>
 </div>
 </body>

@@ -728,6 +728,7 @@ white <code>@</code> on the screen until until the libtcod window gets closed:</
     <span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">set_default_foreground</span><span class="tok-p">(</span><span class="tok-n">colors</span><span class="tok-o">::</span><span class="tok-n">WHITE</span><span class="tok-p">);</span>
     <span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">put_char</span><span class="tok-p">(</span><span class="tok-mi">1</span><span class="tok-p">,</span> <span class="tok-mi">1</span><span class="tok-p">,</span> <span class="tok-sc">&#39;@&#39;</span><span class="tok-p">,</span> <span class="tok-n">BackgroundFlag</span><span class="tok-o">::</span><span class="tok-nb">None</span><span class="tok-p">);</span>
     <span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">flush</span><span class="tok-p">();</span>
+    <span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">wait_for_keypress</span><span class="tok-p">(</span><span class="tok-k">true</span><span class="tok-p">);</span>
 <span class="tok-p">}</span></code></pre>
 </div>
 </div>
@@ -757,19 +758,21 @@ screen. The <code>0, 0</code> coordinate is at the top left corner of the window
 colour.</p>
 </div>
 <div class="paragraph">
-<p>And finally we call <code>flush</code>, which will actually draw everything on
-the window at once.</p>
+<p>Calling <code>flush</code>, which will draw everything on the window at once.</p>
+</div>
+<div class="paragraph">
+<p>And finally, we also need to call <code>wait_for_keypress</code> even though
+we&#8217;re not processing keyboard input yet. This is because libtcod
+handles the window manager&#8217;s events (including your request to close
+the window) in the input processing code.</p>
+</div>
+<div class="paragraph">
+<p>If we didn&#8217;t call it, <code>window_close</code> would not work properly and the
+game would crash or hang.</p>
 </div>
 <div class="paragraph">
 <p>You can now run it with <code>cargo run --release</code> and bask in your
 creation. It&#8217;s almost a game now!</p>
-</div>
-<div class="paragraph">
-<p>Unfortunately, closing the window may hang the whole thing instead.
-This is because libtcod handles the window manager&#8217;s events (including
-your request to close the window) in the input processing code which
-we haven&#8217;t added yet. You may have to forcefully close the process,
-for now.</p>
 </div>
 <div class="paragraph">
 <p>We will look at input next.</p>
@@ -976,7 +979,7 @@ before the <code>let exit = handle_keys(&#8230;&#8203;)</code> call:</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2016-07-09 18:56:23 CEST
+Last updated 2016-07-21 14:38:51 CEST
 </div>
 </div>
 </body>
