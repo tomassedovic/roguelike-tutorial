@@ -988,10 +988,8 @@ fn handle_keys(key: Key, tcod: &mut Tcod, map: &mut Map, objects: &mut Vec<Objec
             });
             if let Some(item_id) = item_id {
                 pick_item_up(item_id, objects, inventory, messages);
-                TookTurn
-            } else {
-                DidntTakeTurn
             }
+            DidntTakeTurn
         }
 
         (Key { printable: 'i', .. }, true) => {
@@ -1002,10 +1000,8 @@ fn handle_keys(key: Key, tcod: &mut Tcod, map: &mut Map, objects: &mut Vec<Objec
                 &mut tcod.root);
             if let Some(inventory_index) = inventory_index {
                 use_item(inventory_index, inventory, objects, messages, map, tcod);
-                TookTurn
-            } else {
-                DidntTakeTurn
             }
+            DidntTakeTurn
         }
 
         (Key { printable: 'd', .. }, true) => {
@@ -1016,10 +1012,8 @@ fn handle_keys(key: Key, tcod: &mut Tcod, map: &mut Map, objects: &mut Vec<Objec
                 &mut tcod.root);
             if let Some(inventory_index) = inventory_index {
                 drop_item(inventory_index, inventory, objects, messages);
-                TookTurn
-            } else {
-                DidntTakeTurn
             }
+            DidntTakeTurn
         }
 
         _ => DidntTakeTurn,

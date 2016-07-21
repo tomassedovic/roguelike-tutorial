@@ -39,10 +39,8 @@ easy to add this check at the end of `handle_keys`:
     });
     if player_on_stairs {
         next_level(game, objects, tcod);
-        TookTurn
-    } else {
-        DidntTakeTurn
     }
+    DidntTakeTurn
 }
 ----
 

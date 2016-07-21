@@ -864,10 +864,8 @@ the chosen item. Add this to `handle_keys`, after the inventory key:
         &mut tcod.root);
     if let Some(inventory_index) = inventory_index {
         drop_item(inventory_index, inventory, objects, messages);
-        TookTurn
-    } else {
-        DidntTakeTurn
     }
+    DidntTakeTurn
 }
 ----
 Some new spells, targeting, dropping items -- that's enough for now!

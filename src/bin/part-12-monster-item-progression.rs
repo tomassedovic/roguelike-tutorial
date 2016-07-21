@@ -1105,10 +1105,8 @@ fn handle_keys(key: Key, tcod: &mut Tcod, objects: &mut Vec<Object>, game: &mut 
             });
             if let Some(item_id) = item_id {
                 pick_item_up(item_id, objects, game);
-                TookTurn
-            } else {
-                DidntTakeTurn
             }
+            DidntTakeTurn
         }
 
         (Key { printable: 'i', .. }, true) => {
@@ -1119,10 +1117,8 @@ fn handle_keys(key: Key, tcod: &mut Tcod, objects: &mut Vec<Object>, game: &mut 
                 &mut tcod.root);
             if let Some(inventory_index) = inventory_index {
                 use_item(inventory_index, objects, game, tcod);
-                TookTurn
-            } else {
-                DidntTakeTurn
             }
+            DidntTakeTurn
         }
 
         (Key { printable: 'd', .. }, true) => {
@@ -1133,10 +1129,8 @@ fn handle_keys(key: Key, tcod: &mut Tcod, objects: &mut Vec<Object>, game: &mut 
                 &mut tcod.root);
             if let Some(inventory_index) = inventory_index {
                 drop_item(inventory_index, objects, game);
-                TookTurn
-            } else {
-                DidntTakeTurn
             }
+            DidntTakeTurn
         }
 
         (Key { printable: '<', .. }, true) => {
@@ -1146,10 +1140,8 @@ fn handle_keys(key: Key, tcod: &mut Tcod, objects: &mut Vec<Object>, game: &mut 
             });
             if player_on_stairs {
                 next_level(tcod, objects, game);
-                TookTurn
-            } else {
-                DidntTakeTurn
             }
+            DidntTakeTurn
         }
 
         (Key { printable: 'c', .. }, true) => {
