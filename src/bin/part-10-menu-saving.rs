@@ -203,6 +203,16 @@ impl Object {
                          colors::WHITE);
         }
     }
+
+    /// heal by the given amount, without going over the maximum
+    pub fn heal(&mut self, amount: i32) {
+        if let Some(mut fighter) = self.fighter {
+            fighter.hp += amount;
+            if fighter.hp > fighter.max_hp {
+                fighter.hp = fighter.max_hp;
+            }
+        }
+    }
 }
 
 /// move by the given amount, if the destination is not blocked
@@ -271,16 +281,6 @@ struct Fighter {
     defense: i32,
     power: i32,
     on_death: DeathCallback,
-}
-
-impl Fighter {
-    fn heal(&mut self, amount: i32) {
-        // heal by the given amount, without going over the maximum
-        self.hp += amount;
-        if self.hp > self.max_hp {
-            self.hp = self.max_hp;
-        }
-    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, RustcDecodable, RustcEncodable)]
@@ -422,7 +422,7 @@ fn target_tile(tcod: &mut Tcod,
 
         // accept the target if the player clicked in FOV, and in case a range
         // is specified, if it's in that range
-        let in_fov = tcod.fov.is_in_fov(x, y);
+        let in_fov = (x < MAP_WIDTH) && (y < MAP_HEIGHT) && tcod.fov.is_in_fov(x, y);
         let in_range = max_range.map_or(
             true, |range| objects[PLAYER].distance(x, y) <= range);
         if tcod.mouse.lbutton_pressed && in_fov && in_range {
@@ -481,13 +481,13 @@ fn cast_heal(_inventory_id: usize, objects: &mut [Object], game: &mut Game, _tco
              -> UseResult
 {
     // heal the player
-    if let Some(fighter) = objects[PLAYER].fighter.as_mut() {
+    if let Some(fighter) = objects[PLAYER].fighter {
         if fighter.hp == fighter.max_hp {
             game.log.add("You are already at full health.", colors::RED);
             return UseResult::Cancelled;
         }
-        game.log.add("Your wounds start to fill better!", colors::LIGHT_VIOLET);
-        fighter.heal(HEAL_AMOUNT);
+        game.log.add("Your wounds start to feel better!", colors::LIGHT_VIOLET);
+        objects[PLAYER].heal(HEAL_AMOUNT);
         return UseResult::UsedUp;
     }
     UseResult::Cancelled
@@ -967,10 +967,8 @@ fn handle_keys(key: Key, tcod: &mut Tcod, objects: &mut Vec<Object>, game: &mut 
             });
             if let Some(item_id) = item_id {
                 pick_item_up(item_id, objects, game);
-                TookTurn
-            } else {
-                DidntTakeTurn
             }
+            DidntTakeTurn
         }
 
         (Key { printable: 'i', .. }, true) => {
@@ -981,10 +979,8 @@ fn handle_keys(key: Key, tcod: &mut Tcod, objects: &mut Vec<Object>, game: &mut 
                 &mut tcod.root);
             if let Some(inventory_index) = inventory_index {
                 use_item(inventory_index, objects, game, tcod);
-                TookTurn
-            } else {
-                DidntTakeTurn
             }
+            DidntTakeTurn
         }
 
         (Key { printable: 'd', .. }, true) => {
@@ -995,10 +991,8 @@ fn handle_keys(key: Key, tcod: &mut Tcod, objects: &mut Vec<Object>, game: &mut 
                 &mut tcod.root);
             if let Some(inventory_index) = inventory_index {
                 drop_item(inventory_index, objects, game);
-                TookTurn
-            } else {
-                DidntTakeTurn
             }
+            DidntTakeTurn
         }
 
         _ => DidntTakeTurn,

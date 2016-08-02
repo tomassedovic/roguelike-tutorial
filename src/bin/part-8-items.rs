@@ -188,6 +188,16 @@ impl Object {
                     colors::WHITE);
         }
     }
+
+    /// heal by the given amount, without going over the maximum
+    pub fn heal(&mut self, amount: i32) {
+        if let Some(mut fighter) = self.fighter {
+            fighter.hp += amount;
+            if fighter.hp > fighter.max_hp {
+                fighter.hp = fighter.max_hp;
+            }
+        }
+    }
 }
 
 /// move by the given amount, if the destination is not blocked
@@ -258,16 +268,6 @@ struct Fighter {
     defense: i32,
     power: i32,
     on_death: DeathCallback,
-}
-
-impl Fighter {
-    fn heal(&mut self, amount: i32) {
-        // heal by the given amount, without going over the maximum
-        self.hp += amount;
-        if self.hp > self.max_hp {
-            self.hp = self.max_hp;
-        }
-    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -343,13 +343,13 @@ fn use_item(inventory_id: usize, inventory: &mut Vec<Object>, objects: &mut [Obj
 
 fn cast_heal(_inventory_id: usize, objects: &mut [Object], messages: &mut Messages) -> UseResult {
     // heal the player
-    if let Some(fighter) = objects[PLAYER].fighter.as_mut() {
+    if let Some(fighter) = objects[PLAYER].fighter {
         if fighter.hp == fighter.max_hp {
             message(messages, "You are already at full health.", colors::RED);
             return UseResult::Cancelled;
         }
-        message(messages, "Your wounds start to fill better!", colors::LIGHT_VIOLET);
-        fighter.heal(HEAL_AMOUNT);
+        message(messages, "Your wounds start to feel better!", colors::LIGHT_VIOLET);
+        objects[PLAYER].heal(HEAL_AMOUNT);
         return UseResult::UsedUp;
     }
     UseResult::Cancelled
@@ -743,10 +743,8 @@ fn handle_keys(key: Key, root: &mut Root, map: &Map, objects: &mut Vec<Object>,
             });
             if let Some(item_id) = item_id {
                 pick_item_up(item_id, objects, inventory, messages);
-                TookTurn
-            } else {
-                DidntTakeTurn
             }
+            DidntTakeTurn
         }
 
         (Key { printable: 'i', .. }, true) => {
@@ -757,10 +755,8 @@ fn handle_keys(key: Key, root: &mut Root, map: &Map, objects: &mut Vec<Object>,
                 root);
             if let Some(inventory_index) = inventory_index {
                 use_item(inventory_index, inventory, objects, messages);
-                TookTurn
-            } else {
-                DidntTakeTurn
             }
+            DidntTakeTurn
         }
 
         _ => DidntTakeTurn,
