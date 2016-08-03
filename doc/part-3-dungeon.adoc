@@ -8,9 +8,9 @@ ifdef::env-github[:outfilesuffix: .adoc]
 
 Having a painstakingly handmade room with artfully placed pillars is
 all well and good, but roguelikes are about procedural generation! How
-about adding some randomness to the mix.
+about adding some randomness to the mix?
 
-We're going to carve rooms and tunnels in an underground rock. In this
+We're going to carve rooms and tunnels in underground rock. In this
 section we'll build some helper functions which we'll then use to
 generate the whole dungeon.
 
@@ -36,7 +36,7 @@ impl Rect {
 The rectangle stores the coordinates for the top-left and bottom-right
 points.
 
-This function will take a rect and place it in the map, by making sure
+This function will take a rect and place it in the map, making sure
 all the tiles are empty.
 
 [source,rust]
@@ -201,7 +201,7 @@ use rand::Rng;
 
 With that out of the way, let's actually implement the algorithm in
 `make_map`. Remove the previous code that created the example rooms
-and tunnel and instead make a loop goes through the maximum number of
+and tunnel and instead make a loop that goes through the maximum number of
 rooms, assigning random coordinates and size to each one as we go.
 
 [source,rust]
@@ -295,7 +295,7 @@ tunnels between the rooms.
 
 For every room except the first one we connect it to the previous one.
 Now, sometimes we can't connect them with a straight line (horizontal
-or vertiral) but we need two tunnels.
+or vertical) but we need two tunnels.
 
 We could start with a horizontal tunnel to reach the same level as the
 new room and then connect it with a vertical one or we can do the
