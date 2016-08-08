@@ -22,7 +22,7 @@ comparing the different algorithms.
 
 We'll define the chosen algorithm along with some other constants so
 they can be changed later. For now we'll just use the default
-(`Basic`) algorithm. There's also an option to light walls or not,
+(`Basic`) algorithm. There's also an option to light walls or not;
 this is a matter of preference. Another important constant is the
 maximum radius for FOV calculations, how far the player can see in the
 dungeon. (Whether this is due to the player's sight range or the light
@@ -47,7 +47,7 @@ const COLOR_LIGHT_GROUND: Color = Color { r: 200, g: 180, b: 50 };
 ----
 
 The fov map object in `tcod` is called `Map`, which conflicts with our
-own dungeon map type. So we'll rename the tcod's one to `FovMap` on
+own dungeon map type. So we'll rename tcod's to `FovMap` on
 import:
 
 [source,rust]
@@ -92,7 +92,7 @@ let mut previous_player_position = (-1, -1);
 time through the loop)
 
 Then this right before `handle_keys` (which is where the player's
-position could change)
+position could change):
 
 [source,rust]
 ----

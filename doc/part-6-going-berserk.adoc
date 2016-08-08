@@ -8,13 +8,13 @@ ifdef::env-github[:outfilesuffix: .adoc]
 
 == The Components
 
-TODO: talk about composition vs. inhericance and how this isn't a real ECS whatever that means...
+TODO: talk about composition vs. inheritance and how this isn't a real ECS whatever that means...
 
 Our components will be plain `structs` with related bits of data and
 not much else. Each `Object` will have some (or all or none) of the
 components attached and that will drive their behaviour. Only things
 with the `Fighter` component will be able to attack or be attacked,
-etc..
+for example.
 
 Let's create the `Fighter` component. It will have hit points, maximum
 hit points (for healing), defense and attack power.
@@ -71,7 +71,7 @@ changing it now)
 
 
 And next the monsters. Each monster will get a `Fighter` component as
-well as the `Ai` one. In `place_objcets` where the monsters are
+well as the `Ai` one. In `place_objects` where the monsters are
 defined:
 
 [source]
@@ -93,12 +93,12 @@ if ... {
 
 == AI
 
-We went through all this trouble and yet nothing happens? Let's that
+We went through all this trouble and yet nothing happens? Let's fix that
 by actually using our newly-minted components! The monsters have been
 growling for too long and are ready to fight now.
 
 We'll start by creating a function that will cause an object (monster,
-usually) move towards a position (the player's coordinates, usually).
+usually) to move towards a position (the player's coordinates, usually).
 
 [source]
 ----
@@ -281,7 +281,7 @@ attack you. This is how you make a simple GUI! At the end of the
 ----
 // show the player's stats
 if let Some(fighter) = objects[PLAYER].fighter {
-    con.print_ex(1, SCREEN_HEIGHT - 2, BackgroundFlag::None, TextAlignment::Left,
+    root.print_ex(1, SCREEN_HEIGHT - 2, BackgroundFlag::None, TextAlignment::Left,
                  format!("HP: {}/{} ", fighter.hp, fighter.max_hp));
 }
 ----
@@ -372,8 +372,8 @@ The first `if let` check looks almost identical to the one that's already
 there for taking the hit points down. There is a difference, however.
 
 It boils down to ownership again. The first `if let` takes a mutable
-reference of `self.fighter`. That means, for the duration of that
-block, we can't take a mutable reference to `self`, because it's part
+reference to `self.fighter`. That means, for the duration of that
+block, we can't take a mutable reference to `self`, because a part of it
 (`fighter`) is already borrowed.
 
 But we do need a mutable reference to pass it to the `on_death`
@@ -466,7 +466,7 @@ for object in &to_draw {
 }
 ----
 
-Instead of going through the `objects` list and we clone it into a
+Instead of going through the `objects` list we clone it into a
 mutable vector (`render_all` is taking `&[Object]` so it can't change
 the list directly -- nor should it). Then we sort the vector such that
 all non-blocking objects come before all the blocking ones. Since we can't
@@ -491,7 +491,7 @@ for object in &to_draw {
 }
 ----
 
-It's finally ready to play, and it actually feels like a game! It was
+It's finally ready to play, and it actually feels like a game! It's been
 a long journey since we first printed the `@` character, but we've got
 random dungeons, FOV, exploration, enemies, AI, and a true combat
 system. You can now beat those pesky monsters into a pulp and walk

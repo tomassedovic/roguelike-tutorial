@@ -210,9 +210,9 @@ then repeat.
 
 When we have `y` lower than zero, it would mean we'd draw *above* the
 panel. Libtcod wouldn't let us, but since that means we've ran out of
-space, why we may as well break out of the loop.
+space, we may as well break out of the loop.
 
-Again, we need to pass the messages argument to `render_all`. It's
+Again, we need to pass the messages argument to `render_all`. Its
 signature is now:
 
 [source]

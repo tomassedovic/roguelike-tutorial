@@ -163,7 +163,7 @@ arrow-handling and the final `return DidntTakeTurn` line:
 And we need to pass inventory to `handle_keys`. And we'll _also_ have
 to change the `&mut [Object]` argument to `&mut Vec<Object>`, because
 that's what `pick_item_up` expects. The difference is that the former
-is a mutable reference to an `array` -- we can change it's items but
+is a mutable reference to an `array` -- we can change its items but
 not its _size_. The latter is a full vector, which means we can also
 grow or shrink it.
 
@@ -457,7 +457,7 @@ since it will probably be used multiple times. The constant
 ----
 /// heal by the given amount, without going over the maximum
 pub fn heal(&mut self, amount: i32) {
-    if let Some(mut fighter) = self.fighter {
+    if let Some(fighter) = self.fighter.as_mut() {
         fighter.hp += amount;
         if fighter.hp > fighter.max_hp {
             fighter.hp = fighter.max_hp;
