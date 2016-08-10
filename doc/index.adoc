@@ -44,12 +44,12 @@ https://github.com/tomassedovic/roguelike-tutorial/
 Rust is a systems programming language targeting roughly the same
 space as C{plusplus}. That means it's fast and is generally used for things
 where you need a fair bit of control over how are things structured in
-the memory, etc. Rust is a good candidate for writing a browser,
+memory, etc. Rust is a good candidate for writing a browser,
 database, operating system, web server and... games.
 
 What attracted me personally to Rust was the fact that it was
 reasonably low-level (i.e. I could use it for things where I'd
-normally go for C or C{plusplus}), with a good support for calling into
+normally go for C or C{plusplus}), with good support for calling into
 libraries written in C/C{plusplus} but feeling much more modern.
 
 It has a real module system, closures, powerful macros and it protects
@@ -62,8 +62,8 @@ As a *wonderful* cherry on top, it doesn't have null pointers or references.
 
 `libtcod` is a library specifically designed for writing roguelikes.
 It deals with rendering ASCII characters in a grid, mouse and keyboard
-input and provides useful utilities for path finding, field of view,
-noise toolkit and a name generator.
+input and provides useful utilities for path finding and field of view,
+a noise toolkit and a name generator.
 
 In other words, it provides a good chunk of what a typical roguelike would need.
 
@@ -107,7 +107,7 @@ All in one file::
 
 The original Python tutorial is all one file. That's not something you
 want to end up with -- especially when you're collaborating on the
-project -- but the final result is still not _that_ big and it's makes
+project -- but the final result is still not _that_ big and it makes
 writing and following the tutorial easier when you don't have to worry
 about where each code snippet goes.
 
@@ -123,10 +123,10 @@ Sameness::
 The original Python tutorial is a bit infamous because games that
 people do after going through it all look samey. That's not a reason
 to shun the tutorial, though. Just don't get caught in the game
-desighn of it. The purpose of this is to teach you how to write a game
+design of it. The purpose of this is to teach you how to write a game
 using libtcod. There's little of game design here. What I'd recommend
 is: go through this, absorb the concepts but then start from scratch
-when actually writing your game. And think about how to make it
+when actually writing your game, and think about how to make it
 unique.
 
 == Start the tutorial
@@ -139,7 +139,7 @@ Start your game right away by setting up the screen, printing the
 <<part-2-object-map#,Part 2: The object and the map>>::
 
   This introduces two new concepts: the generic object system that
-  will be the basis for the whole game, and a general map object that
+  will be the basis for the whole game and a general map object that
   you'll use to hold your dungeon.
 
 <<part-3-dungeon#,Part 3: The dungeon>>::

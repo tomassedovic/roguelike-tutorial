@@ -32,7 +32,7 @@ struct Game {
 }
 ----
 
-So right it'll just hold the map, the message log and the inventory.
+So right now it'll just hold the map, the message log and the inventory.
 We'll add more things later on, but let's start small.
 
 Now let's move our initialisation code under this struct. In `main`:
@@ -196,7 +196,7 @@ wraps the underlying `Vec<(String, Color)>` and has the `add()` method
 (_BORING_) or *we put the method the vec type directly*. I know,
 right?
 
-Rust let's you implement traits to types you don't control (e.g.
+Rust lets you implement traits to types you don't control (e.g.
 because they come from the standard library like our `Vec`) assuming
 you control the trait.
 
@@ -228,7 +228,7 @@ impl MessageLog for Vec<(String, Color)> {
 ----
 
 This is basically the same thing as our `message` function does,
-expect it's a method (so it takes an explicit `&mut self`) and we
+except it's a method (so it takes an explicit `&mut self`) and we
 don't bother with the message count check.
 
 And now, we can just add messages to the log by calling:
@@ -306,10 +306,10 @@ fn new_game(tcod: &mut Tcod) -> (Vec<Object>, Game) {
 }
 ----
 
-We return use a tuple to return two arguments: the vec of `Objects` and
+We return a tuple with two elements: the vec of `Objects` and
 the `Game` struct.
 
-`new_game` is calling `initialise_fov` so we need create it and move
+`new_game` is calling `initialise_fov` so we need to create it and move
 the FOV-related code to it:
 
 [source]
@@ -730,7 +730,7 @@ failure is `Err`.
 
 There's also the {error}[Error trait] which represents an error and
 lets you get its textual description. All the file-handling
-serialiastion errors in our save/load code implement Error.
+serialisation errors in our save/load code implement Error.
 
 So, looking at `save_game`, the `json::encode` call returns either
 `Ok(String)` with the encoded value or

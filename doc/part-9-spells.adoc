@@ -62,7 +62,7 @@ let mut tcod = Tcod {
 };
 ----
 
-(and remove the `fov_map` and `mouse` initialisation code, too since
+(and remove the `fov_map` and `mouse` initialisation code, too, since
 it's in here)
 
 And next, let the compiler guide us.
@@ -183,7 +183,7 @@ Now we need to write the `cast_lightning` function!
 fn cast_lightning(_inventory_id: usize, objects: &mut [Object], messages: &mut Messages, tcod: &mut Tcod)
                   -> UseResult
 {
-    // find closest enemy (inside a maximum range and damage it)
+    // find closest enemy (inside a maximum range) and damage it
     let monster_id = closest_monster(LIGHTNING_RANGE, objects, tcod);
     if let Some(monster_id) = monster_id {
         // zap it!
@@ -449,7 +449,7 @@ with an asterisk to return the boxed value -- `Ai`. If we didn't put
 the asterisk there, we'd return `Box<Ai>`, which is not what
 `ai_take_turn` expects.
 
-Now, the actual scroll that uses this AI! For it to appear in the
+Now, the actual scroll that causes this AI! For it to appear in the
 dungeon it must be added to `place_objects`. Notice that the chance of
 getting a lightning bolt scroll must change:
 
@@ -512,7 +512,7 @@ it with the `Confused` one.
 `target_monster` should always return a monster that has the `Ai`
 component, but the `Object.ai` still contains `Option<Ai>` rather than
 bare `Ai` (not every Object has AI even though we expect each monster
-to have one). We could use {unwrap}[the unwrap] or {expect}[expect]
+to have one). We could use the {unwrap}[unwrap] or {expect}[expect]
 methods to get the inner value, but this would crash the program
 (`expect` would print a custom message). Here we use
 {unwrap_or}[unwrap_or] instead which will return the `Basic` AI in
@@ -630,7 +630,7 @@ range from the clicked position to the player is lower or equal.
 We also make sure that the target is within FOV to prevent firing
 through walls.
 
-Finally, we need a way of cancel the targeting UI:
+Finally, we need a way to cancel the targeting UI:
 
 [source]
 ----
@@ -743,7 +743,7 @@ required it yet. Since they all must have the same function signature,
 we have to add it to `cast_heal`, `cast_lightning`, `cast_confuse` as
 well as `use_item`.
 
-Here's what `on_use` bit looks like now:
+Here's what the `on_use` bit looks like now:
 
 [source]
 ----

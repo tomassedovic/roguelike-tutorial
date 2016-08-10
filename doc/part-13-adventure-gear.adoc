@@ -14,7 +14,7 @@ and so on?
 
 We need equipment. It differs from the items we have in two ways: you
 can only equip it in limited slots and it enhances your abilities
-while it's being worn. Unlike our items which are one-use-only (though
+while it's being worn. This is unlike our items which are one-use-only (though
 they don't have to be!).
 
 == Basic equipment
@@ -132,7 +132,7 @@ Game` here instead and you'll see the problem when we get to
 
 How do we equip our items? We can rely on the existing `Item`
 mechanism -- when you try to "use" or "cast" an equipment (which you
-can do since it's an `Item`, too), we'll equip or dequip it.
+can do since it's an `Item`, too), we'll equip or unequip it.
 
 First, let's add a new Item type:
 

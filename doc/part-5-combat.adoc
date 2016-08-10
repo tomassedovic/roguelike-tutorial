@@ -42,8 +42,7 @@ fn place_objects(room: Rect, objects: &mut Vec<Object>) {
 }
 ----
 
-We'll define the `MAX_ROOM_MONSTERS = 3` constant on top of the file
-again.
+We'll define the `MAX_ROOM_MONSTERS = 3` constant at the top of the file.
 
 Calling `rand::random::<f32>()` will produce an `f32` number between
 `0.0` and `1.0`. 80% of that is `0.8`.
@@ -70,7 +69,7 @@ Let's also remove the dummy NPC from the initial objects list. We
 won't need it anymore.
 
 
-== Getting hold of Player's position
+== Getting hold of the Player's position
 
 Before we move further, there are two things we can do to make working
 with the _player_ object easier and also to get and set the position
@@ -107,14 +106,14 @@ pub fn set_pos(&mut self, x: i32, y: i32) {
 
 These give us a shorthand for getting or setting both coordinates (`x`
 and `y`) at once. This will again simplify some code in `main`, the
-`move_by` method of Object as well as setting player's initial
+`move_by` method of Object as well as setting the player's initial
 position in `make_map`.
 
 
 == Blocking objects
 
-If you tried to walk up to a monster, you'd seen that the player
-walked right through! That's clearly not what we want to happen in
+If you tried to walk up to a monster, you'd see that the player
+would walk right through! That's clearly not what we want to happen in
 general. Plus, we don't want multiple monsters standing on the same
 tile.
 
@@ -156,7 +155,7 @@ items, scrolls, stairs, etc. and the balance will shift. Better set
 things alive explicitly than turn it off. It's easy to see when you've
 missed setting `alive = true` but hard to do the opposite.
 
-Now we'll create a function that tests if a file is blocked -- whether
+Now we'll create a function that tests if a tile is blocked -- whether
 due to a wall or an object blocking it.
 
 [source,rust]
@@ -244,7 +243,7 @@ fn move_by(id: usize, dx: i32, dy: i32, map: &Map, objects: &mut [Object]) {
 }
 ----
 
-Now we no longer have the problem, because we first call get the
+Now we no longer have the problem, because we first get the
 object's position (immutable borrow that ends immediately), then call
 `is_blocked` with `objects` (again, immutable borrow that ends right
 after the call) and finally, with no borrows to burden us, we set the
@@ -252,7 +251,7 @@ position.
 
 This is what Rust people sometimes refer to as "fighting the borrow
 checker". When you start with the language, you'll likely encounter a
-lot of these situations. As you get more experienced though, you'll
+lot of these situations. As you get more experienced, though, you'll
 learn which patterns will cause trouble and structure your code
 differently.
 
@@ -436,7 +435,7 @@ For movement, we only want it to work when the player is alive so:
 
 [source]
 ----
-(Key { code: Up, .. }, Playing) =>  // move player
+(Key { code: Up, .. }, true) =>  // move player
 ----
 
 and so on.
@@ -449,7 +448,7 @@ easier to read and it makes sure we never forget to handle the game
 state when we add a new key.
 
 
-And now we need to go back to the main loop though and handle
+And now we need to go back to the main loop and handle
 `PlayerAction` there. Change the end of the loop to:
 
 [source]
@@ -505,7 +504,7 @@ With:
 
 [source]
 ----
-player_move_or_attack(PLAYER, 1, 0, map, objects)
+player_move_or_attack(1, 0, map, objects)
 ----
 
 Now let's write the function itself:
@@ -542,10 +541,10 @@ It's possible no match will be found, so it actually returns
 `Option<usize>` here.
 
 We then test whether we have found a target at that position (in which case
-we know it's index) and print out a message or whether we can just
+we know its index), and either print out a message or just
 move into that place.
 
-And that's it! You test it out. No one's dealing any damage, but the
+And that's it! Test it out. No one's dealing any damage, but the
 game now detects when you're trying to attack a monster. And you can
 see the monsters taking their turns after you.
 

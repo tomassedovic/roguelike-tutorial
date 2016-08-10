@@ -6,7 +6,7 @@ ifdef::env-github[:outfilesuffix: .adoc]
 
 == Off-screen consoles
 
-Before we continue, let's talk about _consoles_. In libtocd, console
+Before we continue, let's talk about _consoles_. In libtcod, console
 is where we _draw stuff_. We've only used one so far -- the root
 console. It is connected to the game window and anything you want to
 show must eventually make its way there.
@@ -32,7 +32,7 @@ instead of `root`.
 
 And finally, blit the contents of the new console to the root console
 to display them. The `blit` function takes a lot of parameters, but
-the meaning is straight forward. We take the console we want to blit
+the meaning is straightforward. We take the console we want to blit
 _from_ (i.e. `con`), the coordinates where to start and the width and
 height of the area we want to blit (we'll blit it all). Then the
 destination (`root`), _where_ to start blitting (we'll use the
@@ -116,8 +116,8 @@ let mut objects = [player, npc];
 
 Now we'll need to do a few changes to make it work. First in
 `handle_keys` we'll use player's `move_by` method to change the
-coordinates. This means we'll need to pass (mutable reference to) the
-player object in.
+coordinates. This means we'll need to pass in (a mutable reference to) the
+player object.
 
 [source,rust]
 ----
@@ -174,7 +174,7 @@ const MAP_HEIGHT: i32 = 45;
 
 Next we'll define colours for the tiles. We'll have two tiles for now:
 _wall_ and _ground_. Let's define their _dark_ variants. When we add
-field of view, we'll have add set for when they're lit.
+field of view, we'll have to add a set for when they're lit.
 
 [source,rust]
 ----
@@ -215,7 +215,7 @@ The `#[derive(...)]` bit automatically implements certain behaviours
 there. `Debug` is to let us print the Tile's contents and `Clone` and
 `Copy` will let us _copy_ the values on assignment or function call
 instead of _moving_ them. So they'll behave like e.g. integers in this
-matter.
+respect.
 
 We don't want the `Copy` behaviour for `Object` (we could accidentally
 modify a copy instead of the original and get our changes lost for
@@ -265,11 +265,11 @@ map[30][22] = Tile::wall();
 map[50][22] = Tile::wall();
 ----
 
-(you can also access the tile's properties directly like sof:
+(you can also access the tile's properties directly like so:
 `map[30][22].blocked = true`)
 
 
-Next we need to draw the draw the map on our window. Since we need to
+Next we need to draw the map on our window. Since we need to
 draw both the objects and the map, let's create a new function that
 renders everything and call it from the main loop.
 
@@ -325,7 +325,7 @@ if !map[(self.x + dx) as usize][(self.y + dy) as usize].blocked {
 
 We'll have to pass a reference to the map to `move_by` and
 `handle_keys` which calls it. This may look annoying now but as the
-code grows, it will be gook to know which functions can see (and
+code grows, it will be good to know which functions can see (and
 change!) what.
 
 Finally, since the `con` console is for objects and the map only, we
