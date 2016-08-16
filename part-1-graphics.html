@@ -508,7 +508,7 @@ $ cd roguelike/</pre>
 </div>
 </div>
 <div class="paragraph">
-<p>It will create two files: <code>Cargo.toml</code> and <code>main.rs</code> in the <code>src</code>
+<p>This will create two files: <code>Cargo.toml</code> and <code>main.rs</code> in the <code>src</code>
 directory. <code>Cargo.toml</code> contains metadata for the project and any
 dependencies you&#8217;re going to need (such as libtcod).</p>
 </div>
@@ -548,7 +548,7 @@ Hello, world!</pre>
 </div>
 <div class="paragraph">
 <p>Rust will first compile <code>main.rs</code> and any other files it needs (there
-are none yet). The resulting binary program will called <code>roguelike</code>
+are none yet). The resulting binary program will be called <code>roguelike</code>
 and placed in the <code>target/release</code> directory.</p>
 </div>
 <div class="paragraph">
@@ -562,7 +562,7 @@ and placed in the <code>target/release</code> directory.</p>
 </td>
 <td class="content">
 Rust (and Cargo) can compile programs in two modes: <em>with
-optimisations</em> and <em>without</em>. Code compiled without opmimisations is
+optimisations</em> and <em>without</em>. Code compiled without optimisations is
 <strong>really slow</strong>, but it&#8217;s easier to work with under a debugger. We will
 be using the optimised mode in the tutorial (with the <code>--release</code>
 option), to make sure no one is making speed claims without
@@ -628,7 +628,7 @@ the asterisk (<code>*</code>) as the name means to import everything under
 <code>BackgroundFlag</code>, etc.</p>
 </div>
 <div class="paragraph">
-<p>Now we&#8217;ll add some constants so we&#8217;re don&#8217;t end up littering the
+<p>Now we&#8217;ll add some constants so we don&#8217;t end up littering the
 source code with a bunch of opaque numbers:</p>
 </div>
 <div class="listingblock">
@@ -656,7 +656,7 @@ renders a character on it.</p>
 </div>
 <div class="paragraph">
 <p>To create a window we call <code>Root::initializer(). &#8230;&#8203; .init()</code>.
-In-between go custom settings. Default values are going to be used for
+In between go custom settings. Default values are going to be used for
 any option that&#8217;s not specified.</p>
 </div>
 <div class="listingblock">
@@ -695,7 +695,7 @@ type it explicitly, though:</p>
 </div>
 <div class="paragraph">
 <p>First, we&#8217;re setting up a font. Libtcod uses bitmap fonts of various
-formats. Calling the <code>font</code> methods let&#8217;s us set our own font using a
+formats. Calling the <code>font</code> methods lets us set our own font using a
 file name and a font layout. <code>font_type</code> is another option for loading
 a font.</p>
 </div>
@@ -747,7 +747,7 @@ colour everything will be drawn with unless specified otherwise.</p>
 </div>
 <div class="paragraph">
 <p>The <code>tcod::colors</code> module contains values for common colours as well
-as the <code>Color</code> struct that let&#8217;s you use your own.</p>
+as the <code>Color</code> struct that lets you use your own.</p>
 </div>
 <div class="paragraph">
 <p>Next we draw the <code>@</code> character at the coordinates <code>1, 1</code> on the
@@ -758,7 +758,7 @@ screen. The <code>0, 0</code> coordinate is at the top left corner of the window
 colour.</p>
 </div>
 <div class="paragraph">
-<p>Calling <code>flush</code>, which will draw everything on the window at once.</p>
+<p>Calling <code>flush</code> will draw everything on the window at once.</p>
 </div>
 <div class="paragraph">
 <p>And finally, we also need to call <code>wait_for_keypress</code> even though
@@ -820,11 +820,11 @@ coordinates so we can change them based on the player&#8217;s actions.</p>
 </div>
 <div class="paragraph">
 <p>A function signature in Rust is <code>fn function_name(parameter:
-type, &#8230;&#8203;) &#8594; return_type</code>. Here we call our function <code>handle_keys</code>,
+type, &#8230;&#8203;) &#8594; return_type</code>. Here we call our function <code>handle_keys</code>;
 it accepts three parameters&#8201;&#8212;&#8201;the root console (of type
 <code>tcod::console::Root</code>), the x coordinate and the y coordinate (of type
-<code>i32</code>) and it returns a boolean value. <code>true</code> says "exit the game",
-<code>false</code> means "keep going"</p>
+<code>i32</code>)&#8201;&#8212;&#8201;and it returns a boolean value. <code>true</code> says "exit the game",
+<code>false</code> means "keep going".</p>
 </div>
 <div class="paragraph">
 <p>The &amp;mut` bits before the types are borrowing operators. You can read
@@ -847,7 +847,7 @@ could only read their values but it could not change them. Since we
 want to update them based on the key the player pressed, we&#8217;ll get
 them as mutable references. Then we can assign a new value using the
 dereference operator (e.g. <code>*player_x = 10</code>) and that will show up
-back in the caller code.</p>
+back in the calling scope.</p>
 </div>
 <div class="paragraph">
 <p>Right now, the function&#8217;s body is empty, except that it always returns
@@ -886,7 +886,7 @@ there are others for <code>alt</code>, <code>ctrl</code>, etc.</p>
 <div class="paragraph">
 <p>The two dots at the end mean "I don&#8217;t care about the other fields".
 If it wasn&#8217;t there, it would not compile until you specified values
-fore every field of the <code>Key</code> struct.</p>
+for every field of the <code>Key</code> struct.</p>
 </div>
 <div class="paragraph">
 <p>Rust requires that <code>match</code> arms are <em>exhaustive</em>. That means you have
@@ -928,7 +928,7 @@ code:</p>
 </div>
 <div class="paragraph">
 <p>Now, we could put it on top of the file next to the existing imports,
-but: Rust lets you place them in individual functions as well, which
+but Rust lets you place them in individual functions as well, which
 will make them available only for that function. Since we&#8217;ll contain
 our keyboard-handling code in <code>handle_keys</code>, let&#8217;s make it the first
 thing there.</p>
@@ -960,7 +960,7 @@ references.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>And we also need to clear the <em>previous</em> position position&#8201;&#8212;&#8201;otherwise we&#8217;d leave a trail of <code>@</code> on the screen! Put this right
+<p>And we also need to clear the <em>previous</em> player position&#8201;&#8212;&#8201;otherwise we&#8217;d leave a trail of <code>@</code> on the screen! Put this right
 before the <code>let exit = handle_keys(&#8230;&#8203;)</code> call:</p>
 </div>
 <div class="listingblock">
@@ -979,7 +979,7 @@ before the <code>let exit = handle_keys(&#8230;&#8203;)</code> call:</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2016-07-21 14:38:51 CEST
+Last updated 2016-08-16 18:54:54 CEST
 </div>
 </div>
 </body>

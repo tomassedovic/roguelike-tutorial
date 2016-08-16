@@ -222,7 +222,7 @@ impl Object {
     /// heal by the given amount, without going over the maximum
     pub fn heal(&mut self, amount: i32, game: &Game) {
         let max_hp = self.max_hp(game);
-        if let Some(mut fighter) = self.fighter {
+        if let Some(ref mut fighter) = self.fighter {
             fighter.hp += amount;
             if fighter.hp > max_hp {
                 fighter.hp = max_hp;

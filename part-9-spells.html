@@ -550,7 +550,7 @@ monster in the FOV, another needs mouse targeting, etc.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>(and remove the <code>fov_map</code> and <code>mouse</code> initialisation code, too since
+<p>(and remove the <code>fov_map</code> and <code>mouse</code> initialisation code, too, since
 it&#8217;s in here)</p>
 </div>
 <div class="paragraph">
@@ -707,7 +707,7 @@ it&#8217;s done with monsters:</p>
 <pre class="pygments highlight"><code data-lang="rust"><span class="tok-k">fn</span> <span class="tok-n">cast_lightning</span><span class="tok-p">(</span><span class="tok-n">_inventory_id</span><span class="tok-o">:</span> <span class="tok-n">usize</span><span class="tok-p">,</span> <span class="tok-n">objects</span><span class="tok-o">:</span> <span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-p">[</span><span class="tok-n">Object</span><span class="tok-p">],</span> <span class="tok-n">messages</span><span class="tok-o">:</span> <span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">Messages</span><span class="tok-p">,</span> <span class="tok-n">tcod</span><span class="tok-o">:</span> <span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-n">Tcod</span><span class="tok-p">)</span>
                   <span class="tok-o">-&gt;</span> <span class="tok-n">UseResult</span>
 <span class="tok-p">{</span>
-    <span class="tok-c1">// find closest enemy (inside a maximum range and damage it)</span>
+    <span class="tok-c1">// find closest enemy (inside a maximum range) and damage it</span>
     <span class="tok-kd">let</span> <span class="tok-n">monster_id</span> <span class="tok-o">=</span> <span class="tok-n">closest_monster</span><span class="tok-p">(</span><span class="tok-n">LIGHTNING_RANGE</span><span class="tok-p">,</span> <span class="tok-n">objects</span><span class="tok-p">,</span> <span class="tok-n">tcod</span><span class="tok-p">);</span>
     <span class="tok-k">if</span> <span class="tok-kd">let</span> <span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">monster_id</span><span class="tok-p">)</span> <span class="tok-o">=</span> <span class="tok-n">monster_id</span> <span class="tok-p">{</span>
         <span class="tok-c1">// zap it!</span>
@@ -1006,7 +1006,7 @@ the asterisk there, we&#8217;d return <code>Box&lt;Ai&gt;</code>, which is not w
 <code>ai_take_turn</code> expects.</p>
 </div>
 <div class="paragraph">
-<p>Now, the actual scroll that uses this AI! For it to appear in the
+<p>Now, the actual scroll that causes this AI! For it to appear in the
 dungeon it must be added to <code>place_objects</code>. Notice that the chance of
 getting a lightning bolt scroll must change:</p>
 </div>
@@ -1068,7 +1068,7 @@ it with the <code>Confused</code> one.</p>
 <p><code>target_monster</code> should always return a monster that has the <code>Ai</code>
 component, but the <code>Object.ai</code> still contains <code>Option&lt;Ai&gt;</code> rather than
 bare <code>Ai</code> (not every Object has AI even though we expect each monster
-to have one). We could use <a href="http://doc.rust-lang.org/stable/std/option/enum.Option.html#method.unwrap">the unwrap</a> or <a href="http://doc.rust-lang.org/stable/std/option/enum.Option.html#method.expect">expect</a>
+to have one). We could use the <a href="http://doc.rust-lang.org/stable/std/option/enum.Option.html#method.unwrap">unwrap</a> or <a href="http://doc.rust-lang.org/stable/std/option/enum.Option.html#method.expect">expect</a>
 methods to get the inner value, but this would crash the program
 (<code>expect</code> would print a custom message). Here we use
 <a href="http://doc.rust-lang.org/stable/std/option/enum.Option.html#method.unwrap_or">unwrap_or</a> instead which will return the <code>Basic</code> AI in
@@ -1199,7 +1199,7 @@ range from the clicked position to the player is lower or equal.</p>
 through walls.</p>
 </div>
 <div class="paragraph">
-<p>Finally, we need a way of cancel the targeting UI:</p>
+<p>Finally, we need a way to cancel the targeting UI:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -1321,7 +1321,7 @@ we have to add it to <code>cast_heal</code>, <code>cast_lightning</code>, <code>
 well as <code>use_item</code>.</p>
 </div>
 <div class="paragraph">
-<p>Here&#8217;s what <code>on_use</code> bit looks like now:</p>
+<p>Here&#8217;s what the <code>on_use</code> bit looks like now:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -1473,7 +1473,7 @@ much more interesting!</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2016-07-21 14:07:59 CEST
+Last updated 2016-08-16 18:54:54 CEST
 </div>
 </div>
 </body>

@@ -490,7 +490,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <h2 id="_off_screen_consoles">Off-screen consoles</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Before we continue, let&#8217;s talk about <em>consoles</em>. In libtocd, console
+<p>Before we continue, let&#8217;s talk about <em>consoles</em>. In libtcod, console
 is where we <em>draw stuff</em>. We&#8217;ve only used one so far&#8201;&#8212;&#8201;the root
 console. It is connected to the game window and anything you want to
 show must eventually make its way there.</p>
@@ -521,7 +521,7 @@ instead of <code>root</code>.</p>
 <div class="paragraph">
 <p>And finally, blit the contents of the new console to the root console
 to display them. The <code>blit</code> function takes a lot of parameters, but
-the meaning is straight forward. We take the console we want to blit
+the meaning is straightforward. We take the console we want to blit
 <em>from</em> (i.e. <code>con</code>), the coordinates where to start and the width and
 height of the area we want to blit (we&#8217;ll blit it all). Then the
 destination (<code>root</code>), <em>where</em> to start blitting (we&#8217;ll use the
@@ -611,8 +611,8 @@ non-player character to test things out:</p>
 <div class="paragraph">
 <p>Now we&#8217;ll need to do a few changes to make it work. First in
 <code>handle_keys</code> we&#8217;ll use player&#8217;s <code>move_by</code> method to change the
-coordinates. This means we&#8217;ll need to pass (mutable reference to) the
-player object in.</p>
+coordinates. This means we&#8217;ll need to pass in (a mutable reference to) the
+player object.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -678,7 +678,7 @@ leave some space for a panel with stats that we&#8217;ll add later.</p>
 <div class="paragraph">
 <p>Next we&#8217;ll define colours for the tiles. We&#8217;ll have two tiles for now:
 <em>wall</em> and <em>ground</em>. Let&#8217;s define their <em>dark</em> variants. When we add
-field of view, we&#8217;ll have add set for when they&#8217;re lit.</p>
+field of view, we&#8217;ll have to add a set for when they&#8217;re lit.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -722,7 +722,7 @@ passable tiles that block sight for secret passages. We&#8217;ll create a
 there. <code>Debug</code> is to let us print the Tile&#8217;s contents and <code>Clone</code> and
 <code>Copy</code> will let us <em>copy</em> the values on assignment or function call
 instead of <em>moving</em> them. So they&#8217;ll behave like e.g. integers in this
-matter.</p>
+respect.</p>
 </div>
 <div class="paragraph">
 <p>We don&#8217;t want the <code>Copy</code> behaviour for <code>Object</code> (we could accidentally
@@ -778,11 +778,11 @@ tiles and then build the map of those columns.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>(you can also access the tile&#8217;s properties directly like sof:
+<p>(you can also access the tile&#8217;s properties directly like so:
 <code>map[30][22].blocked = true</code>)</p>
 </div>
 <div class="paragraph">
-<p>Next we need to draw the draw the map on our window. Since we need to
+<p>Next we need to draw the map on our window. Since we need to
 draw both the objects and the map, let&#8217;s create a new function that
 renders everything and call it from the main loop.</p>
 </div>
@@ -844,7 +844,7 @@ beginning of the Object&#8217;s <code>move_by</code> method:</p>
 <div class="paragraph">
 <p>We&#8217;ll have to pass a reference to the map to <code>move_by</code> and
 <code>handle_keys</code> which calls it. This may look annoying now but as the
-code grows, it will be gook to know which functions can see (and
+code grows, it will be good to know which functions can see (and
 change!) what.</p>
 </div>
 <div class="paragraph">
@@ -911,7 +911,7 @@ supposed to be covered with spikes).
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2016-07-20 23:52:44 CEST
+Last updated 2016-08-16 18:54:54 CEST
 </div>
 </div>
 </body>

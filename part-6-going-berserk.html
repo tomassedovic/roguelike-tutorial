@@ -491,14 +491,14 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <h2 id="_the_components">The Components</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>TODO: talk about composition vs. inhericance and how this isn&#8217;t a real ECS whatever that means&#8230;&#8203;</p>
+<p>TODO: talk about composition vs. inheritance and how this isn&#8217;t a real ECS whatever that means&#8230;&#8203;</p>
 </div>
 <div class="paragraph">
 <p>Our components will be plain <code>structs</code> with related bits of data and
 not much else. Each <code>Object</code> will have some (or all or none) of the
 components attached and that will drive their behaviour. Only things
 with the <code>Fighter</code> component will be able to attack or be attacked,
-etc..</p>
+for example.</p>
 </div>
 <div class="paragraph">
 <p>Let&#8217;s create the <code>Fighter</code> component. It will have hit points, maximum
@@ -562,7 +562,7 @@ changing it now)</p>
 </div>
 <div class="paragraph">
 <p>And next the monsters. Each monster will get a <code>Fighter</code> component as
-well as the <code>Ai</code> one. In <code>place_objcets</code> where the monsters are
+well as the <code>Ai</code> one. In <code>place_objects</code> where the monsters are
 defined:</p>
 </div>
 <div class="listingblock">
@@ -588,13 +588,13 @@ defined:</p>
 <h2 id="_ai">AI</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>We went through all this trouble and yet nothing happens? Let&#8217;s that
+<p>We went through all this trouble and yet nothing happens? Let&#8217;s fix that
 by actually using our newly-minted components! The monsters have been
 growling for too long and are ready to fight now.</p>
 </div>
 <div class="paragraph">
 <p>We&#8217;ll start by creating a function that will cause an object (monster,
-usually) move towards a position (the player&#8217;s coordinates, usually).</p>
+usually) to move towards a position (the player&#8217;s coordinates, usually).</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -795,7 +795,7 @@ attack you. This is how you make a simple GUI! At the end of the
 <div class="content">
 <pre class="pygments highlight"><code data-lang="rust"><span class="tok-c1">// show the player&#39;s stats</span>
 <span class="tok-k">if</span> <span class="tok-kd">let</span> <span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">fighter</span><span class="tok-p">)</span> <span class="tok-o">=</span> <span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-n">PLAYER</span><span class="tok-p">].</span><span class="tok-n">fighter</span> <span class="tok-p">{</span>
-    <span class="tok-n">con</span><span class="tok-p">.</span><span class="tok-n">print_ex</span><span class="tok-p">(</span><span class="tok-mi">1</span><span class="tok-p">,</span> <span class="tok-n">SCREEN_HEIGHT</span> <span class="tok-o">-</span> <span class="tok-mi">2</span><span class="tok-p">,</span> <span class="tok-n">BackgroundFlag</span><span class="tok-o">::</span><span class="tok-nb">None</span><span class="tok-p">,</span> <span class="tok-n">TextAlignment</span><span class="tok-o">::</span><span class="tok-n">Left</span><span class="tok-p">,</span>
+    <span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">print_ex</span><span class="tok-p">(</span><span class="tok-mi">1</span><span class="tok-p">,</span> <span class="tok-n">SCREEN_HEIGHT</span> <span class="tok-o">-</span> <span class="tok-mi">2</span><span class="tok-p">,</span> <span class="tok-n">BackgroundFlag</span><span class="tok-o">::</span><span class="tok-nb">None</span><span class="tok-p">,</span> <span class="tok-n">TextAlignment</span><span class="tok-o">::</span><span class="tok-n">Left</span><span class="tok-p">,</span>
                  <span class="tok-n">format</span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-s">&quot;HP: {}/{} &quot;</span><span class="tok-p">,</span> <span class="tok-n">fighter</span><span class="tok-p">.</span><span class="tok-n">hp</span><span class="tok-p">,</span> <span class="tok-n">fighter</span><span class="tok-p">.</span><span class="tok-n">max_hp</span><span class="tok-p">));</span>
 <span class="tok-p">}</span></code></pre>
 </div>
@@ -907,8 +907,8 @@ there for taking the hit points down. There is a difference, however.</p>
 </div>
 <div class="paragraph">
 <p>It boils down to ownership again. The first <code>if let</code> takes a mutable
-reference of <code>self.fighter</code>. That means, for the duration of that
-block, we can&#8217;t take a mutable reference to <code>self</code>, because it&#8217;s part
+reference to <code>self.fighter</code>. That means, for the duration of that
+block, we can&#8217;t take a mutable reference to <code>self</code>, because a part of it
 (<code>fighter</code>) is already borrowed.</p>
 </div>
 <div class="paragraph">
@@ -1014,7 +1014,7 @@ property:</p>
 </div>
 </div>
 <div class="paragraph">
-<p>Instead of going through the <code>objects</code> list and we clone it into a
+<p>Instead of going through the <code>objects</code> list we clone it into a
 mutable vector (<code>render_all</code> is taking <code>&amp;[Object]</code> so it can&#8217;t change
 the list directly&#8201;&#8212;&#8201;nor should it). Then we sort the vector such that
 all non-blocking objects come before all the blocking ones. Since we can&#8217;t
@@ -1042,7 +1042,7 @@ we&#8217;ll only sort items that we actually want to draw.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>It&#8217;s finally ready to play, and it actually feels like a game! It was
+<p>It&#8217;s finally ready to play, and it actually feels like a game! It&#8217;s been
 a long journey since we first printed the <code>@</code> character, but we&#8217;ve got
 random dungeons, FOV, exploration, enemies, AI, and a true combat
 system. You can now beat those pesky monsters into a pulp and walk
@@ -1060,7 +1060,7 @@ the same to you.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2016-07-20 23:52:44 CEST
+Last updated 2016-08-16 18:54:54 CEST
 </div>
 </div>
 </body>

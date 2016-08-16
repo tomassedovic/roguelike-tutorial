@@ -505,7 +505,7 @@ comparing the different algorithms.</p>
 <div class="paragraph">
 <p>We&#8217;ll define the chosen algorithm along with some other constants so
 they can be changed later. For now we&#8217;ll just use the default
-(<code>Basic</code>) algorithm. There&#8217;s also an option to light walls or not,
+(<code>Basic</code>) algorithm. There&#8217;s also an option to light walls or not;
 this is a matter of preference. Another important constant is the
 maximum radius for FOV calculations, how far the player can see in the
 dungeon. (Whether this is due to the player&#8217;s sight range or the light
@@ -532,7 +532,7 @@ the player.)</p>
 </div>
 <div class="paragraph">
 <p>The fov map object in <code>tcod</code> is called <code>Map</code>, which conflicts with our
-own dungeon map type. So we&#8217;ll rename the tcod&#8217;s one to <code>FovMap</code> on
+own dungeon map type. So we&#8217;ll rename tcod&#8217;s to <code>FovMap</code> on
 import:</p>
 </div>
 <div class="listingblock">
@@ -582,7 +582,7 @@ time through the loop)</p>
 </div>
 <div class="paragraph">
 <p>Then this right before <code>handle_keys</code> (which is where the player&#8217;s
-position could change)</p>
+position could change):</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -759,7 +759,7 @@ for now.
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2016-07-20 23:52:44 CEST
+Last updated 2016-08-16 18:54:54 CEST
 </div>
 </div>
 </body>

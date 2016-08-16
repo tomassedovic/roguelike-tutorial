@@ -692,7 +692,7 @@ arrow-handling and the final <code>return DidntTakeTurn</code> line:</p>
 <p>And we need to pass inventory to <code>handle_keys</code>. And we&#8217;ll <em>also</em> have
 to change the <code>&amp;mut [Object]</code> argument to <code>&amp;mut Vec&lt;Object&gt;</code>, because
 that&#8217;s what <code>pick_item_up</code> expects. The difference is that the former
-is a mutable reference to an <code>array</code>&#8201;&#8212;&#8201;we can change it&#8217;s items but
+is a mutable reference to an <code>array</code>&#8201;&#8212;&#8201;we can change its items but
 not its <em>size</em>. The latter is a full vector, which means we can also
 grow or shrink it.</p>
 </div>
@@ -1012,7 +1012,7 @@ since it will probably be used multiple times. The constant
 <div class="content">
 <pre class="pygments highlight"><code data-lang="rust"><span class="tok-c-Doc">/// heal by the given amount, without going over the maximum</span>
 <span class="tok-k">pub</span> <span class="tok-k">fn</span> <span class="tok-n">heal</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span> <span class="tok-bp">self</span><span class="tok-p">,</span> <span class="tok-n">amount</span><span class="tok-o">:</span> <span class="tok-kt">i32</span><span class="tok-p">)</span> <span class="tok-p">{</span>
-    <span class="tok-k">if</span> <span class="tok-kd">let</span> <span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-k">mut</span> <span class="tok-n">fighter</span><span class="tok-p">)</span> <span class="tok-o">=</span> <span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">fighter</span> <span class="tok-p">{</span>
+    <span class="tok-k">if</span> <span class="tok-kd">let</span> <span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-k">ref</span> <span class="tok-k">mut</span> <span class="tok-n">fighter</span><span class="tok-p">)</span> <span class="tok-o">=</span> <span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">fighter</span> <span class="tok-p">{</span>
         <span class="tok-n">fighter</span><span class="tok-p">.</span><span class="tok-n">hp</span> <span class="tok-o">+=</span> <span class="tok-n">amount</span><span class="tok-p">;</span>
         <span class="tok-k">if</span> <span class="tok-n">fighter</span><span class="tok-p">.</span><span class="tok-n">hp</span> <span class="tok-o">&gt;</span> <span class="tok-n">fighter</span><span class="tok-p">.</span><span class="tok-n">max_hp</span> <span class="tok-p">{</span>
             <span class="tok-n">fighter</span><span class="tok-p">.</span><span class="tok-n">hp</span> <span class="tok-o">=</span> <span class="tok-n">fighter</span><span class="tok-p">.</span><span class="tok-n">max_hp</span><span class="tok-p">;</span>
@@ -1063,7 +1063,7 @@ will really make the most of this inventory system.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2016-07-21 14:06:58 CEST
+Last updated 2016-08-16 18:54:54 CEST
 </div>
 </div>
 </body>

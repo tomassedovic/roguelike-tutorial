@@ -516,7 +516,7 @@ libtcod-related stuff and now let&#8217;s add the rest!</p>
 </div>
 </div>
 <div class="paragraph">
-<p>So right it&#8217;ll just hold the map, the message log and the inventory.
+<p>So right now it&#8217;ll just hold the map, the message log and the inventory.
 We&#8217;ll add more things later on, but let&#8217;s start small.</p>
 </div>
 <div class="paragraph">
@@ -729,7 +729,7 @@ wraps the underlying <code>Vec&lt;(String, Color)&gt;</code> and has the <code>a
 right?</p>
 </div>
 <div class="paragraph">
-<p>Rust let&#8217;s you implement traits to types you don&#8217;t control (e.g.
+<p>Rust lets you implement traits to types you don&#8217;t control (e.g.
 because they come from the standard library like our <code>Vec</code>) assuming
 you control the trait.</p>
 </div>
@@ -766,7 +766,7 @@ those methods and we can pass it to functions that expect that trait.</p>
 </div>
 <div class="paragraph">
 <p>This is basically the same thing as our <code>message</code> function does,
-expect it&#8217;s a method (so it takes an explicit <code>&amp;mut self</code>) and we
+except it&#8217;s a method (so it takes an explicit <code>&amp;mut self</code>) and we
 don&#8217;t bother with the message count check.</p>
 </div>
 <div class="paragraph">
@@ -873,11 +873,11 @@ and the main loop into a <code>new_game</code> function:</p>
 </div>
 </div>
 <div class="paragraph">
-<p>We return use a tuple to return two arguments: the vec of <code>Objects</code> and
+<p>We return a tuple with two elements: the vec of <code>Objects</code> and
 the <code>Game</code> struct.</p>
 </div>
 <div class="paragraph">
-<p><code>new_game</code> is calling <code>initialise_fov</code> so we need create it and move
+<p><code>new_game</code> is calling <code>initialise_fov</code> so we need to create it and move
 the FOV-related code to it:</p>
 </div>
 <div class="listingblock">
@@ -1388,7 +1388,7 @@ failure is <code>Err</code>.</p>
 <div class="paragraph">
 <p>There&#8217;s also the <a href="https://doc.rust-lang.org/std/error/trait.Error.html">Error trait</a> which represents an error and
 lets you get its textual description. All the file-handling
-serialiastion errors in our save/load code implement Error.</p>
+serialisation errors in our save/load code implement Error.</p>
 </div>
 <div class="paragraph">
 <p>So, looking at <code>save_game</code>, the <code>json::encode</code> call returns either
@@ -1508,7 +1508,7 @@ we had to learn a ton of new stuff to understand it.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2016-07-20 23:52:44 CEST
+Last updated 2016-08-16 18:54:54 CEST
 </div>
 </div>
 </body>

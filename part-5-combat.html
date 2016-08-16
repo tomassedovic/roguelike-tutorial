@@ -528,8 +528,7 @@ room.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>We&#8217;ll define the <code>MAX_ROOM_MONSTERS = 3</code> constant on top of the file
-again.</p>
+<p>We&#8217;ll define the <code>MAX_ROOM_MONSTERS = 3</code> constant at the top of the file.</p>
 </div>
 <div class="paragraph">
 <p>Calling <code>rand::random::&lt;f32&gt;()</code> will produce an <code>f32</code> number between
@@ -572,7 +571,7 @@ won&#8217;t need it anymore.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_getting_hold_of_player_s_position">Getting hold of Player&#8217;s position</h2>
+<h2 id="_getting_hold_of_the_player_s_position">Getting hold of the Player&#8217;s position</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Before we move further, there are two things we can do to make working
@@ -615,7 +614,7 @@ in <code>render_all</code>.</p>
 <div class="paragraph">
 <p>These give us a shorthand for getting or setting both coordinates (<code>x</code>
 and <code>y</code>) at once. This will again simplify some code in <code>main</code>, the
-<code>move_by</code> method of Object as well as setting player&#8217;s initial
+<code>move_by</code> method of Object as well as setting the player&#8217;s initial
 position in <code>make_map</code>.</p>
 </div>
 </div>
@@ -624,8 +623,8 @@ position in <code>make_map</code>.</p>
 <h2 id="_blocking_objects">Blocking objects</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>If you tried to walk up to a monster, you&#8217;d seen that the player
-walked right through! That&#8217;s clearly not what we want to happen in
+<p>If you tried to walk up to a monster, you&#8217;d see that the player
+would walk right through! That&#8217;s clearly not what we want to happen in
 general. Plus, we don&#8217;t want multiple monsters standing on the same
 tile.</p>
 </div>
@@ -681,7 +680,7 @@ missed setting <code>alive = true</code> but hard to do the opposite.
 </table>
 </div>
 <div class="paragraph">
-<p>Now we&#8217;ll create a function that tests if a file is blocked&#8201;&#8212;&#8201;whether
+<p>Now we&#8217;ll create a function that tests if a tile is blocked&#8201;&#8212;&#8201;whether
 due to a wall or an object blocking it.</p>
 </div>
 <div class="listingblock">
@@ -797,7 +796,7 @@ reference:</p>
 </div>
 </div>
 <div class="paragraph">
-<p>Now we no longer have the problem, because we first call get the
+<p>Now we no longer have the problem, because we first get the
 object&#8217;s position (immutable borrow that ends immediately), then call
 <code>is_blocked</code> with <code>objects</code> (again, immutable borrow that ends right
 after the call) and finally, with no borrows to burden us, we set the
@@ -806,7 +805,7 @@ position.</p>
 <div class="paragraph">
 <p>This is what Rust people sometimes refer to as "fighting the borrow
 checker". When you start with the language, you&#8217;ll likely encounter a
-lot of these situations. As you get more experienced though, you&#8217;ll
+lot of these situations. As you get more experienced, though, you&#8217;ll
 learn which patterns will cause trouble and structure your code
 differently.</p>
 </div>
@@ -1016,7 +1015,7 @@ ignoring the latter.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span class="tok-p">(</span><span class="tok-n">Key</span> <span class="tok-p">{</span> <span class="tok-n">code</span><span class="tok-o">:</span> <span class="tok-n">Up</span><span class="tok-p">,</span> <span class="tok-p">..</span> <span class="tok-p">},</span> <span class="tok-n">Playing</span><span class="tok-p">)</span> <span class="tok-o">=&gt;</span>  <span class="tok-c1">// move player</span></code></pre>
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-p">(</span><span class="tok-n">Key</span> <span class="tok-p">{</span> <span class="tok-n">code</span><span class="tok-o">:</span> <span class="tok-n">Up</span><span class="tok-p">,</span> <span class="tok-p">..</span> <span class="tok-p">},</span> <span class="tok-k">true</span><span class="tok-p">)</span> <span class="tok-o">=&gt;</span>  <span class="tok-c1">// move player</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1040,7 +1039,7 @@ state when we add a new key.
 </table>
 </div>
 <div class="paragraph">
-<p>And now we need to go back to the main loop though and handle
+<p>And now we need to go back to the main loop and handle
 <code>PlayerAction</code> there. Change the end of the loop to:</p>
 </div>
 <div class="listingblock">
@@ -1105,7 +1104,7 @@ called <code>player_move_or_attack</code> and use it instead of <code>move_by</c
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span class="tok-n">player_move_or_attack</span><span class="tok-p">(</span><span class="tok-n">PLAYER</span><span class="tok-p">,</span> <span class="tok-mi">1</span><span class="tok-p">,</span> <span class="tok-mi">0</span><span class="tok-p">,</span> <span class="tok-n">map</span><span class="tok-p">,</span> <span class="tok-n">objects</span><span class="tok-p">)</span></code></pre>
+<pre class="pygments highlight"><code data-lang="rust"><span class="tok-n">player_move_or_attack</span><span class="tok-p">(</span><span class="tok-mi">1</span><span class="tok-p">,</span> <span class="tok-mi">0</span><span class="tok-p">,</span> <span class="tok-n">map</span><span class="tok-p">,</span> <span class="tok-n">objects</span><span class="tok-p">)</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1146,11 +1145,11 @@ case a vec of <code>Object</code>).</p>
 </div>
 <div class="paragraph">
 <p>We then test whether we have found a target at that position (in which case
-we know it&#8217;s index) and print out a message or whether we can just
+we know its index), and either print out a message or just
 move into that place.</p>
 </div>
 <div class="paragraph">
-<p>And that&#8217;s it! You test it out. No one&#8217;s dealing any damage, but the
+<p>And that&#8217;s it! Test it out. No one&#8217;s dealing any damage, but the
 game now detects when you&#8217;re trying to attack a monster. And you can
 see the monsters taking their turns after you.</p>
 </div>
@@ -1168,7 +1167,7 @@ see the monsters taking their turns after you.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2016-07-20 23:52:44 CEST
+Last updated 2016-08-16 18:54:54 CEST
 </div>
 </div>
 </body>

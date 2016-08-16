@@ -492,10 +492,10 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div class="paragraph">
 <p>Having a painstakingly handmade room with artfully placed pillars is
 all well and good, but roguelikes are about procedural generation! How
-about adding some randomness to the mix.</p>
+about adding some randomness to the mix?</p>
 </div>
 <div class="paragraph">
-<p>We&#8217;re going to carve rooms and tunnels in an underground rock. In this
+<p>We&#8217;re going to carve rooms and tunnels in underground rock. In this
 section we&#8217;ll build some helper functions which we&#8217;ll then use to
 generate the whole dungeon.</p>
 </div>
@@ -524,7 +524,7 @@ generate the whole dungeon.</p>
 points.</p>
 </div>
 <div class="paragraph">
-<p>This function will take a rect and place it in the map, by making sure
+<p>This function will take a rect and place it in the map, making sure
 all the tiles are empty.</p>
 </div>
 <div class="listingblock">
@@ -721,7 +721,7 @@ section:</p>
 <div class="paragraph">
 <p>With that out of the way, let&#8217;s actually implement the algorithm in
 <code>make_map</code>. Remove the previous code that created the example rooms
-and tunnel and instead make a loop goes through the maximum number of
+and tunnel and instead make a loop that goes through the maximum number of
 rooms, assigning random coordinates and size to each one as we go.</p>
 </div>
 <div class="listingblock">
@@ -823,7 +823,7 @@ tunnels between the rooms.</p>
 <div class="paragraph">
 <p>For every room except the first one we connect it to the previous one.
 Now, sometimes we can&#8217;t connect them with a straight line (horizontal
-or vertiral) but we need two tunnels.</p>
+or vertical) but we need two tunnels.</p>
 </div>
 <div class="paragraph">
 <p>We could start with a horizontal tunnel to reach the same level as the
@@ -876,7 +876,7 @@ horizontal one.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2016-07-20 23:52:44 CEST
+Last updated 2016-08-16 18:54:54 CEST
 </div>
 </div>
 </body>
