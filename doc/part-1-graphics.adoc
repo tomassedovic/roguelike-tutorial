@@ -96,15 +96,21 @@ extern crate tcod;
 ----
 
 To use any external library (i.e. code outside of your project) in
-Rust, you need to have it in `Cargo.toml` under `[dependencies]` and
-use `extern crate` in your Rust file. Rust libraries are called
-_crates_.
+Rust, you need to have it in `Cargo.toml` under `[dependencies]`:
 
+[source,toml]
+----
+[dependencies]
+tcod = "0.11"
+----
 
-Next, add some imports via the `use` statements:
+and use `extern crate` in your Rust file. Rust libraries are called
+_crates_. Next, add some imports via the `use` statements:
 
 [source,rust]
 ----
+extern crate tcod;
+
 use tcod::console::*;
 use tcod::colors;
 ----
