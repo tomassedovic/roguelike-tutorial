@@ -4,7 +4,7 @@
 :source-language: rust
 ifdef::env-github[:outfilesuffix: .adoc]
 
-:rustc-serialize: https://crates.io/crates/rustc-serialize
+:serde: https://crates.io/crates/serde
 
 <<index#,Back to the index.>>
 
@@ -550,7 +550,7 @@ and loading quite painless. Here's the teaser:
 [source]
 ----
 fn save_game(objects: &[Object], game: &Game) -> Result<(), Box<Error>> {  // <1><2>
-    let save_data = try! { json::encode(&(objects, game)) };  // <3>
+    let save_data = try! { serde_json::to_string(&(objects, game)) };  // <3>
     let mut file = try! { File::create("savegame") };  // <4>
     try!{ file.write_all(save_data.as_bytes()) }  // <5>
     Ok(())  // <6>
@@ -569,63 +569,79 @@ game state
 Don't mind the `try!` blocks for now, they're for error handling and
 we'll explain them in a bit.
 
-The first line (`json::encode(&some_data)`) takes the data we want to
-save (objects and the game state in our case) and turns it to a
-{json}[JSON]-encoded String.
+The first line (`serde_json::to_string(&some_data)`) takes the data we
+want to save (objects and the game state in our case) and turns it to
+a {json}[JSON]-encoded String.
 
-That functionality comes from the {rustc-serialize}[rustc-serialize
-crate] so we need to add it to our `[dependencies]` in the
-`Cargo.toml` file and we'll also enable the "rustc-serialize" feature
-in the _tcod_ crate:
+That functionality comes from the {serde}[serde and related crates] so
+we need to add them to our `[dependencies]` in the `Cargo.toml` file
+and we'll also enable the "serialization" feature in the _tcod_ crate:
 
 [source,toml]
 ----
 [dependencies]
-tcod = { version = "0.9", features = ["rustc-serialize"] }
+tcod = { version = "0.11", features = ["serialization"] }
 rand = "0.3"
-rustc-serialize = "0.3"
+serde = "0.9"
+serde_derive = "0.9"
+serde_json = "0.9"
 ----
 
-The `rustc-serialize` crate gives us options to convert our structs
-into JSON (and other formats).
+The `serde` crate provides the main functionality for serializing and
+deserializing of Rust data. This includes the `Serialize` and
+`Deserialize` traits which describe what to do for a given
+struct/enum/whatever. `serde_derive` provides a way to *derive* those
+traits so we don't need to implement them ourselves and finally
+`serde_json` converts any serializable struct to and from JSON. If we
+wanted to use a different format (YAML, TOML or anything else, we'd
+replace this crate with another one that supports what you want).
 
 Now let's add the crate to our source code, including the `save_game`
 function and try to compile:
 
 [source]
 ----
-extern crate rustc_serialize;
+extern crate serde;
+#[macro_use] extern crate serde_derive;
+extern crate serde_json;
 
 // the existing imports
 use std::io::{Read, Write};
 use std::fs::File;
 use std::error::Error;
-use rustc_serialize::json;
 ----
+
+Note the `macro_use` attribute in front of the `serde_derive`. The
+functionality provided by the crate is in form of macros. And if we
+want to use macros provided by another crate, we need to say so in the
+`extern` statement.
 
 Unfortunately, it will fail:
 
 ----
-   Compiling roguelike-tutorial v0.1.0 (file:///home/thomas/code/roguelike-tutorial)
-src/bin/part-10-menu-saving.rs:1137:28: 1137:40 error: the trait `rustc_serialize::serialize::Encodable` is not implemented for the type `Game` [E0277]
-src/bin/part-10-menu-saving.rs:1137     let save_data = try! { json::encode(&(objects, game)) };
-                                                               ^~~~~~~~~~~~
-src/bin/part-10-menu-saving.rs:1137:21: 1137:60 note: in this expansion of try! (defined in <std macros>)
-src/bin/part-10-menu-saving.rs:1137:28: 1137:40 help: run `rustc --explain E0277` to see a detailed explanation
-src/bin/part-10-menu-saving.rs:1137:28: 1137:40 note: required by `rustc_serialize::json::encode`
+   Compiling roguelike-tutorial v0.1.0 (file:///home/thomas/personal/code/roguelike-tutorial)
+error[E0277]: the trait bound `Game: serde::Serialize` is not satisfied
+    --> src/bin/part-10-menu-saving.rs:1140:28
+     |
+1140 |     let save_data = try! { serde_json::to_string(&(objects, game)) };
+     |                            ^^^^^^^^^^^^^^^^^^^^^ the trait `serde::Serialize` is not implemented for `Game`
+     |
+     = note: required because of the requirements on the impl of `serde::Serialize` for `&Game`
+     = note: required because of the requirements on the impl of `serde::Serialize` for `(&[Object], &Game)`
+     = note: required by `serde_json::to_string`
 ----
 
-:encodable: https://doc.rust-lang.org/rustc-serialize/rustc_serialize/trait.Encodable.html
+:serialize: https://docs.serde.rs/serde/trait.Serialize.html
 
-Apparently, we need to implement {encodable}[the Encodable trait].
+Apparently, we need to implement {serialize}[the Serialize trait].
 That tells Rust how to encode each bit of data in our structs. We can
 do it manually, but it would be error-prone and *really tedious*.
-Luckily, we can just use `#[derive(RustcEncodable)]` and have Rust do
-it for us!
+Luckily, we can just use `#[derive(Serialize)]` and have Rust do it
+for us!
 
 [source]
 ----
-#[derive(RustcEncodable)]  // <1>
+#[derive(Serialize)]  // <1>
 struct Game {
     map: Map,
     log: Messages,
@@ -635,7 +651,7 @@ struct Game {
 <1> The Game struct can be now serialised... sort of
 
 If you try to compile it now, you'll see that the complaint has
-shifted from `Game` to `Object`. We'll need to derive `RustcEncodable`
+shifted from `Game` to `Object`. We'll need to derive `Serialize`
 for every struct and enum we'll be saving:
 
 * Game
@@ -676,7 +692,7 @@ fn load_game() -> Result<(Vec<Object>, Game), Box<Error>> {
     let mut json_save_state = String::new();
     let mut file = try! { File::open("savegame") };
     try! { file.read_to_string(&mut json_save_state) };
-    let result = try! { json::decode::<(Vec<Object>, Game)>(&json_save_state) };
+    let result = try! { serde_json::from_str::<(Vec<Object>, Game)>(&json_save_state) };
     Ok(result)
 }
 ----
@@ -701,8 +717,8 @@ match choice {
 }
 ----
 
-To make things compile, you'll have to derive `RustcDecodable` to
-every struct and enum that has the `RustcEncodable` trait, too.
+To make things compile, you'll have to derive `Deserialize` to every
+struct and enum that has the `Serialize` trait, too.
 
 After that, you should be able to load a previously saved game and
 continue playing!
@@ -732,11 +748,11 @@ There's also the {error}[Error trait] which represents an error and
 lets you get its textual description. All the file-handling
 serialisation errors in our save/load code implement Error.
 
-So, looking at `save_game`, the `json::encode` call returns either
-`Ok(String)` with the encoded value or
-`Err(rustc_serialize::json::EncoderError)` on failure. `File::create`
-and the `write_all` method work similarly although with different
-success and error types.
+So, looking at `save_game`, the `serde_json::to_string` call returns
+either `Ok(String)` with the encoded value or
+`Err(serde_json::error::Error)` on failure. `File::create` and the
+`write_all` method work similarly although with different success and
+error types.
 
 Since we can return more then one error type, we return `Box<Error>`
 instead. That lets us return any type that implements `Error` and the
