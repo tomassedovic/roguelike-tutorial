@@ -25,14 +25,14 @@ weapons or "head" for helmets.
 
 [source]
 ----
-#[derive(Clone, Copy, Debug, PartialEq, RustcDecodable, RustcEncodable)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 /// An object that can be equipped, yielding bonuses.
 struct Equipment {
     slot: Slot,
     equipped: bool,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, RustcDecodable, RustcEncodable)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 enum Slot {
     LeftHand,
     RightHand,

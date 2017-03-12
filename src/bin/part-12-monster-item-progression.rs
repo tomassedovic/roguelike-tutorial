@@ -1,6 +1,8 @@
 extern crate tcod;
 extern crate rand;
-extern crate rustc_serialize;
+extern crate serde;
+#[macro_use] extern crate serde_derive;
+extern crate serde_json;
 
 use std::cmp;
 
@@ -13,7 +15,6 @@ use tcod::colors::{self, Color};
 use tcod::input::{self, Event, Key, Mouse};
 use tcod::map::{Map as FovMap, FovAlgorithm};
 use rand::Rng;
-use rustc_serialize::json;
 
 // actual size of the window
 const SCREEN_WIDTH: i32 = 80;
@@ -69,7 +70,7 @@ type Map = Vec<Vec<Tile>>;
 type Messages = Vec<(String, Color)>;
 
 /// A tile of the map and its properties
-#[derive(Clone, Copy, Debug, RustcDecodable, RustcEncodable)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 struct Tile {
     blocked: bool,
     explored: bool,
@@ -115,7 +116,7 @@ impl Rect {
 
 /// This is a generic object: the player, a monster, an item, the stairs...
 /// It's always represented by a character on screen.
-#[derive(Debug, RustcDecodable, RustcEncodable)]
+#[derive(Debug, Serialize, Deserialize)]
 struct Object {
     x: i32,
     y: i32,
@@ -288,7 +289,7 @@ fn is_blocked(x: i32, y: i32, map: &Map, objects: &[Object]) -> bool {
 
 
 // combat-related properties and methods (monster, player, NPC).
-#[derive(Clone, Copy, Debug, PartialEq, RustcDecodable, RustcEncodable)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 struct Fighter {
     max_hp: i32,
     hp: i32,
@@ -298,7 +299,7 @@ struct Fighter {
     on_death: DeathCallback,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, RustcDecodable, RustcEncodable)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 enum DeathCallback {
     Player,
     Monster,
@@ -315,7 +316,7 @@ impl DeathCallback {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, RustcDecodable, RustcEncodable)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 enum Ai {
     Basic,
     Confused{previous_ai: Box<Ai>, num_turns: i32},
@@ -367,7 +368,7 @@ fn ai_confused(monster_id: usize, objects: &mut [Object], game: &mut Game,
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, RustcDecodable, RustcEncodable)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 enum Item {
     Heal,
     Lightning,
@@ -1244,7 +1245,7 @@ struct Tcod {
     mouse: Mouse,
 }
 
-#[derive(RustcDecodable, RustcEncodable)]
+#[derive(Serialize, Deserialize)]
 struct Game {
     map: Map,
     log: Messages,
@@ -1352,7 +1353,7 @@ fn play_game(objects: &mut Vec<Object>, game: &mut Game, tcod: &mut Tcod) {
 }
 
 fn save_game(objects: &[Object], game: &Game) -> Result<(), Box<Error>> {
-    let save_data = try! { json::encode(&(objects, game)) };
+    let save_data = try! { serde_json::to_string(&(objects, game)) };
     let mut file = try! { File::create("savegame") };
     try! { file.write_all(save_data.as_bytes()) };
     Ok(())
@@ -1362,7 +1363,7 @@ fn load_game() -> Result<(Vec<Object>, Game), Box<Error>> {
     let mut json_save_state = String::new();
     let mut file = try! { File::open("savegame") };
     try! { file.read_to_string(&mut json_save_state) };
-    let result = try! { json::decode::<(Vec<Object>, Game)>(&json_save_state) };
+    let result = try! { serde_json::from_str::<(Vec<Object>, Game)>(&json_save_state) };
     Ok(result)
 }
 
