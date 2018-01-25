@@ -550,9 +550,9 @@ and loading quite painless. Here's the teaser:
 [source]
 ----
 fn save_game(objects: &[Object], game: &Game) -> Result<(), Box<Error>> {  // <1><2>
-    let save_data = try! { serde_json::to_string(&(objects, game)) };  // <3>
-    let mut file = try! { File::create("savegame") };  // <4>
-    try!{ file.write_all(save_data.as_bytes()) }  // <5>
+    let save_data = serde_json::to_string(&(objects, game))?;  // <3>
+    let mut file = File::create("savegame")?;  // <4>
+    file.write_all(save_data.as_bytes())?;  // <5>
     Ok(())  // <6>
 }
 ----
@@ -566,8 +566,8 @@ game state
 
 :json: https://en.wikipedia.org/wiki/JSON
 
-Don't mind the `try!` blocks for now, they're for error handling and
-we'll explain them in a bit.
+Don't mind the `?` operator at the end of the line for now, it's there for error handling and
+we'll explain it in a bit.
 
 The first line (`serde_json::to_string(&some_data)`) takes the data we
 want to save (objects and the game state in our case) and turns it to
@@ -623,8 +623,8 @@ Unfortunately, it will fail:
 error[E0277]: the trait bound `Game: serde::Serialize` is not satisfied
     --> src/bin/part-10-menu-saving.rs:1140:28
      |
-1140 |     let save_data = try! { serde_json::to_string(&(objects, game)) };
-     |                            ^^^^^^^^^^^^^^^^^^^^^ the trait `serde::Serialize` is not implemented for `Game`
+1140 |     let save_data = serde_json::to_string(&(objects, game))?;
+     |                     ^^^^^^^^^^^^^^^^^^^^^ the trait `serde::Serialize` is not implemented for `Game`
      |
      = note: required because of the requirements on the impl of `serde::Serialize` for `&Game`
      = note: required because of the requirements on the impl of `serde::Serialize` for `(&[Object], &Game)`
@@ -690,9 +690,9 @@ it have? We need to add a `load_game` function, too:
 ----
 fn load_game() -> Result<(Vec<Object>, Game), Box<Error>> {
     let mut json_save_state = String::new();
-    let mut file = try! { File::open("savegame") };
-    try! { file.read_to_string(&mut json_save_state) };
-    let result = try! { serde_json::from_str::<(Vec<Object>, Game)>(&json_save_state) };
+    let mut file = File::open("savegame")?;
+    file.read_to_string(&mut json_save_state)?;
+    let result = serde_json::from_str::<(Vec<Object>, Game)>(&json_save_state)?;
     Ok(result)
 }
 ----
@@ -758,22 +758,31 @@ Since we can return more then one error type, we return `Box<Error>`
 instead. That lets us return any type that implements `Error` and the
 caller can get at the description and the raw error if they want.
 
-:try: https://doc.rust-lang.org/std/macro.try!.html
+:?: https://doc.rust-lang.org/book/second-edition/ch09-02-recoverable-errors-with-result.html#a-shortcut-for-propagating-errors-
 
-The {try}[try! macro] is just a convenient way of saying _"If this
-failed, return the function with error immediately, otherwise give me
-the success value"_.
+The {?}[? operator] is a convenient way of saying _"If this
+failed, return from the function with error immediately, otherwise give me
+the success value"_. The operator also does an extra conversion to the error 
+type specified in the functions return value.
 
-So `let mut file = try! { File::create("savegame") };` is equivalent
-to this:
+So `let mut file = File::create("savegame")?;` is almost equivalent
+to 
 
 [source]
 ----
-let mut file = match File::create("savegame") {
-    Ok(f) => f,
-    Err(e) => return Box::new(e),
-};
+fn save_game(objects: &[Object], game: &Game) -> Result<(), Box<Error>> {
+  ...
+  let mut file = match File::create("savegame") {
+      Ok(f) => f,
+      Err(e) => return Err(e)
+  };
+  ...
+}
 ----
+
+Only difference is that the `?` operator also does the conversion of the error to 
+whatever Error type the calling function asks for. In our case, since we're using
+`Box<Error>`, no conversion will actually be done.
 
 So, that explains the `save/load game` functions. But what about using
 their results?
