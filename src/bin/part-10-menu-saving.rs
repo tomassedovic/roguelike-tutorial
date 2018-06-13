@@ -1138,17 +1138,17 @@ fn play_game(objects: &mut Vec<Object>, game: &mut Game, tcod: &mut Tcod) {
 }
 
 fn save_game(objects: &[Object], game: &Game) -> Result<(), Box<Error>> {
-    let save_data = try! { serde_json::to_string(&(objects, game)) };
-    let mut file = try! { File::create("savegame") };
-    try! { file.write_all(save_data.as_bytes()) };
+    let save_data = serde_json::to_string(&(objects, game))?;
+    let mut file = File::create("savegame")?;
+    file.write_all(save_data.as_bytes())?;
     Ok(())
 }
 
 fn load_game() -> Result<(Vec<Object>, Game), Box<Error>> {
     let mut json_save_state = String::new();
-    let mut file = try! { File::open("savegame") };
-    try! { file.read_to_string(&mut json_save_state) };
-    let result = try! { serde_json::from_str::<(Vec<Object>, Game)>(&json_save_state) };
+    let mut file = File::open("savegame")?;
+    file.read_to_string(&mut json_save_state)?;
+    let result = serde_json::from_str::<(Vec<Object>, Game)>(&json_save_state)?;
     Ok(result)
 }
 
