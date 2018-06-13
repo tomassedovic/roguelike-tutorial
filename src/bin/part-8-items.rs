@@ -3,7 +3,6 @@ extern crate rand;
 
 use std::cmp;
 
-use std::ascii::AsciiExt;
 use tcod::console::*;
 use tcod::colors::{self, Color};
 use tcod::input::{self, Event, Key, Mouse};

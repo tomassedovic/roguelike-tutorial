@@ -309,16 +309,6 @@ if key.printable.is_alphabetic() {
 }
 ----
 
-:asciiext: http://doc.rust-lang.org/std/ascii/trait.AsciiExt.html
-
-We also need to bring the {asciiext}[AsciiExt trait] in scope for the
-`to_ascii_lowercase` method:
-
-[source]
-----
-use std::ascii::AsciiExt;
-----
-
 That was one really long function! But if you base most of your
 interfaces on this function, you won't need to create any more
 like it. As an example, here's how you show an inventory -- just build

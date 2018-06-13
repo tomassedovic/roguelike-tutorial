@@ -6,7 +6,6 @@ extern crate serde_json;
 
 use std::cmp;
 
-use std::ascii::AsciiExt;
 use std::io::{Read, Write};
 use std::fs::File;
 use std::error::Error;
