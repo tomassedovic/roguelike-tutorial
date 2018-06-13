@@ -1,16 +1,17 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    asciidoctor (1.5.2)
-    posix-spawn (0.3.11)
-    pygments.rb (0.6.3)
-      posix-spawn (~> 0.3.6)
-      yajl-ruby (~> 1.2.0)
-    yajl-ruby (1.2.1)
+    asciidoctor (1.5.7)
+    multi_json (1.13.1)
+    pygments.rb (1.2.1)
+      multi_json (>= 1.0.0)
 
 PLATFORMS
   ruby
 
 DEPENDENCIES
-  asciidoctor (= 1.5.2)
-  pygments.rb (~> 0.6.3)
+  asciidoctor (= 1.5.7)
+  pygments.rb (~> 1.2.1)
+
+BUNDLED WITH
+   1.13.7
