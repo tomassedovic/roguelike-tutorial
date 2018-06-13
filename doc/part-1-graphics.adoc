@@ -114,7 +114,7 @@ Rust, you need to have it in `Cargo.toml` under `[dependencies]`:
 [source,toml]
 ----
 [dependencies]
-tcod = "0.11"
+tcod = "0.12"
 ----
 
 and use `extern crate` in your Rust file. Rust libraries are called
