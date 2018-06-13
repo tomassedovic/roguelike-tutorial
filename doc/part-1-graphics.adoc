@@ -85,6 +85,19 @@ Go to the following link and follow the instructions for your platform (Windows,
 https://github.com/tomassedovic/tcod-rs#how-to-use-this
 
 
+=== Adding the font file
+
+We will be using the font `arial10x10.png` that ships with libtcod.
+
+You can download it from here:
+
+https://github.com/tomassedovic/tcod-rs/raw/master/fonts/arial10x10.png
+
+Feel free to check out the other fonts in there and pick the one you like.
+
+Be sure to put it in your game directory -- next to `Cargo.toml`!
+
+
 == Showing the @ on screen
 
 Now let's open the `src/main.rs` file and tell it to use libtcod. Put
@@ -188,6 +201,10 @@ First, we're setting up a font. Libtcod uses bitmap fonts of various
 formats. Calling the `font` methods lets us set our own font using a
 file name and a font layout. `font_type` is another option for loading
 a font.
+
+The font must be in the root of your project, next to `Cargo.toml`. If you've
+picked a different font than `arial10x10.png`, make sure to put the right
+filename in your `font` method call.
 
 Next we set the window dimensions (width and height in characters) and
 the text displayed in the window's title bar.
