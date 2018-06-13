@@ -580,11 +580,11 @@ and we'll also enable the "serialization" feature in the _tcod_ crate:
 [source,toml]
 ----
 [dependencies]
-tcod = { version = "0.11", features = ["serialization"] }
+tcod = { version = "0.12", features = ["serialization"] }
 rand = "0.3"
-serde = "0.9"
-serde_derive = "0.9"
-serde_json = "0.9"
+serde = "1.0"
+serde_derive = "1.0"
+serde_json = "1.0"
 ----
 
 The `serde` crate provides the main functionality for serializing and
@@ -762,11 +762,11 @@ caller can get at the description and the raw error if they want.
 
 The {?}[? operator] is a convenient way of saying _"If this
 failed, return from the function with error immediately, otherwise give me
-the success value"_. The operator also does an extra conversion to the error 
+the success value"_. The operator also does an extra conversion to the error
 type specified in the functions return value.
 
 So `let mut file = File::create("savegame")?;` is almost equivalent
-to 
+to
 
 [source]
 ----
@@ -780,7 +780,7 @@ fn save_game(objects: &[Object], game: &Game) -> Result<(), Box<Error>> {
 }
 ----
 
-Only difference is that the `?` operator also does the conversion of the error to 
+Only difference is that the `?` operator also does the conversion of the error to
 whatever Error type the calling function asks for. In our case, since we're using
 `Box<Error>`, no conversion will actually be done.
 

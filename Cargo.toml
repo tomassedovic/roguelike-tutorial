@@ -6,8 +6,8 @@ license = "WTFPL"
 readme = "README"
 
 [dependencies]
-tcod = { version = "0.11", features = ["serialization"] }
+tcod = { version = "0.12", features = ["serialization"] }
 rand = "0.3"
-serde = "0.9"
-serde_derive = "0.9"
-serde_json = "0.9"
+serde = "1.0"
+serde_derive = "1.0"
+serde_json = "1.0"
