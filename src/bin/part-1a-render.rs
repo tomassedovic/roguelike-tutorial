@@ -22,6 +22,7 @@ fn main() {
 
     while !root.window_closed() {
         root.set_default_foreground(colors::WHITE);
+        root.clear();
         root.put_char(1, 1, '@', BackgroundFlag::None);
         root.flush();
         root.wait_for_keypress(true);
