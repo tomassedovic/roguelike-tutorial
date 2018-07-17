@@ -273,6 +273,15 @@ screen. These little formulae calculate what the position of the
 top-left corner of the window should be, so that it's centered on the
 screen.
 
+
+[source]
+----
+// blit the contents of "window" to the root console
+let x = SCREEN_WIDTH / 2 - width / 2;
+let y = SCREEN_HEIGHT / 2 - height / 2;
+tcod::console::blit(&mut window, (0, 0), (width, height), root, (x, y), 1.0, 0.7);
+----
+
 The last 2 parameters to `blit` hadn't been used in our game before:
 according to the libtcod docs, they define the foreground and
 background transparency, respectively. The first is `1.0` so the
