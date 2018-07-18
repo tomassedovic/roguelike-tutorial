@@ -5,7 +5,10 @@ docs:
 	for f in src/bin/*.rs; do cp "$$f" "target/tutorial/$$(basename $$f.txt)"; done
 	bundle exec asciidoctor --doctype article --destination-dir target/tutorial doc/*.adoc
 
-publish: docs
+docs-docker:
+	docker run --rm  -v "$$PWD":/in:z -v "$$PWD/target/tutorial":/out:z roguelike-tutorial
+
+publish:
 	@git diff-index --quiet HEAD || { echo "Error: the repository is dirty."; exit 1; }
 	rm -rf .deploy
 	cp -r target/tutorial .deploy
@@ -25,4 +28,4 @@ preview: docs
 clean:
 	rm -rf target/tutorial
 
-.PHONY: all docs preview clean publish
+.PHONY: all docs docs-docker preview clean publish
