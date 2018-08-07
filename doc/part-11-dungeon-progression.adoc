@@ -59,7 +59,7 @@ fn next_level(tcod: &mut Tcod, objects: &mut Vec<Object>, game: &mut Game) {
     game.log.add("After a rare moment of peace, you descend deeper into \
                   the heart of the dungeon...", colors::RED);
     game.map = make_map(objects);
-    initialise_fov(&game.map, &mut tcod.fov);
+    initialise_fov(&game.map, tcod);
 }
 ----
 
