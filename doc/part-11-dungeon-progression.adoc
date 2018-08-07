@@ -38,7 +38,7 @@ easy to add this check at the end of `handle_keys`:
         object.pos() == objects[PLAYER].pos() && object.name == "stairs"
     });
     if player_on_stairs {
-        next_level(game, objects, tcod);
+        next_level(tcod, objects, game);
     }
     DidntTakeTurn
 }
