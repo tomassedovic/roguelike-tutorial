@@ -99,7 +99,7 @@ let mut monster = match monster_choice.ind_sample(&mut rand::thread_rng()) {
 The `"orc"` and `"troll"` blocks will contain the same code as the
 `if/else` blocks before.
 
-The `_ => unreachable!()` unreachable branch is there before in Rust,
+The `_ => unreachable!()` unreachable branch is there because in Rust,
 all `match` statements must be exhaustive -- they must cover all the
 possibilities. Since we're matching on a string here, we need to
 handle the case when the string is neither "orc" nor "troll".
