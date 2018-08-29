@@ -179,7 +179,7 @@ Now update `render_all` to take it into account. When building the
 .filter(|o| {
     tcod.fov.is_in_fov(o.x, o.y) ||
         (o.always_visible && game.map[o.x as usize][o.y as usize].explored)
-})
+}).collect();
 ----
 
 We keep the old `is_in_fov` test, but now we can also show the object
