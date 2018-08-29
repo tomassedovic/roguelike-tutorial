@@ -3,10 +3,7 @@ all: clean docs
 docs:
 	@mkdir -p target/tutorial
 	for f in src/bin/*.rs; do cp "$$f" "target/tutorial/$$(basename $$f.txt)"; done
-	bundle exec asciidoctor --doctype article --destination-dir target/tutorial doc/*.adoc
-
-docs-docker:
-	docker run --rm  -v "$$PWD":/in:z -v "$$PWD/target/tutorial":/out:z roguelike-tutorial
+	asciidoctor --doctype article --destination-dir target/tutorial doc/*.adoc
 
 publish:
 	@git diff-index --quiet HEAD || { echo "Error: the repository is dirty."; exit 1; }
