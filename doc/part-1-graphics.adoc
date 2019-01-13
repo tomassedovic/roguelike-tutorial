@@ -224,7 +224,7 @@ block for input (i.e. nothing happens until the player presses a key),
 it will have no effect.
 
 And speaking of game loops, now's the time to add one! Let's render a
-white `@` on the screen until until the libtcod window gets closed:
+white `@` on the screen until the libtcod window gets closed:
 
 [source,rust]
 ----
