@@ -312,7 +312,7 @@ it accepts three parameters -- the root console (of type
 `i32`) -- and it returns a boolean value. `true` says "exit the game",
 `false` means "keep going".
 
-The &mut` bits before the types are borrowing operators. You can read
+The `&mut` bits before the types are borrowing operators. You can read
 about them (and the ownership they're strongly tied to) in the Rust
 book:
 
