@@ -184,8 +184,8 @@ If we just put the `!is_blocked(self.x + dx, self.y + dy, map,
 objects)` check into the method and add `objects` as a function
 parameter, Rust will not let us use it.
 
-The method will compile just fine, but if you try calling it in
-`handle_keys`, it will not compile:
+This method will compile just fine, but if you try calling it in
+`handle_keys`, the program will not compile:
 
 [source,rust]
 ----
