@@ -90,13 +90,13 @@ fn main() {
         // clear the screen of the previous frame
         root.clear();
 
-        // blit the contents of "con" to the root console and present it
-        blit(&mut con, (0, 0), (SCREEN_WIDTH, SCREEN_HEIGHT), &mut root, (0, 0), 1.0, 1.0);
-        root.flush();
-
         for object in &objects {
             object.draw(&mut con);
         }
+
+        // blit the contents of "con" to the root console and present it
+        blit(&mut con, (0, 0), (SCREEN_WIDTH, SCREEN_HEIGHT), &mut root, (0, 0), 1.0, 1.0);
+        root.flush();
 
         // handle keys and exit game if needed
         let player = &mut objects[0];
