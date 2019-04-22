@@ -45,7 +45,7 @@ checks.
 It would be much nicer if we could define a _loot table_. Luckily, the
 `rand` crate supports this using the `WeightedChoice` distribution:
 
-https://doc.rust-lang.org/rand/rand/distributions/index.html
+https://docs.rs/rand/~0/rand/distributions/index.html
 
 First, we specify the random table as an array of `WeightedChoice`
 structs:

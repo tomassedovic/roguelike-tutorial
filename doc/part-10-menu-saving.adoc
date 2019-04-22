@@ -758,7 +758,7 @@ Since we can return more then one error type, we return `Box<Error>`
 instead. That lets us return any type that implements `Error` and the
 caller can get at the description and the raw error if they want.
 
-:?: https://doc.rust-lang.org/book/second-edition/ch09-02-recoverable-errors-with-result.html#a-shortcut-for-propagating-errors-
+:?: https://doc.rust-lang.org/book/ch09-02-recoverable-errors-with-result.html?highlight=with,result#recoverable-errors-with--result
 
 The {?}[? operator] is a convenient way of saying _"If this
 failed, return from the function with error immediately, otherwise give me
