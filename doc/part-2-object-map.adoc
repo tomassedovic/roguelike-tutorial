@@ -27,8 +27,8 @@ Put this right after we initialise the root console:
 let mut con = Offscreen::new(SCREEN_WIDTH, SCREEN_HEIGHT);
 ----
 
-Now call the `set_default_foreground` and `put_char` methods on `con`
-instead of `root`.
+Now call the `set_default_foreground`, `clear` and `put_char` methods
+on `con` instead of `root`.
 
 And finally, blit the contents of the new console to the root console
 to display them. The `blit` function takes a lot of parameters, but

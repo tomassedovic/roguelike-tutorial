@@ -50,7 +50,7 @@ fn main() {
     while !root.window_closed() {
         root.set_default_foreground(colors::WHITE);
         root.clear();
-        root.put_char(1, 1, '@', BackgroundFlag::None);
+        root.put_char(player_x, player_y, '@', BackgroundFlag::None);
         root.flush();
 
         // handle keys and exit game if needed

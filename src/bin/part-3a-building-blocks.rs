@@ -196,7 +196,7 @@ fn main() {
 
     while !root.window_closed() {
         // clear the screen of the previous frame
-        root.clear();
+        con.clear();
 
         // render the screen
         render_all(&mut root, &mut con, &objects, &map);

@@ -295,7 +295,7 @@ fn main() {
 
     while !root.window_closed() {
         // clear the screen of the previous frame
-        root.clear();
+        con.clear();
 
         // render the screen
         let fov_recompute = previous_player_position != (objects[0].x, objects[0].y);

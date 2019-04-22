@@ -88,7 +88,7 @@ fn main() {
 
     while !root.window_closed() {
         // clear the screen of the previous frame
-        root.clear();
+        con.clear();
 
         for object in &objects {
             object.draw(&mut con);

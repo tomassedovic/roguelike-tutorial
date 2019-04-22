@@ -1096,7 +1096,7 @@ fn play_game(objects: &mut Vec<Object>, game: &mut Game, tcod: &mut Tcod) {
 
     while !tcod.root.window_closed() {
         // clear the screen of the previous frame
-        tcod.root.clear();
+        tcod.con.clear();
 
         match input::check_for_event(input::MOUSE | input::KEY_PRESS) {
             Some((_, Event::Mouse(m))) => tcod.mouse = m,
