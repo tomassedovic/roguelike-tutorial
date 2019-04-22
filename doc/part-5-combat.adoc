@@ -262,9 +262,9 @@ it rather errs on the side of safety.
 
 You can read more in the Rust book's chapters on ownership and borrowing:
 
-http://doc.rust-lang.org/book/ownership.html
+https://doc.rust-lang.org/book/ch04-00-understanding-ownership.html
 
-http://doc.rust-lang.org/book/references-and-borrowing.html
+https://doc.rust-lang.org/book/ch04-02-references-and-borrowing.html
 
 
 === All's well

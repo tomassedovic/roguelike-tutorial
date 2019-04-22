@@ -7,7 +7,7 @@ ifdef::env-github[:outfilesuffix: .adoc]
 :tcod-rs: https://github.com/tomassedovic/tcod-rs
 :console: http://tomassedovic.github.io/tcod-rs/tcod/console/index.html
 :colors: http://tomassedovic.github.io/tcod-rs/tcod/colors/index.html
-:match: http://doc.rust-lang.org/book/match.html
+:match: https://doc.rust-lang.org/book/ch06-02-match.html
 :key: http://tomassedovic.github.io/tcod-rs/tcod/input/struct.Key.html
 
 <<index#,Back to the index.>>
@@ -316,9 +316,9 @@ The `&mut` bits before the types are borrowing operators. You can read
 about them (and the ownership they're strongly tied to) in the Rust
 book:
 
-http://doc.rust-lang.org/book/ownership.html
+https://doc.rust-lang.org/book/ch04-00-understanding-ownership.html
 
-http://doc.rust-lang.org/book/references-and-borrowing.html
+https://doc.rust-lang.org/book/ch04-02-references-and-borrowing.html
 
 We must pass `root` as a borrowed value because it would be consumed
 by the first call to `handle_keys` otherwise.
