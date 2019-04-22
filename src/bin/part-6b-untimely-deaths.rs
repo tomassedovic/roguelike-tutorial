@@ -119,11 +119,6 @@ impl Object {
         con.put_char(self.x, self.y, self.char, BackgroundFlag::None);
     }
 
-    /// Erase the character that represents this object
-    pub fn clear(&self, con: &mut Console) {
-        con.put_char(self.x, self.y, ' ', BackgroundFlag::None);
-    }
-
     pub fn pos(&self) -> (i32, i32) {
         (self.x, self.y)
     }
@@ -383,30 +378,30 @@ fn render_all(root: &mut Root, con: &mut Offscreen, objects: &[Object], map: &mu
         // recompute FOV if needed (the player moved or something)
         let player = &objects[PLAYER];
         fov_map.compute_fov(player.x, player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALGO);
+    }
 
-        // go through all tiles, and set their background color
-        for y in 0..MAP_HEIGHT {
-            for x in 0..MAP_WIDTH {
-                let visible = fov_map.is_in_fov(x, y);
-                let wall = map[x as usize][y as usize].block_sight;
-                let color = match (visible, wall) {
-                    // outside of field of view:
-                    (false, true) => COLOR_DARK_WALL,
-                    (false, false) => COLOR_DARK_GROUND,
-                    // inside fov:
-                    (true, true) => COLOR_LIGHT_WALL,
-                    (true, false) => COLOR_LIGHT_GROUND,
-                };
+    // go through all tiles, and set their background color
+    for y in 0..MAP_HEIGHT {
+        for x in 0..MAP_WIDTH {
+            let visible = fov_map.is_in_fov(x, y);
+            let wall = map[x as usize][y as usize].block_sight;
+            let color = match (visible, wall) {
+                // outside of field of view:
+                (false, true) => COLOR_DARK_WALL,
+                (false, false) => COLOR_DARK_GROUND,
+                // inside fov:
+                (true, true) => COLOR_LIGHT_WALL,
+                (true, false) => COLOR_LIGHT_GROUND,
+            };
 
-                let explored = &mut map[x as usize][y as usize].explored;
-                if visible {
-                    // since it's visible, explore it
-                    *explored = true;
-                }
-                if *explored {
-                    // show explored tiles only (any visible tile is explored already)
-                    con.set_char_background(x, y, color, BackgroundFlag::Set);
-                }
+            let explored = &mut map[x as usize][y as usize].explored;
+            if visible {
+                // since it's visible, explore it
+                *explored = true;
+            }
+            if *explored {
+                // show explored tiles only (any visible tile is explored already)
+                con.set_char_background(x, y, color, BackgroundFlag::Set);
             }
         }
     }
@@ -554,16 +549,14 @@ fn main() {
     let mut previous_player_position = (-1, -1);
 
     while !root.window_closed() {
+        // clear the screen of the previous frame
+        root.clear();
+        
         // render the screen
         let fov_recompute = previous_player_position != (objects[PLAYER].pos());
         render_all(&mut root, &mut con, &objects, &mut map, &mut fov_map, fov_recompute);
 
         root.flush();
-
-        // erase all objects at their old locations, before they move
-        for object in &objects {
-            object.clear(&mut con)
-        }
 
         // handle keys and exit game if needed
         previous_player_position = objects[PLAYER].pos();

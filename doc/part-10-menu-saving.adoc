@@ -338,6 +338,9 @@ fn play_game(objects: &mut Vec<Object>, game: &mut Game, tcod: &mut Tcod) {
     let mut key = Default::default();
 
     while !tcod.root.window_closed() {
+        // clear the screen of the previous frame
+        tcod.root.clear();
+
         match input::check_for_event(input::MOUSE | input::KEY_PRESS) {
             Some((_, Event::Mouse(m))) => tcod.mouse = m,
             Some((_, Event::Key(k))) => key = k,
@@ -349,11 +352,6 @@ fn play_game(objects: &mut Vec<Object>, game: &mut Game, tcod: &mut Tcod) {
         render_all(tcod, &objects, game, fov_recompute);
 
         tcod.root.flush();
-
-        // erase all objects at their old locations, before they move
-        for object in objects.iter_mut() {
-            object.clear(&mut tcod.con)
-        }
 
         // handle keys and exit game if needed
         previous_player_position = objects[PLAYER].pos();

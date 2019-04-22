@@ -40,11 +40,6 @@ impl Object {
         con.set_default_foreground(self.color);
         con.put_char(self.x, self.y, self.char, BackgroundFlag::None);
     }
-
-    /// Erase the character that represents this object
-    pub fn clear(&self, con: &mut Console) {
-        con.put_char(self.x, self.y, ' ', BackgroundFlag::None);
-    }
 }
 
 fn handle_keys(root: &mut Root, player: &mut Object) -> bool {
@@ -92,18 +87,15 @@ fn main() {
     let mut objects = [player, npc];
 
     while !root.window_closed() {
-        // draw all objects in the list
-        for object in &objects {
-            object.draw(&mut con);
-        }
+        // clear the screen of the previous frame
+        root.clear();
 
         // blit the contents of "con" to the root console and present it
         blit(&mut con, (0, 0), (SCREEN_WIDTH, SCREEN_HEIGHT), &mut root, (0, 0), 1.0, 1.0);
         root.flush();
 
-        // erase all objects at their old locations, before they move
         for object in &objects {
-            object.clear(&mut con)
+            object.draw(&mut con);
         }
 
         // handle keys and exit game if needed
