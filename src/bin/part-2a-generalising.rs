@@ -1,14 +1,13 @@
 extern crate tcod;
 
-use tcod::console::*;
 use tcod::colors::{self, Color};
+use tcod::console::*;
 
 // actual size of the window
 const SCREEN_WIDTH: i32 = 80;
 const SCREEN_HEIGHT: i32 = 50;
 
-const LIMIT_FPS: i32 = 20;  // 20 frames-per-second maximum
-
+const LIMIT_FPS: i32 = 20; // 20 frames-per-second maximum
 
 /// This is a generic object: the player, a monster, an item, the stairs...
 /// It's always represented by a character on screen.
@@ -48,12 +47,16 @@ fn handle_keys(root: &mut Root, player: &mut Object) -> bool {
 
     let key = root.wait_for_keypress(true);
     match key {
-        Key { code: Enter, alt: true, .. } => {
+        Key {
+            code: Enter,
+            alt: true,
+            ..
+        } => {
             // Alt+Enter: toggle fullscreen
             let fullscreen = root.is_fullscreen();
             root.set_fullscreen(!fullscreen);
         }
-        Key { code: Escape, .. } => return true,  // exit game
+        Key { code: Escape, .. } => return true, // exit game
 
         // movement keys
         Key { code: Up, .. } => player.move_by(0, -1),
@@ -61,7 +64,7 @@ fn handle_keys(root: &mut Root, player: &mut Object) -> bool {
         Key { code: Left, .. } => player.move_by(-1, 0),
         Key { code: Right, .. } => player.move_by(1, 0),
 
-        _ => {},
+        _ => {}
     }
 
     false
@@ -95,14 +98,22 @@ fn main() {
         }
 
         // blit the contents of "con" to the root console and present it
-        blit(&mut con, (0, 0), (SCREEN_WIDTH, SCREEN_HEIGHT), &mut root, (0, 0), 1.0, 1.0);
+        blit(
+            &mut con,
+            (0, 0),
+            (SCREEN_WIDTH, SCREEN_HEIGHT),
+            &mut root,
+            (0, 0),
+            1.0,
+            1.0,
+        );
         root.flush();
 
         // handle keys and exit game if needed
         let player = &mut objects[0];
         let exit = handle_keys(&mut root, player);
         if exit {
-            break
+            break;
         }
     }
 }

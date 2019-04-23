@@ -1,7 +1,7 @@
 extern crate tcod;
 
-use tcod::console::*;
 use tcod::colors;
+use tcod::console::*;
 
 // actual size of the window
 const SCREEN_WIDTH: i32 = 80;
@@ -15,7 +15,11 @@ fn handle_keys(root: &mut Root, player_x: &mut i32, player_y: &mut i32) -> bool 
 
     let key = root.wait_for_keypress(true);
     match key {
-        Key { code: Enter, alt: true, .. } => {
+        Key {
+            code: Enter,
+            alt: true,
+            ..
+        } => {
             // Alt+Enter: toggle fullscreen
             let fullscreen = root.is_fullscreen();
             root.set_fullscreen(!fullscreen);

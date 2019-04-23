@@ -1,7 +1,7 @@
 extern crate tcod;
 
-use tcod::console::*;
 use tcod::colors::{self, Color};
+use tcod::console::*;
 
 // actual size of the window
 const SCREEN_WIDTH: i32 = 80;
@@ -11,10 +11,14 @@ const SCREEN_HEIGHT: i32 = 50;
 const MAP_WIDTH: i32 = 80;
 const MAP_HEIGHT: i32 = 45;
 
-const LIMIT_FPS: i32 = 20;  // 20 frames-per-second maximum
+const LIMIT_FPS: i32 = 20; // 20 frames-per-second maximum
 
 const COLOR_DARK_WALL: Color = Color { r: 0, g: 0, b: 100 };
-const COLOR_DARK_GROUND: Color = Color { r: 50, g: 50, b: 150 };
+const COLOR_DARK_GROUND: Color = Color {
+    r: 50,
+    g: 50,
+    b: 150,
+};
 
 type Map = Vec<Vec<Tile>>;
 
@@ -27,11 +31,17 @@ struct Tile {
 
 impl Tile {
     pub fn empty() -> Self {
-        Tile{blocked: false, block_sight: false}
+        Tile {
+            blocked: false,
+            block_sight: false,
+        }
     }
 
     pub fn wall() -> Self {
-        Tile{blocked: true, block_sight: true}
+        Tile {
+            blocked: true,
+            block_sight: true,
+        }
     }
 }
 
@@ -109,12 +119,16 @@ fn handle_keys(root: &mut Root, player: &mut Object, map: &Map) -> bool {
 
     let key = root.wait_for_keypress(true);
     match key {
-        Key { code: Enter, alt: true, .. } => {
+        Key {
+            code: Enter,
+            alt: true,
+            ..
+        } => {
             // Alt+Enter: toggle fullscreen
             let fullscreen = root.is_fullscreen();
             root.set_fullscreen(!fullscreen);
         }
-        Key { code: Escape, .. } => return true,  // exit game
+        Key { code: Escape, .. } => return true, // exit game
 
         // movement keys
         Key { code: Up, .. } => player.move_by(0, -1, map),
@@ -122,7 +136,7 @@ fn handle_keys(root: &mut Root, player: &mut Object, map: &Map) -> bool {
         Key { code: Left, .. } => player.move_by(-1, 0, map),
         Key { code: Right, .. } => player.move_by(1, 0, map),
 
-        _ => {},
+        _ => {}
     }
 
     false
@@ -163,7 +177,7 @@ fn main() {
         let player = &mut objects[0];
         let exit = handle_keys(&mut root, player, &map);
         if exit {
-            break
+            break;
         }
     }
 }
