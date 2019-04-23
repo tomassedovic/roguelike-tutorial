@@ -934,6 +934,9 @@ function as well:</p>
 <span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">key</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nb">Default</span>::<span class="tok-n">default</span><span class="tok-p">();</span><span class="tok-w"></span>
 
 <span class="tok-w">    </span><span class="tok-k">while</span><span class="tok-w"> </span><span class="tok-o">!</span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">window_closed</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-c1">// clear the screen of the previous frame</span>
+<span class="tok-w">        </span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">con</span><span class="tok-p">.</span><span class="tok-n">clear</span><span class="tok-p">();</span><span class="tok-w"></span>
+
 <span class="tok-w">        </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-n">input</span>::<span class="tok-n">check_for_event</span><span class="tok-p">(</span><span class="tok-n">input</span>::<span class="tok-n">MOUSE</span><span class="tok-w"> </span><span class="tok-o">|</span><span class="tok-w"> </span><span class="tok-n">input</span>::<span class="tok-n">KEY_PRESS</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">            </span><span class="tok-nb">Some</span><span class="tok-p">((</span><span class="tok-n">_</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">Event</span>::<span class="tok-n">Mouse</span><span class="tok-p">(</span><span class="tok-n">m</span><span class="tok-p">)))</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">mouse</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">m</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">            </span><span class="tok-nb">Some</span><span class="tok-p">((</span><span class="tok-n">_</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">Event</span>::<span class="tok-n">Key</span><span class="tok-p">(</span><span class="tok-n">k</span><span class="tok-p">)))</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">key</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">k</span><span class="tok-p">,</span><span class="tok-w"></span>
@@ -945,11 +948,6 @@ function as well:</p>
 <span class="tok-w">        </span><span class="tok-n">render_all</span><span class="tok-p">(</span><span class="tok-n">tcod</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-n">objects</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">fov_recompute</span><span class="tok-p">);</span><span class="tok-w"></span>
 
 <span class="tok-w">        </span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">flush</span><span class="tok-p">();</span><span class="tok-w"></span>
-
-<span class="tok-w">        </span><span class="tok-c1">// erase all objects at their old locations, before they move</span>
-<span class="tok-w">        </span><span class="tok-k">for</span><span class="tok-w"> </span><span class="tok-n">object</span><span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">.</span><span class="tok-n">iter_mut</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-n">object</span><span class="tok-p">.</span><span class="tok-n">clear</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">con</span><span class="tok-p">)</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-p">}</span><span class="tok-w"></span>
 
 <span class="tok-w">        </span><span class="tok-c1">// handle keys and exit game if needed</span>
 <span class="tok-w">        </span><span class="tok-n">previous_player_position</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-n">PLAYER</span><span class="tok-p">].</span><span class="tok-n">pos</span><span class="tok-p">();</span><span class="tok-w"></span>
@@ -1447,7 +1445,7 @@ instead. That lets us return any type that implements <code>Error</code> and the
 caller can get at the description and the raw error if they want.</p>
 </div>
 <div class="paragraph">
-<p>:?: <a href="https://doc.rust-lang.org/book/second-edition/ch09-02-recoverable-errors-with-result.html#a-shortcut-for-propagating-errors-" class="bare">https://doc.rust-lang.org/book/second-edition/ch09-02-recoverable-errors-with-result.html#a-shortcut-for-propagating-errors-</a></p>
+<p>:?: <a href="https://doc.rust-lang.org/book/ch09-02-recoverable-errors-with-result.html?highlight=with,result#recoverable-errors-with&#8212;&#8203;result" class="bare">https://doc.rust-lang.org/book/ch09-02-recoverable-errors-with-result.html?highlight=with,result#recoverable-errors-with&#8212;&#8203;result</a></p>
 </div>
 <div class="paragraph">
 <p>The {?}[? operator] is a convenient way of saying <em>"If this
@@ -1565,7 +1563,7 @@ we had to learn a ton of new stuff to understand it.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-01-13 15:16:28 CET
+Last updated 2019-04-23 21:28:46 CEST
 </div>
 </div>
 </body>

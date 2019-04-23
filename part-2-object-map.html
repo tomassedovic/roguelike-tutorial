@@ -542,8 +542,8 @@ into the root. It will occupy the whole screen for now.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>Now call the <code>set_default_foreground</code> and <code>put_char</code> methods on <code>con</code>
-instead of <code>root</code>.</p>
+<p>Now call the <code>set_default_foreground</code>, <code>clear</code> and <code>put_char</code> methods
+on <code>con</code> instead of <code>root</code>.</p>
 </div>
 <div class="paragraph">
 <p>And finally, blit the contents of the new console to the root console
@@ -580,9 +580,9 @@ as a game <code>Object</code>. It will hold all position and display information
 one instance of the <code>Object</code> struct&#8201;&#8212;&#8201;it&#8217;s general enough that you
 can re-use it to define items on the floor, monsters, doors, stairs;
 anything representable by a character on the screen. Here&#8217;s the class,
-with the initialization, and three common methods <code>move_by</code>, <code>draw</code>
-and <code>clear</code>. The code for drawing and erasing is the same as the one
-we used for the player earlier.</p>
+with the initialization, and two common methods <code>move_by</code> and <code>draw</code>.
+The code for drawing and erasing is the same as the one we used for
+the player earlier.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -613,11 +613,6 @@ we used for the player earlier.</p>
 <span class="tok-w">    </span><span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">fn</span> <span class="tok-nf">draw</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-bp">self</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">con</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Console</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-n">con</span><span class="tok-p">.</span><span class="tok-n">set_default_foreground</span><span class="tok-p">(</span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">color</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-n">con</span><span class="tok-p">.</span><span class="tok-n">put_char</span><span class="tok-p">(</span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">x</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">y</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">char</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">BackgroundFlag</span>::<span class="tok-nb">None</span><span class="tok-p">);</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"></span>
-
-<span class="tok-w">    </span><span class="tok-sd">/// Erase the character that represents this object</span>
-<span class="tok-w">    </span><span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">fn</span> <span class="tok-nf">clear</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-bp">self</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">con</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Console</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-n">con</span><span class="tok-p">.</span><span class="tok-n">put_char</span><span class="tok-p">(</span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">x</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">y</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-sc">&#39; &#39;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">BackgroundFlag</span>::<span class="tok-nb">None</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-p">}</span><span class="tok-w"></span></code></pre>
 </div>
@@ -658,17 +653,7 @@ player object.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>Next, the main loop will now clear all objects like this:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">for</span><span class="tok-w"> </span><span class="tok-n">object</span><span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-n">objects</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">object</span><span class="tok-p">.</span><span class="tok-n">clear</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">con</span><span class="tok-p">)</span><span class="tok-w"></span>
-<span class="tok-p">}</span><span class="tok-w"></span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>and draw them like so:</p>
+<p>Next, the main loop will now draw all objects like so:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -938,7 +923,7 @@ supposed to be covered with spikes).
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-01-13 15:16:28 CET
+Last updated 2019-04-23 21:28:46 CEST
 </div>
 </div>
 </body>

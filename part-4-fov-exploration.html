@@ -627,8 +627,7 @@ position could change):</p>
 </div>
 <div class="paragraph">
 <p>Now we need to change the rendering code to actually recompute FOV and
-display the result. We&#8217;re doing it there, because if the FOV doesn&#8217;t
-need to be recomputed, we don&#8217;t need to render the map at all!</p>
+display the result.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -641,8 +640,8 @@ need to be recomputed, we don&#8217;t need to render the map at all!</p>
 </div>
 <div class="paragraph">
 <p>As you can see, we&#8217;re using all the constants we defined earlier.
-Now move the code that renders the map at the end of that <code>if</code>. We&#8217;ll
-extend it to render the tiles in FOV with their <code>light</code> colours:</p>
+We&#8217;ll extend the code that render the tiles so that if they are in the FOV
+they will get their <code>light</code> colours:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -786,7 +785,7 @@ for now.
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-01-13 15:16:28 CET
+Last updated 2019-04-23 21:28:46 CEST
 </div>
 </div>
 </body>

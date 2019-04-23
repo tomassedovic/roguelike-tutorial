@@ -808,6 +808,9 @@ colour everything will be drawn with unless specified otherwise.</p>
 as the <code>Color</code> struct that lets you use your own.</p>
 </div>
 <div class="paragraph">
+<p>Then we <code>clear</code> the console of anything that we drew on the previous frame.</p>
+</div>
+<div class="paragraph">
 <p>Next we draw the <code>@</code> character at the coordinates <code>1, 1</code> on the
 screen. The <code>0, 0</code> coordinate is at the top left corner of the window.</p>
 </div>
@@ -890,10 +893,10 @@ about them (and the ownership they&#8217;re strongly tied to) in the Rust
 book:</p>
 </div>
 <div class="paragraph">
-<p><a href="http://doc.rust-lang.org/book/ownership.html" class="bare">http://doc.rust-lang.org/book/ownership.html</a></p>
+<p><a href="https://doc.rust-lang.org/book/ch04-00-understanding-ownership.html" class="bare">https://doc.rust-lang.org/book/ch04-00-understanding-ownership.html</a></p>
 </div>
 <div class="paragraph">
-<p><a href="http://doc.rust-lang.org/book/references-and-borrowing.html" class="bare">http://doc.rust-lang.org/book/references-and-borrowing.html</a></p>
+<p><a href="https://doc.rust-lang.org/book/ch04-02-references-and-borrowing.html" class="bare">https://doc.rust-lang.org/book/ch04-02-references-and-borrowing.html</a></p>
 </div>
 <div class="paragraph">
 <p>We must pass <code>root</code> as a borrowed value because it would be consumed
@@ -954,7 +957,7 @@ value that matches <em>everything else</em>. That&#8217;s what <code>_ &#8658; {
 does.</p>
 </div>
 <div class="paragraph">
-<p>You can <a href="http://doc.rust-lang.org/book/match.html">read more about match in the Rust book</a>.</p>
+<p>You can <a href="https://doc.rust-lang.org/book/ch06-02-match.html">read more about match in the Rust book</a>.</p>
 </div>
 <div class="paragraph">
 <p>We could end here, but since we&#8217;re doing keyboard stuff anyway, let&#8217;s
@@ -1018,15 +1021,6 @@ references.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>And we also need to clear the <em>previous</em> player position&#8201;&#8212;&#8201;otherwise we&#8217;d leave a trail of <code>@</code> on the screen! Put this right
-before the <code>let exit = handle_keys(&#8230;&#8203;)</code> call:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">put_char</span><span class="tok-p">(</span><span class="tok-n">player_x</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">player_y</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-sc">&#39; &#39;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">BackgroundFlag</span>::<span class="tok-nb">None</span><span class="tok-p">);</span><span class="tok-w"></span></code></pre>
-</div>
-</div>
-<div class="paragraph">
 <p>Here&#8217;s <a href="part-1b-movement.rs.txt">the complete code so far</a>.</p>
 </div>
 <div class="paragraph">
@@ -1037,7 +1031,7 @@ before the <code>let exit = handle_keys(&#8230;&#8203;)</code> call:</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-03-21 14:12:29 CET
+Last updated 2019-04-23 21:28:46 CEST
 </div>
 </div>
 </body>

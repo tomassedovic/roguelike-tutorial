@@ -7,8 +7,7 @@ use tcod::colors;
 const SCREEN_WIDTH: i32 = 80;
 const SCREEN_HEIGHT: i32 = 50;
 
-const LIMIT_FPS: i32 = 20;  // 20 frames-per-second maximum
-
+const LIMIT_FPS: i32 = 20; // 20 frames-per-second maximum
 
 fn handle_keys(root: &mut Root, player_x: &mut i32, player_y: &mut i32) -> bool {
     use tcod::input::Key;
@@ -21,7 +20,7 @@ fn handle_keys(root: &mut Root, player_x: &mut i32, player_y: &mut i32) -> bool 
             let fullscreen = root.is_fullscreen();
             root.set_fullscreen(!fullscreen);
         }
-        Key { code: Escape, .. } => return true,  // exit game
+        Key { code: Escape, .. } => return true, // exit game
 
         // movement keys
         Key { code: Up, .. } => *player_y -= 1,
@@ -29,7 +28,7 @@ fn handle_keys(root: &mut Root, player_x: &mut i32, player_y: &mut i32) -> bool 
         Key { code: Left, .. } => *player_x -= 1,
         Key { code: Right, .. } => *player_x += 1,
 
-        _ => {},
+        _ => {}
     }
 
     false
@@ -50,16 +49,14 @@ fn main() {
 
     while !root.window_closed() {
         root.set_default_foreground(colors::WHITE);
+        root.clear();
         root.put_char(player_x, player_y, '@', BackgroundFlag::None);
-
         root.flush();
-
-        root.put_char(player_x, player_y, ' ', BackgroundFlag::None);
 
         // handle keys and exit game if needed
         let exit = handle_keys(&mut root, &mut player_x, &mut player_y);
         if exit {
-            break
+            break;
         }
     }
 }

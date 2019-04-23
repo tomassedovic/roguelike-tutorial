@@ -582,13 +582,24 @@ more variety.
 </table>
 </div>
 <div class="paragraph">
-<p>To actually place the monsters in each room, call this function right
-after <code>create_room</code> in <code>make_map</code>:</p>
+<p>To actually place the monsters in each room, we will call this function
+right after <code>create_room</code> in <code>make_map</code>:</p>
 </div>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-c1">// add some content to this room, such as monsters</span>
 <span class="tok-n">place_objects</span><span class="tok-p">(</span><span class="tok-n">new_room</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">);</span><span class="tok-w"></span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>And update the signature of <code>make_map</code> to take in a mutable reference
+to our list of objects, and pass it in to the method when we call it
+just before the main loop:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span> <span class="tok-nf">make_map</span><span class="tok-p">(</span><span class="tok-n">objects</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-nb">Vec</span><span class="tok-o">&lt;</span><span class="tok-n">Object</span><span class="tok-o">&gt;</span><span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-nc">Map</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-p">...</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -846,10 +857,10 @@ it rather errs on the side of safety.</p>
 <p>You can read more in the Rust book&#8217;s chapters on ownership and borrowing:</p>
 </div>
 <div class="paragraph">
-<p><a href="http://doc.rust-lang.org/book/ownership.html" class="bare">http://doc.rust-lang.org/book/ownership.html</a></p>
+<p><a href="https://doc.rust-lang.org/book/ch04-00-understanding-ownership.html" class="bare">https://doc.rust-lang.org/book/ch04-00-understanding-ownership.html</a></p>
 </div>
 <div class="paragraph">
-<p><a href="http://doc.rust-lang.org/book/references-and-borrowing.html" class="bare">http://doc.rust-lang.org/book/references-and-borrowing.html</a></p>
+<p><a href="https://doc.rust-lang.org/book/ch04-02-references-and-borrowing.html" class="bare">https://doc.rust-lang.org/book/ch04-02-references-and-borrowing.html</a></p>
 </div>
 </div>
 <div class="sect2">
@@ -1195,7 +1206,7 @@ see the monsters taking their turns after you.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-03-21 14:12:29 CET
+Last updated 2019-04-23 21:33:50 CEST
 </div>
 </div>
 </body>
