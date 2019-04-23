@@ -778,7 +778,7 @@ fn main() {
     while !root.window_closed() {
         // clear the screen of the previous frame
         con.clear();
-        
+
         match input::check_for_event(input::MOUSE | input::KEY_PRESS) {
             Some((_, Event::Mouse(m))) => mouse = m,
             Some((_, Event::Key(k))) => key = k,
