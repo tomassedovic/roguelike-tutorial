@@ -250,6 +250,8 @@ colour everything will be drawn with unless specified otherwise.
 The `tcod::colors` module contains values for common colours as well
 as the `Color` struct that lets you use your own.
 
+Then we `clear` the console of anything that we drew on the previous frame.
+
 Next we draw the `@` character at the coordinates `1, 1` on the
 screen. The `0, 0` coordinate is at the top left corner of the window.
 
@@ -426,15 +428,6 @@ Now update our drawing function to use the player coordinates:
 [source,rust]
 ----
 root.put_char(player_x, player_y, '@', BackgroundFlag::None);
-----
-
-And we also need to clear the _previous_ player position --
-otherwise we'd leave a trail of `@` on the screen! Put this right
-before the `let exit = handle_keys(...)` call:
-
-[source,rust]
-----
-root.put_char(player_x, player_y, ' ', BackgroundFlag::None);
 ----
 
 Here's link:part-1b-movement.rs.txt[the complete code so far].

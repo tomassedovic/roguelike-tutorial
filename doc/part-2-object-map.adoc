@@ -27,8 +27,8 @@ Put this right after we initialise the root console:
 let mut con = Offscreen::new(SCREEN_WIDTH, SCREEN_HEIGHT);
 ----
 
-Now call the `set_default_foreground` and `put_char` methods on `con`
-instead of `root`.
+Now call the `set_default_foreground`, `clear` and `put_char` methods
+on `con` instead of `root`.
 
 And finally, blit the contents of the new console to the root console
 to display them. The `blit` function takes a lot of parameters, but
@@ -60,9 +60,9 @@ as a game `Object`. It will hold all position and display information
 one instance of the `Object` struct -- it's general enough that you
 can re-use it to define items on the floor, monsters, doors, stairs;
 anything representable by a character on the screen. Here's the class,
-with the initialization, and three common methods `move_by`, `draw`
-and `clear`. The code for drawing and erasing is the same as the one
-we used for the player earlier.
+with the initialization, and two common methods `move_by` and `draw`.
+The code for drawing and erasing is the same as the one we used for
+the player earlier.
 
 [source,rust]
 ----
@@ -93,11 +93,6 @@ impl Object {
     pub fn draw(&self, con: &mut Console) {
         con.set_default_foreground(self.color);
         con.put_char(self.x, self.y, self.char, BackgroundFlag::None);
-    }
-
-    /// Erase the character that represents this object
-    pub fn clear(&self, con: &mut Console) {
-        con.put_char(self.x, self.y, ' ', BackgroundFlag::None);
     }
 }
 ----
@@ -134,16 +129,7 @@ let player = &mut objects[0];
 let exit = handle_keys(&mut root, player);
 ----
 
-Next, the main loop will now clear all objects like this:
-
-[source,rust]
-----
-for object in &objects {
-    object.clear(&mut con)
-}
-----
-
-and draw them like so:
+Next, the main loop will now draw all objects like so:
 
 [source,rust]
 ----

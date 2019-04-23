@@ -108,8 +108,7 @@ render_all(&mut root, &mut con, &objects, &map, &mut fov_map, fov_recompute);
 ----
 
 Now we need to change the rendering code to actually recompute FOV and
-display the result. We're doing it there, because if the FOV doesn't
-need to be recomputed, we don't need to render the map at all!
+display the result.
 
 [source,rust]
 ----
@@ -121,8 +120,8 @@ if fov_recompute {
 ----
 
 As you can see, we're using all the constants we defined earlier.
-Now move the code that renders the map at the end of that `if`. We'll
-extend it to render the tiles in FOV with their `light` colours:
+We'll extend the code that render the tiles so that if they are in the FOV
+they will get their `light` colours:
 
 [source,rust]
 ----

@@ -157,11 +157,6 @@ impl Object {
         con.put_char(self.x, self.y, self.char, BackgroundFlag::None);
     }
 
-    /// Erase the character that represents this object
-    pub fn clear(&self, con: &mut Console) {
-        con.put_char(self.x, self.y, ' ', BackgroundFlag::None);
-    }
-
     pub fn pos(&self) -> (i32, i32) {
         (self.x, self.y)
     }
@@ -1039,30 +1034,30 @@ fn render_all(tcod: &mut Tcod, objects: &[Object], game: &mut Game, fov_recomput
         // recompute FOV if needed (the player moved or something)
         let player = &objects[PLAYER];
         tcod.fov.compute_fov(player.x, player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALGO);
+    }
 
-        // go through all tiles, and set their background color
-        for y in 0..MAP_HEIGHT {
-            for x in 0..MAP_WIDTH {
-                let visible = tcod.fov.is_in_fov(x, y);
-                let wall = game.map[x as usize][y as usize].block_sight;
-                let color = match (visible, wall) {
-                    // outside of field of view:
-                    (false, true) => COLOR_DARK_WALL,
-                    (false, false) => COLOR_DARK_GROUND,
-                    // inside fov:
-                    (true, true) => COLOR_LIGHT_WALL,
-                    (true, false) => COLOR_LIGHT_GROUND,
-                };
+    // go through all tiles, and set their background color
+    for y in 0..MAP_HEIGHT {
+        for x in 0..MAP_WIDTH {
+            let visible = tcod.fov.is_in_fov(x, y);
+            let wall = game.map[x as usize][y as usize].block_sight;
+            let color = match (visible, wall) {
+                // outside of field of view:
+                (false, true) => COLOR_DARK_WALL,
+                (false, false) => COLOR_DARK_GROUND,
+                // inside fov:
+                (true, true) => COLOR_LIGHT_WALL,
+                (true, false) => COLOR_LIGHT_GROUND,
+            };
 
-                let explored = &mut game.map[x as usize][y as usize].explored;
-                if visible {
-                    // since it's visible, explore it
-                    *explored = true;
-                }
-                if *explored {
-                    // show explored tiles only (any visible tile is explored already)
-                    tcod.con.set_char_background(x, y, color, BackgroundFlag::Set);
-                }
+            let explored = &mut game.map[x as usize][y as usize].explored;
+            if visible {
+                // since it's visible, explore it
+                *explored = true;
+            }
+            if *explored {
+                // show explored tiles only (any visible tile is explored already)
+                tcod.con.set_char_background(x, y, color, BackgroundFlag::Set);
             }
         }
     }
@@ -1497,6 +1492,9 @@ fn play_game(objects: &mut Vec<Object>, game: &mut Game, tcod: &mut Tcod) {
     let mut key = Default::default();
 
     while !tcod.root.window_closed() {
+        // clear the screen of the previous frame
+        tcod.con.clear();
+        
         match input::check_for_event(input::MOUSE | input::KEY_PRESS) {
             Some((_, Event::Mouse(m))) => tcod.mouse = m,
             Some((_, Event::Key(k))) => key = k,
@@ -1511,11 +1509,6 @@ fn play_game(objects: &mut Vec<Object>, game: &mut Game, tcod: &mut Tcod) {
 
         // level up if needed
         level_up(objects, game, tcod);
-
-        // erase all objects at their old locations, before they move
-        for object in objects.iter_mut() {
-            object.clear(&mut tcod.con)
-        }
 
         // handle keys and exit game if needed
         previous_player_position = objects[PLAYER].pos();

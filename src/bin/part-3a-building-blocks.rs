@@ -85,11 +85,6 @@ impl Object {
         con.set_default_foreground(self.color);
         con.put_char(self.x, self.y, self.char, BackgroundFlag::None);
     }
-
-    /// Erase the character that represents this object
-    pub fn clear(&self, con: &mut Console) {
-        con.put_char(self.x, self.y, ' ', BackgroundFlag::None);
-    }
 }
 
 fn create_room(room: Rect, map: &mut Map) {
@@ -200,15 +195,13 @@ fn main() {
     let map = make_map();
 
     while !root.window_closed() {
+        // clear the screen of the previous frame
+        con.clear();
+
         // render the screen
         render_all(&mut root, &mut con, &objects, &map);
 
         root.flush();
-
-        // erase all objects at their old locations, before they move
-        for object in &objects {
-            object.clear(&mut con)
-        }
 
         // handle keys and exit game if needed
         let player = &mut objects[0];
