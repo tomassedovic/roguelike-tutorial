@@ -12,3 +12,15 @@ splitting it into parts and writing the tutorial text.
 The text is in the `doc` directory, you can look at the rendered tutorial at:
 
 http://tomassedovic.github.io/roguelike-tutorial/
+
+== Running the tutorial code
+
+If you want to try running a part of the tutorial using the reference code here,
+all you have to do is run this cargo command:
+
+`cargo run --bin name-of-part`
+
+For example, if you would like to run the reference code that is at the end of Part 1
+then you run this command:
+
+`cargo run --bin part-1b-movement`
