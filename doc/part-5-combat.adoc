@@ -56,13 +56,23 @@ NOTE: later on, we'll use a choice table to make the code cleaner but
 for now you can just extend the `if random() ... else` block to add
 more variety.
 
-To actually place the monsters in each room, call this function right
-after `create_room` in `make_map`:
+To actually place the monsters in each room, we will call this function
+right after `create_room` in `make_map`:
 
 [source,rust]
 ----
 // add some content to this room, such as monsters
 place_objects(new_room, objects);
+----
+
+And update the signature of `make_map` to take in a mutable reference
+to our list of objects, and pass it in to the method when we call it
+just before the main loop:
+
+[source,rust]
+----
+fn make_map(objects: &mut Vec<Object>) -> Map {
+    ...
 ----
 
 Let's also remove the dummy NPC from the initial objects list. We
