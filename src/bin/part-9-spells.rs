@@ -450,13 +450,12 @@ fn use_item(
     use Item::*;
     // just call the "use_function" if it is defined
     if let Some(item) = inventory[inventory_id].item {
-        let on_use: fn(usize, &mut [Object], &mut Messages, &mut Map, &mut Tcod) -> UseResult =
-            match item {
-                Heal => cast_heal,
-                Lightning => cast_lightning,
-                Confuse => cast_confuse,
-                Fireball => cast_fireball,
-            };
+        let on_use = match item {
+            Heal => cast_heal,
+            Lightning => cast_lightning,
+            Confuse => cast_confuse,
+            Fireball => cast_fireball,
+        };
         match on_use(inventory_id, objects, messages, map, tcod) {
             UseResult::UsedUp => {
                 // destroy after use, unless it was cancelled for some reason
