@@ -25,4 +25,10 @@ preview: docs
 clean:
 	rm -rf target/tutorial
 
-.PHONY: all docs docs-docker preview clean publish
+list-contributor-names:
+	git shortlog --summary | awk '{$$1=""}1' | sort
+
+list-contributor-links:
+	git log --merges | grep 'Merge pull request' | awk '{print $$6}' | cut -d/ -f1 | sort | uniq | sed -e 's|^|https://github.com/|'
+
+.PHONY: all docs docs-docker preview clean publish list-contributor-names list-contributor-links
