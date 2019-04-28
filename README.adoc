@@ -32,6 +32,7 @@ This tutorial has been put together by the following people:
 * https://github.com/Raveline[A.D]
 * https://github.com/Oscuro87[Emmanuel C]
 * https://github.com/iszla[iszla]
+* https://github.com/JCGrant[JCGrant]
 * https://github.com/keisetsu[Jesse J. Bethel]
 * https://github.com/aquarhead[LOU Xun]
 * https://github.com/mipli[Michael A. Plikk]
