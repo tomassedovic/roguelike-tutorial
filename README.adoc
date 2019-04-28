@@ -24,3 +24,20 @@ For example, if you would like to run the reference code that is at the end of P
 then you run this command:
 
 `cargo run --bin part-1b-movement`
+
+== Thanks!
+
+This tutorial has been put together by the following people:
+
+* https://github.com/Raveline[A.D]
+* https://github.com/Oscuro87[Emmanuel C]
+* https://github.com/iszla[iszla]
+* https://github.com/keisetsu[Jesse J. Bethel]
+* https://github.com/aquarhead[LOU Xun]
+* https://github.com/mipli[Michael A. Plikk]
+* https://github.com/Nathanator[Nathan Jeffrey]
+* https://github.com/smw[Stefan Wasilewski]
+* https://github.com/tomassedovic[Tomas Sedovic]
+* https://github.com/wcarss[Wyatt Carss]
+
+(sorted alphabetically)
