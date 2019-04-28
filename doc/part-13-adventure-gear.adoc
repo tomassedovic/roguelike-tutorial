@@ -154,7 +154,7 @@ Then in the callback match in `use_item`:
 
 [source]
 ----
-let on_use: ... = match item {
+let on_use = match item {
     Heal => cast_heal,
     Lightning => cast_lightning,
     Fireball => cast_fireball,
@@ -774,7 +774,7 @@ and in `use_item`:
 
 [source]
 ----
-let on_use: ... = match item {
+let on_use = match item {
     Heal => cast_heal,
     Lightning => cast_lightning,
     Confuse => cast_confuse,

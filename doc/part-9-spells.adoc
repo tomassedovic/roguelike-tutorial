@@ -207,67 +207,7 @@ from being destroyed in that case, like the healing potion. There are
 also a couple of new constants that have to be defined:
 `LIGHTNING_DAMAGE = 20` and `LIGHTNING_RANGE = 5`.
 
-Now we'd write the `closest_monster` method, but as soon as we start,
-we'll see Rust being unhappy about our `let on_use = match item` line
-in our `use_item` function.
-
-You'll see it if you add a dummy `closest_monster` implementation and
-try to compile:
-
-[source]
-----
-fn closest_monster(max_range: i32, objects: &mut [Object], tcod: &Tcod) -> Option<usize> {
-    unimplemented!()
-}
-----
-
-Here's the error Rust reports:
-
-----
-   Compiling roguelike-tutorial v0.1.0 (file:///home/thomas/code/roguelike-tutorial)
-src/bin/part-9-spells.rs:328:22: 331:10 error: match arms have incompatible types:
- expected `fn(usize, &mut [Object], &mut collections::vec::Vec<(collections::string::String, tcod::colors::Color)>, &mut Tcod) -> UseResult {cast_heal}`,
-    found `fn(usize, &mut [Object], &mut collections::vec::Vec<(collections::string::String, tcod::colors::Color)>, &mut Tcod) -> UseResult {cast_lightning}`
-(expected fn item,
-    found a different fn item) [E0308]
-src/bin/part-9-spells.rs:328         let on_use = match item {
-src/bin/part-9-spells.rs:329             Heal => cast_heal,
-src/bin/part-9-spells.rs:330             Lightning => cast_lightning,
-src/bin/part-9-spells.rs:331         };
-src/bin/part-9-spells.rs:328:22: 331:10 help: run `rustc --explain E0308` to see a detailed explanation
-src/bin/part-9-spells.rs:330:26: 330:40 note: match arm with an incompatible type
-src/bin/part-9-spells.rs:330             Lightning => cast_lightning,
-                                                      ^~~~~~~~~~~~~~
-src/bin/part-9-spells.rs:332:15: 332:21 error: the type of this value must be known in this context
-src/bin/part-9-spells.rs:332         match on_use(inventory_id, objects, messages, tcod) {
-                                           ^~~~~~
-----
-
-Now this may seem scary, but Rust's errors are generally quite good in
-telling you what's wrong and sometimes even how to fix it.
-
-In this case, we're apparently passing two different types to the
-`match` expression. Just like `if/else`, all branches of `match` must
-return the same type. Now in both cases we're returning a function
-with the same signature (arguments and a return value), but the two
-functions (`cast_heal` and `cast_lightning`) are actually different
-and Rust treats them as separate types.
-
-The fix here is a bit annoying but simple. We just tell rust the
-signature we expect and Rust will happily figure out that both our
-functions satisfy it:
-
-[source]
-----
-let on_use: fn(usize, &mut [Object], &mut Messages, &mut Tcod) -> UseResult = match item {
-    Heal => cast_heal,
-    Lightning => cast_lightning,
-};
-----
-
-And now we compile!
-
-So let's write that `closest_monster` properly:
+Now let's write `closest_monster`:
 
 [source]
 ----
@@ -542,7 +482,7 @@ And associate it with `cast_confuse` in the `use_item` function:
 
 [source]
 ----
-let on_use: fn(usize, &mut [Object], &mut Messages, &mut Tcod) -> UseResult = match item {
+let on_use = match item {
     Heal => cast_heal,
     Lightning => cast_lightning,
     Confuse => cast_confuse,
@@ -729,7 +669,7 @@ fix that:
 
 [source]
 ----
-let on_use: fn(usize, &mut [Object], &mut Messages, &mut Tcod) -> UseResult = match item {
+let on_use = match item {
     Heal => cast_heal,
     Lightning => cast_lightning,
     Confuse => cast_confuse,
@@ -747,7 +687,7 @@ Here's what the `on_use` bit looks like now:
 
 [source]
 ----
-let on_use: fn(usize, &mut [Object], &mut Messages, &mut Map, &mut Tcod) -> UseResult = match item {
+let on_use = match item {
     Heal => cast_heal,
     Lightning => cast_lightning,
     Confuse => cast_confuse,
