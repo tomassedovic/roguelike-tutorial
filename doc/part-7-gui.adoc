@@ -41,16 +41,17 @@ size, and a few calls to tcod's `rect` method for the rectangles.
 
 [source]
 ----
-fn render_bar(panel: &mut Offscreen,
-              x: i32,
-              y: i32,
-              total_width: i32,
-              name: &str,
-              value: i32,
-              maximum: i32,
-              bar_color: Color,
-              back_color: Color)
-{
+fn render_bar(
+    panel: &mut Offscreen,
+    x: i32,
+    y: i32,
+    total_width: i32,
+    name: &str,
+    value: i32,
+    maximum: i32,
+    bar_color: Color,
+    back_color: Color,
+) {
     // render a bar (HP, experience, etc). First calculate the width of the bar
     let bar_width = (value as f32 / maximum as f32 * total_width as f32) as i32;
 
@@ -74,8 +75,13 @@ at the very end of `render_bar`:
 ----
 // finally, some centered text with the values
 panel.set_default_foreground(colors::WHITE);
-panel.print_ex(x + total_width / 2, y, BackgroundFlag::None, TextAlignment::Center,
-               &format!("{}: {}/{}", name, value, maximum));
+panel.print_ex(
+    x + total_width / 2,
+    y,
+    BackgroundFlag::None,
+    TextAlignment::Center,
+    &format!("{}: {}/{}", name, value, maximum),
+);
 ----
 
 Now we'll modify the main rendering function to use this. First,
@@ -107,10 +113,28 @@ panel.clear();
 // show the player's stats
 let hp = objects[PLAYER].fighter.map_or(0, |f| f.hp);
 let max_hp = objects[PLAYER].fighter.map_or(0, |f| f.max_hp);
-render_bar(panel, 1, 1, BAR_WIDTH, "HP", hp, max_hp, colors::LIGHT_RED, colors::DARKER_RED);
+render_bar(
+    panel,
+    1,
+    1,
+    BAR_WIDTH,
+    "HP",
+    hp,
+    max_hp,
+    colors::LIGHT_RED,
+    colors::DARKER_RED,
+);
 
 // blit the contents of `panel` to the root console
-blit(panel, (0, 0), (SCREEN_WIDTH, PANEL_HEIGHT), root, (0, PANEL_Y), 1.0, 1.0);
+blit(
+    panel,
+    (0, 0),
+    (SCREEN_WIDTH, PANEL_HEIGHT),
+    root,
+    (0, PANEL_Y),
+    1.0,
+    1.0,
+);
 ----
 
 And we'll have to add `panel` to the `render_all` arguments and pass
@@ -217,9 +241,16 @@ signature is now:
 
 [source]
 ----
-fn render_all(root: &mut Root, con: &mut Offscreen, panel: &mut Offscreen,
-              objects: &[Object], map: &mut Map, messages: &Messages,
-              fov_map: &mut FovMap, fov_recompute: bool)
+fn render_all(
+    root: &mut Root,
+    con: &mut Offscreen,
+    panel: &mut Offscreen,
+    objects: &[Object],
+    map: &mut Map,
+    messages: &Messages,
+    fov_map: &mut FovMap,
+    fov_recompute: bool,
+)
 ----
 
 
@@ -227,9 +258,16 @@ And in the `main` loop:
 
 [source]
 ----
-render_all(&mut root, &mut con, &mut panel,
-           &objects, &mut map, &messages,
-           &mut fov_map, fov_recompute);
+render_all(
+    &mut root,
+    &mut con,
+    &mut panel,
+    &objects,
+    &mut map,
+    &messages,
+    &mut fov_map,
+    fov_recompute,
+);
 ----
 
 But now we're ready to test it! Let's print a friendly message before
@@ -238,8 +276,11 @@ the main loop to welcome the player to our dungeon of doom:
 [source]
 ----
 // a warm welcoming message!
-message(&mut messages, "Welcome stranger! Prepare to perish in the Tombs of the Ancient Kings.",
-        colors::RED);
+message(
+    &mut messages,
+    "Welcome stranger! Prepare to perish in the Tombs of the Ancient Kings.",
+    colors::RED,
+);
 ----
 
 Yay! You can now replace all the `println!` macro uses with calls to
@@ -332,8 +373,13 @@ Now pass the key to `handle_keys` and remove the call to
 
 [source]
 ----
-fn handle_keys(key: Key, root: &mut Root, map: &Map, objects: &mut [Object],
-               messages: &mut Messages) -> PlayerAction {
+fn handle_keys(
+    key: Key,
+    root: &mut Root,
+    map: &Map,
+    objects: &mut [Object],
+    messages: &mut Messages,
+) -> PlayerAction {
     ...
 }
 ----
@@ -370,8 +416,13 @@ on the mouse's position, after rendering the health bar:
 ----
 // display names of objects under the mouse
 panel.set_default_foreground(colors::LIGHT_GREY);
-panel.print_ex(1, 0, BackgroundFlag::None, TextAlignment::Left,
-               get_names_under_mouse(mouse, objects, fov_map));
+panel.print_ex(
+    1,
+    0,
+    BackgroundFlag::None,
+    TextAlignment::Left,
+    get_names_under_mouse(mouse, objects, fov_map),
+);
 ----
 
 (we need to pass the `mouse: Mouse` argument to `render_all`)
