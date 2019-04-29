@@ -100,32 +100,22 @@ Be sure to put it in your game directory -- next to `Cargo.toml`!
 
 == Showing the @ on screen
 
-Now let's open the `src/main.rs` file and tell it to use libtcod. Put
-this as the first line of the file (before the `fn main` block):
-
-[source,rust]
-----
-extern crate tcod;
-----
-
 To use any external library (i.e. code outside of your project) in
 Rust, you need to have it in `Cargo.toml` under `[dependencies]`:
 
 [source,toml]
 ----
 [dependencies]
-tcod = "0.12"
+tcod = "0.13"
 ----
 
-and use `extern crate` in your Rust file. Rust libraries are called
-_crates_. Next, add some imports via the `use` statements:
+Rust libraries are called _crates_. Next, add some imports via the `use`
+statements:
 
 [source,rust]
 ----
-extern crate tcod;
-
+use tcod::colors::*;
 use tcod::console::*;
-use tcod::colors;
 ----
 
 Like in Python, Rust's code can be structured under modules. We could
@@ -146,6 +136,7 @@ source code with a bunch of opaque numbers:
 ----
 const SCREEN_WIDTH: i32 = 80;
 const SCREEN_HEIGHT: i32 = 50;
+
 const LIMIT_FPS: i32 = 20;
 ----
 
@@ -229,7 +220,7 @@ white `@` on the screen until the libtcod window gets closed:
 [source,rust]
 ----
 while !root.window_closed() {
-    root.set_default_foreground(colors::WHITE);
+    root.set_default_foreground(WHITE);
     root.clear();
     root.put_char(1, 1, '@', BackgroundFlag::None);
     root.flush();
@@ -382,12 +373,16 @@ Put these at the beginning of `match key`:
 
 [source,rust]
 ----
-Key { code: Enter, alt: true, .. } => {
+Key {
+    code: Enter,
+    alt: true,
+    ..
+} => {
     // Alt+Enter: toggle fullscreen
     let fullscreen = root.is_fullscreen();
     root.set_fullscreen(!fullscreen);
 }
-Key { code: Escape, .. } => return true,  // exit game
+Key { code: Escape, .. } => return true, // exit game
 ----
 
 

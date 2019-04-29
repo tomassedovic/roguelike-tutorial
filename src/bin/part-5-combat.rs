@@ -1,6 +1,3 @@
-extern crate rand;
-extern crate tcod;
-
 use std::cmp;
 
 use rand::Rng;
@@ -168,7 +165,7 @@ fn is_blocked(x: i32, y: i32, map: &Map, objects: &[Object]) -> bool {
     // now check for any blocking objects
     objects
         .iter()
-        .any(|object| object.blocks && object.x == x && object.y == y)
+        .any(|object| object.blocks && object.pos() == (x, y))
 }
 
 fn create_room(room: Rect, map: &mut Map) {
@@ -467,7 +464,7 @@ fn main() {
             break;
         }
 
-        // let monstars take their turn
+        // let monsters take their turn
         if objects[PLAYER].alive && player_action != PlayerAction::DidntTakeTurn {
             for object in &objects {
                 // only if object is not player

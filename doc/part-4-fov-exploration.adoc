@@ -41,9 +41,21 @@ And we need to add colours for the lit tiles:
 [source,rust]
 ----
 const COLOR_DARK_WALL: Color = Color { r: 0, g: 0, b: 100 };
-const COLOR_LIGHT_WALL: Color = Color { r: 130, g: 110, b: 50 };
-const COLOR_DARK_GROUND: Color = Color { r: 50, g: 50, b: 150 };
-const COLOR_LIGHT_GROUND: Color = Color { r: 200, g: 180, b: 50 };
+const COLOR_LIGHT_WALL: Color = Color {
+    r: 130,
+    g: 110,
+    b: 50,
+};
+const COLOR_DARK_GROUND: Color = Color {
+    r: 50,
+    g: 50,
+    b: 150,
+};
+const COLOR_LIGHT_GROUND: Color = Color {
+    r: 200,
+    g: 180,
+    b: 50,
+};
 ----
 
 The fov map object in `tcod` is called `Map`, which conflicts with our
@@ -52,7 +64,7 @@ import:
 
 [source,rust]
 ----
-use tcod::map::{Map as FovMap, FovAlgorithm};
+use tcod::map::{FovAlgorithm, Map as FovMap};
 ----
 
 The libtcod FOV module needs to know which tiles block sight. So, we
@@ -70,9 +82,12 @@ main function, before entering the main game loop.
 let mut fov_map = FovMap::new(MAP_WIDTH, MAP_HEIGHT);
 for y in 0..MAP_HEIGHT {
     for x in 0..MAP_WIDTH {
-        fov_map.set(x, y,
-                    !map[x as usize][y as usize].block_sight,
-                    !map[x as usize][y as usize].blocked);
+        fov_map.set(
+            x,
+            y,
+            !map[x as usize][y as usize].block_sight,
+            !map[x as usize][y as usize].blocked,
+        );
     }
 }
 ----
@@ -104,7 +119,14 @@ And lastly, replace the existing call to `render_all` with these two lines:
 [source,rust]
 ----
 let fov_recompute = previous_player_position != (objects[0].x, objects[0].y);
-render_all(&mut root, &mut con, &objects, &map, &mut fov_map, fov_recompute);
+render_all(
+    &mut root,
+    &mut con,
+    &objects,
+    &map,
+    &mut fov_map,
+    fov_recompute,
+);
 ----
 
 Now we need to change the rendering code to actually recompute FOV and
@@ -189,11 +211,19 @@ And you need to update the `Tile::empty` and `Tile::wall` bodies:
 [source,rust]
 ----
 pub fn empty() -> Self {
-    Tile{blocked: false, explored: false, block_sight: false}
+    Tile {
+        blocked: false,
+        explored: false,
+        block_sight: false,
+    }
 }
 
 pub fn wall() -> Self {
-    Tile{blocked: true, explored: false, block_sight: true}
+    Tile {
+        blocked: true,
+        explored: false,
+        block_sight: true,
+    }
 }
 ----
 

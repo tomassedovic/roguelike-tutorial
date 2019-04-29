@@ -41,7 +41,15 @@ top-left corner) and finally a foreground and background transparency
 
 [source,rust]
 ----
-blit(&mut con, (0, 0), (SCREEN_WIDTH, SCREEN_HEIGHT), &mut root, (0, 0), 1.0, 1.0);
+blit(
+    &mut con,
+    (0, 0),
+    (SCREEN_WIDTH, SCREEN_HEIGHT),
+    &mut root,
+    (0, 0),
+    1.0,
+    1.0,
+);
 ----
 
 
@@ -75,12 +83,7 @@ struct Object {
 
 impl Object {
     pub fn new(x: i32, y: i32, char: char, color: Color) -> Self {
-        Object {
-            x: x,
-            y: y,
-            char: char,
-            color: color,
-        }
+        Object { x, y, char, color }
     }
 
     pub fn move_by(&mut self, dx: i32, dy: i32) {
