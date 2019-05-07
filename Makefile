@@ -2,8 +2,7 @@ all: clean docs
 
 docs:
 	@mkdir -p target/tutorial
-	for f in src/bin/*.rs; do cp "$$f" "target/tutorial/$$(basename $$f.txt)"; done
-	asciidoctor --doctype article --destination-dir target/tutorial doc/*.adoc
+	asciidoctor --destination-dir target/tutorial doc/*.adoc
 
 publish:
 	@git diff-index --quiet HEAD || { echo "Error: the repository is dirty."; exit 1; }
