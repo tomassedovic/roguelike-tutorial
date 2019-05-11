@@ -22,7 +22,15 @@ generating a level. Right at the end of `make_map`:
 ----
 // create stairs at the center of the last room
 let (last_room_x, last_room_y) = rooms[rooms.len() - 1].center();
-let stairs = Object::new(last_room_x, last_room_y, '<', "stairs", colors::WHITE, false);
+let mut stairs = Object::new(
+    last_room_x,
+    last_room_y,
+    '<',
+    "stairs",
+    colors::WHITE,
+    false,
+);
+stairs.always_visible = true;
 objects.push(stairs);
 ----
 
@@ -34,9 +42,9 @@ easy to add this check at the end of `handle_keys`:
 ----
 (Key { printable: '<', .. }, true) => {
     // go down stairs, if the player is on them
-    let player_on_stairs = objects.iter().any(|object| {
-        object.pos() == objects[PLAYER].pos() && object.name == "stairs"
-    });
+    let player_on_stairs = objects
+        .iter()
+        .any(|object| object.pos() == objects[PLAYER].pos() && object.name == "stairs");
     if player_on_stairs {
         next_level(tcod, objects, game);
     }
@@ -52,12 +60,19 @@ onto it. We'll also heal the player because we're feeling generous!
 ----
 /// Advance to the next level
 fn next_level(tcod: &mut Tcod, objects: &mut Vec<Object>, game: &mut Game) {
-    game.log.add("You take a moment to rest, and recover your strength.", colors::VIOLET);
+    game.log.add(
+        "You take a moment to rest, and recover your strength.",
+        colors::VIOLET,
+    );
     let heal_hp = objects[PLAYER].fighter.map_or(0, |f| f.max_hp / 2);
     objects[PLAYER].heal(heal_hp);
 
-    game.log.add("After a rare moment of peace, you descend deeper into \
-                  the heart of the dungeon...", colors::RED);
+    game.log.add(
+        "After a rare moment of peace, you descend deeper into \
+         the heart of the dungeon...",
+        colors::RED,
+    );
+    game.dungeon_level += 1;
     game.map = make_map(objects);
     initialise_fov(&game.map, tcod);
 }
@@ -136,8 +151,13 @@ calling `render_bar`:
 
 [source]
 ----
-tcod.panel.print_ex(1, 3, BackgroundFlag::None, TextAlignment::Left,
-                    format!("Dungeon level: {}", game.dungeon_level));
+tcod.panel.print_ex(
+    1,
+    3,
+    BackgroundFlag::None,
+    TextAlignment::Left,
+    format!("Dungeon level: {}", game.dungeon_level),
+);
 ----
 
 Finally, it would be great to always show the stairs once discovered,
@@ -177,9 +197,10 @@ Now update `render_all` to take it into account. When building the
 [source]
 ----
 .filter(|o| {
-    tcod.fov.is_in_fov(o.x, o.y) ||
-        (o.always_visible && game.map[o.x as usize][o.y as usize].explored)
-}).collect();
+    tcod.fov.is_in_fov(o.x, o.y)
+        || (o.always_visible && game.map[o.x as usize][o.y as usize].explored)
+})
+.collect();
 ----
 
 We keep the old `is_in_fov` test, but now we can also show the object
@@ -282,11 +303,16 @@ variable and then give it all to the player afterwards:
 let mut xp_to_gain = 0;  // <1>
 for (id, obj) in objects.iter_mut().enumerate() {  // <2>
     if obj.distance(x, y) <= FIREBALL_RADIUS as f32 && obj.fighter.is_some() {
-        game.log.add(format!("The {} gets burned for {} hit points.", obj.name, FIREBALL_DAMAGE),
-                     colors::ORANGE);
+        game.log.add(
+            format!(
+                "The {} gets burned for {} hit points.",
+                obj.name, FIREBALL_DAMAGE
+            ),
+            colors::ORANGE,
+        );
         if let Some(xp) = obj.take_damage(FIREBALL_DAMAGE, game) {
-            // Don't reward the player for burning themself!
             if id != PLAYER {  // <3>
+                // Don't reward the player for burning themself!
                 xp_to_gain += xp;
             }
         }
@@ -353,9 +379,13 @@ fn level_up(objects: &mut [Object], game: &mut Game, tcod: &mut Tcod) {
     if player.fighter.as_ref().map_or(0, |f| f.xp) >= level_up_xp {
         // it is! level up
         player.level += 1;
-        game.log.add(format!("Your battle skills grow stronger! You reached level {}!",
-                             player.level),
-                     colors::YELLOW);
+        game.log.add(
+            format!(
+                "Your battle skills grow stronger! You reached level {}!",
+                player.level
+            ),
+            colors::YELLOW,
+        );
         // ... TODO increase players's stats!
     }
 }
@@ -374,14 +404,19 @@ Put this in place of the TODO comment:
 ----
 let fighter = player.fighter.as_mut().unwrap();
 let mut choice = None;
-while choice.is_none() {  // keep asking until a choice is made
+while choice.is_none() {
+    // keep asking until a choice is made
     choice = menu(
         "Level up! Choose a stat to raise:\n",
-        &[format!("Constitution (+20 HP, from {})", fighter.max_hp),
-          format!("Strength (+1 attack, from {})", fighter.power),
-          format!("Agility (+1 defense, from {})", fighter.defense)],
-        LEVEL_SCREEN_WIDTH, &mut tcod.root);
-};
+        &[
+            format!("Constitution (+20 HP, from {})", fighter.max_hp),
+            format!("Strength (+1 attack, from {})", fighter.power),
+            format!("Agility (+1 defense, from {})", fighter.defense),
+        ],
+        LEVEL_SCREEN_WIDTH,
+        &mut tcod.root,
+    );
+}
 fighter.xp -= level_up_xp;
 match choice.unwrap() {
     0 => {
@@ -422,7 +457,8 @@ current stats somewhere. Let's display a little message box when the
     let level = player.level;
     let level_up_xp = LEVEL_UP_BASE + player.level * LEVEL_UP_FACTOR;
     if let Some(fighter) = player.fighter.as_ref() {
-        let msg = format!("Character information
+        let msg = format!(
+            "Character information
 
 Level: {}
 Experience: {}
@@ -430,7 +466,9 @@ Experience to level up: {}
 
 Maximum HP: {}
 Attack: {}
-Defense: {}", level, fighter.xp, level_up_xp, fighter.max_hp, fighter.power, fighter.defense);
+Defense: {}",
+            level, fighter.xp, level_up_xp, fighter.max_hp, fighter.power, fighter.defense
+        );
         msgbox(&msg, CHARACTER_SCREEN_WIDTH, &mut tcod.root);
     }
 
@@ -448,8 +486,13 @@ slaying a monster. We can modify the log message in `monster_death`:
 [source]
 ----
 game.log.add(
-    format!("{} is dead! You gain {} experience points.",
-            monster.name, monster.fighter.unwrap().xp), colors::ORANGE);
+    format!(
+        "{} is dead! You gain {} experience points.",
+        monster.name,
+        monster.fighter.unwrap().xp
+    ),
+    colors::ORANGE,
+);
 ----
 
 

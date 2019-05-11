@@ -1,6 +1,3 @@
-extern crate rand;
-extern crate tcod;
-
 use std::cmp;
 
 use rand::Rng;

@@ -1,5 +1,3 @@
-extern crate tcod;
-
 use tcod::colors::{self, Color};
 use tcod::console::*;
 

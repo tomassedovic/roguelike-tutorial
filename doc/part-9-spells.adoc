@@ -84,8 +84,13 @@ The new `render_all` function header is:
 
 [source]
 ----
-fn render_all(tcod: &mut Tcod, objects: &[Object], map: &mut Map,
-              messages: &Messages, fov_recompute: bool) {
+fn render_all(
+    tcod: &mut Tcod,
+    objects: &[Object],
+    map: &mut Map,
+    messages: &Messages,
+    fov_recompute: bool,
+) {
     // ...
 }
 ----
@@ -100,16 +105,28 @@ Main loop:
 
 [source]
 ----
-let player_action = handle_keys(key, &mut tcod, &map, &mut objects,
-                                &mut inventory, &mut messages);
+let player_action = handle_keys(
+    key,
+    &mut tcod,
+    &mut map,
+    &mut objects,
+    &mut inventory,
+    &mut messages,
+);
 ----
 
 Function definition:
 
 [source]
 ----
-fn handle_keys(key: Key, tcod: &mut Tcod, map: &Map, objects: &mut Vec<Object>,
-               inventory: &mut Vec<Object>, messages: &mut Messages) -> PlayerAction {
+fn handle_keys(
+    key: Key,
+    tcod: &mut Tcod,
+    map: &mut Map,
+    objects: &mut Vec<Object>,
+    inventory: &mut Vec<Object>,
+    messages: &mut Messages,
+) -> PlayerAction {
     // ...
 }
 ----
@@ -155,8 +172,14 @@ if !is_blocked(x, y, map, objects) {
         object
     } else {
         // create a lightning bolt scroll (30% chance)
-        let mut object = Object::new(x, y, '#', "scroll of lightning bolt",
-                                     colors::LIGHT_YELLOW, false);
+        let mut object = Object::new(
+            x,
+            y,
+            '#',
+            "scroll of lightning bolt",
+            colors::LIGHT_YELLOW,
+            false,
+        );
         object.item = Some(Item::Lightning);
         object
     };
@@ -180,21 +203,30 @@ Now we need to write the `cast_lightning` function!
 
 [source]
 ----
-fn cast_lightning(_inventory_id: usize, objects: &mut [Object], messages: &mut Messages, tcod: &mut Tcod)
-                  -> UseResult
-{
-    // find closest enemy (inside a maximum range) and damage it
+fn cast_lightning(
+    _inventory_id: usize,
+    objects: &mut [Object],
+    messages: &mut Messages,
+    _map: &mut Map,
+    tcod: &mut Tcod,
+) -> UseResult {
+    // find closest enemy (inside a maximum range and damage it)
     let monster_id = closest_monster(LIGHTNING_RANGE, objects, tcod);
     if let Some(monster_id) = monster_id {
         // zap it!
-        message(messages,
-                format!("A lightning bolt strikes the {} with a loud thunder! \
-                         The damage is {} hit points.",
-                        objects[monster_id].name, LIGHTNING_DAMAGE),
-                colors::LIGHT_BLUE);
+        message(
+            messages,
+            format!(
+                "A lightning bolt strikes the {} with a loud thunder! \
+                 The damage is {} hit points.",
+                objects[monster_id].name, LIGHTNING_DAMAGE
+            ),
+            colors::LIGHT_BLUE,
+        );
         objects[monster_id].take_damage(LIGHTNING_DAMAGE, messages);
         UseResult::UsedUp
-    } else {  // no enemy found within maximum range
+    } else {
+        // no enemy found within maximum range
         message(messages, "No enemy is close enough to strike.", colors::RED);
         UseResult::Cancelled
     }
@@ -214,15 +246,18 @@ Now let's write `closest_monster`:
 /// find closest enemy, up to a maximum range, and in the player's FOV
 fn closest_monster(max_range: i32, objects: &mut [Object], tcod: &Tcod) -> Option<usize> {
     let mut closest_enemy = None;
-    let mut closest_dist = (max_range + 1) as f32;  // start with (slightly more than) maximum range
+    let mut closest_dist = (max_range + 1) as f32; // start with (slightly more than) maximum range
 
     for (id, object) in objects.iter().enumerate() {
-        if (id != PLAYER) && object.fighter.is_some() && object.ai.is_some() &&
-            tcod.fov.is_in_fov(object.x, object.y)
+        if (id != PLAYER)
+            && object.fighter.is_some()
+            && object.ai.is_some()
+            && tcod.fov.is_in_fov(object.x, object.y)
         {
             // calculate distance between this object and the player
             let dist = objects[PLAYER].distance_to(object);
-            if dist < closest_dist {  // it's closer, so remember it
+            if dist < closest_dist {
+                // it's closer, so remember it
                 closest_enemy = Some(id);
                 closest_dist = dist;
             }
@@ -259,7 +294,10 @@ empty `Ai` struct into an enum with two variants:
 ----
 enum Ai {
     Basic,
-    Confused{previous_ai: Box<Ai>, num_turns: i32},
+    Confused {
+        previous_ai: Box<Ai>,
+        num_turns: i32,
+    },
 }
 ----
 
@@ -289,21 +327,33 @@ Next, let's move the code from `ai_take_turn` its own function:
 
 [source]
 ----
-fn ai_take_turn(monster_id: usize, map: &Map, objects: &mut [Object],
-                fov_map: &FovMap, messages: &mut Messages) {
+fn ai_take_turn(
+    monster_id: usize,
+    map: &Map,
+    objects: &mut [Object],
+    fov_map: &FovMap,
+    messages: &mut Messages,
+) {
     use Ai::*;
     if let Some(ai) = objects[monster_id].ai.take() {
         let new_ai = match ai {
             Basic => ai_basic(monster_id, map, objects, fov_map, messages),
-            Confused{previous_ai, num_turns} => ai_confused(
-                monster_id, map, objects, messages, previous_ai, num_turns)
+            Confused {
+                previous_ai,
+                num_turns,
+            } => ai_confused(monster_id, map, objects, messages, previous_ai, num_turns),
         };
         objects[monster_id].ai = Some(new_ai);
     }
 }
 
-fn ai_basic(monster_id: usize, map: &Map, objects: &mut [Object],
-            fov_map: &FovMap, messages: &mut Messages) -> Ai {
+fn ai_basic(
+    monster_id: usize,
+    map: &Map,
+    objects: &mut [Object],
+    fov_map: &FovMap,
+    messages: &mut Messages,
+) -> Ai {
     // a basic monster takes its turn. If you can see it, it can see you
     let (monster_x, monster_y) = objects[monster_id].pos();
     if fov_map.is_in_fov(monster_x, monster_y) {
@@ -355,20 +405,35 @@ So after that mouthful, the rather anti-climactic implementation of
 
 [source]
 ----
-fn ai_confused(monster_id: usize, map: &Map, objects: &mut [Object], messages: &mut Messages,
-               previous_ai: Box<Ai>, num_turns: i32) -> Ai {
-    if num_turns >= 0 {  // still confused ...
-        // move in a random idrection, and decrease the number of turns confused
-        move_by(monster_id,
-                rand::thread_rng().gen_range(-1, 2),
-                rand::thread_rng().gen_range(-1, 2),
-                map,
-                objects);
-        Ai::Confused{previous_ai: previous_ai, num_turns: num_turns - 1}
-    } else {  // restore the previous AI (this one will be deleted)
-        message(messages, format!("The {} is no longer confused!",
-                                  objects[monster_id].name),
-                colors::RED);
+fn ai_confused(
+    monster_id: usize,
+    map: &Map,
+    objects: &mut [Object],
+    messages: &mut Messages,
+    previous_ai: Box<Ai>,
+    num_turns: i32,
+) -> Ai {
+    if num_turns >= 0 {
+        // still confused ...
+        // move in a random direction, and decrease the number of turns confused
+        move_by(
+            monster_id,
+            rand::thread_rng().gen_range(-1, 2),
+            rand::thread_rng().gen_range(-1, 2),
+            map,
+            objects,
+        );
+        Ai::Confused {
+            previous_ai: previous_ai,
+            num_turns: num_turns - 1,
+        }
+    } else {
+        // restore the previous AI (this one will be deleted)
+        message(
+            messages,
+            format!("The {} is no longer confused!", objects[monster_id].name),
+            colors::RED,
+        );
         *previous_ai
     }
 }
@@ -395,16 +460,29 @@ getting a lightning bolt scroll must change:
 
 [source]
 ----
+...
 } else if dice < 0.7 + 0.15 {
-    // create a lightning bolt scroll (15% chance)
-    let mut object = Object::new(x, y, '#', "scroll of lightning bolt",
-                                 colors::LIGHT_YELLOW, false);
+    // create a lightning bolt scroll (10% chance)
+    let mut object = Object::new(
+        x,
+        y,
+        '#',
+        "scroll of lightning bolt",
+        colors::LIGHT_YELLOW,
+        false,
+    );
     object.item = Some(Item::Lightning);
     object
-} else {
-    // create a confuse scroll (15% chance)
-    let mut object = Object::new(x, y, '#', "scroll of confusion",
-                                 colors::LIGHT_YELLOW, false);
+}else {
+    // create a confuse scroll (10% chance)
+    let mut object = Object::new(
+        x,
+        y,
+        '#',
+        "scroll of confusion",
+        colors::LIGHT_YELLOW,
+        false,
+    );
     object.item = Some(Item::Confuse);
     object
 };
@@ -417,11 +495,15 @@ targeting.
 
 [source]
 ----
-fn cast_confuse(_inventory_id: usize, objects: &mut [Object], messages: &mut Messages, tcod: &mut Tcod)
-                -> UseResult
-{
-    // find closest enemy in-range and confuse it
-    let monster_id = closest_monster(CONFUSE_RANGE, objects, tcod);
+fn cast_confuse(
+    _inventory_id: usize,
+    objects: &mut [Object],
+    messages: &mut Messages,
+    map: &mut Map,
+    tcod: &mut Tcod,
+) -> UseResult {
+    // ask the player for a target to confuse
+    let monster_id = target_monster(tcod, objects, map, messages, Some(CONFUSE_RANGE as f32));
     if let Some(monster_id) = monster_id {
         let old_ai = objects[monster_id].ai.take().unwrap_or(Ai::Basic);
         // replace the monster's AI with a "confused" one; after
@@ -430,12 +512,17 @@ fn cast_confuse(_inventory_id: usize, objects: &mut [Object], messages: &mut Mes
             previous_ai: Box::new(old_ai),
             num_turns: CONFUSE_NUM_TURNS,
         });
-        message(messages,
-                format!("The eyes of {} look vacant, as he starts to stumble around!",
-                        objects[monster_id].name),
-                colors::LIGHT_GREEN);
+        message(
+            messages,
+            format!(
+                "The eyes of {} look vacant, as he starts to stumble around!",
+                objects[monster_id].name
+            ),
+            colors::LIGHT_GREEN,
+        );
         UseResult::UsedUp
-    } else {  // no enemy fonud within maximum range
+    } else {
+        // no enemy fonud within maximum range
         message(messages, "No enemy is close enough to strike.", colors::RED);
         UseResult::Cancelled
     }
@@ -517,12 +604,13 @@ would still be visible).
 ----
 /// return the position of a tile left-clicked in player's FOV (optionally in a
 /// range), or (None,None) if right-clicked.
-fn target_tile(tcod: &mut Tcod,
-               objects: &[Object],
-               map: &mut Map,
-               messages: &Messages,
-               max_range: Option<f32>)
-               -> Option<(i32, i32)> {
+fn target_tile(
+    tcod: &mut Tcod,
+    objects: &[Object],
+    map: &mut Map,
+    messages: &Messages,
+    max_range: Option<f32>,
+) -> Option<(i32, i32)> {
     use tcod::input::KeyCode::Escape;
     loop {
         // render the screen. this erases the inventory and shows the names of
@@ -553,8 +641,7 @@ Now we return the clicked position if it's in range and visible:
     // accept the target if the player clicked in FOV, and in case a range
     // is specified, if it's in that range
     let in_fov = (x < MAP_WIDTH) && (y < MAP_HEIGHT) && tcod.fov.is_in_fov(x, y);
-    let in_range = max_range.map_or(
-        true, |range| objects[PLAYER].distance(x, y) <= range);
+    let in_range = max_range.map_or(true, |range| objects[PLAYER].distance(x, y) <= range);
     if tcod.mouse.lbutton_pressed && in_fov && in_range {
         return Some((x, y))
     }
@@ -600,29 +687,43 @@ spell:
 
 [source]
 ----
-fn cast_fireball(_inventory_id: usize, objects: &mut [Object], messages: &mut Messages,
-                 map: &mut Map, tcod: &mut Tcod)
-                 -> UseResult
-{
+fn cast_fireball(
+    _inventory_id: usize,
+    objects: &mut [Object],
+    messages: &mut Messages,
+    map: &mut Map,
+    tcod: &mut Tcod,
+) -> UseResult {
     // ask the player for a target tile to throw a fireball at
-    message(messages,
-            "Left-click a target tile for the fireball, or right-click to cancel.",
-            colors::LIGHT_CYAN);
+    message(
+        messages,
+        "Left-click a target tile for the fireball, or right-click to cancel.",
+        colors::LIGHT_CYAN,
+    );
     let (x, y) = match target_tile(tcod, objects, map, messages, None) {
         Some(tile_pos) => tile_pos,
         None => return UseResult::Cancelled,
     };
-    message(messages,
-            format!("The fireball explodes, burning everything within {} tiles!", FIREBALL_RADIUS),
-            colors::ORANGE);
+    message(
+        messages,
+        format!(
+            "The fireball explodes, burning everything within {} tiles!",
+            FIREBALL_RADIUS
+        ),
+        colors::ORANGE,
+    );
 
     for obj in objects {
         if obj.distance(x, y) <= FIREBALL_RADIUS as f32 && obj.fighter.is_some() {
-            message(messages,
-                    format!("The {} gets burned for {} hit points.", obj.name, FIREBALL_DAMAGE),
-                    colors::ORANGE);
+            message(
+                messages,
+                format!(
+                    "The {} gets burned for {} hit points.",
+                    obj.name, FIREBALL_DAMAGE
+                ),
+                colors::ORANGE,
+            );
             obj.take_damage(FIREBALL_DAMAGE, messages);
-
         }
     }
 
@@ -639,10 +740,11 @@ scroll:
 ----
 } else if dice < 0.7 + 0.1 + 0.1 {
     // create a fireball scroll (10% chance)
-    let mut object = Object::new(x, y, '#', "scroll of fireball", colors::LIGHT_YELLOW, false);
+    let mut object =
+        Object::new(x, y, '#', "scroll of fireball", colors::LIGHT_YELLOW, false);
     object.item = Some(Item::Fireball);
     object
-} else {
+}  else {
     // create a confuse scroll (15% chance)
     // ...
 }
@@ -730,19 +832,20 @@ only when a monster is selected.
 [source]
 ----
 /// returns a clicked monster inside FOV up to a range, or None if right-clicked
-fn target_monster(tcod: &mut Tcod,
-                  objects: &[Object],
-                  map: &mut Map,
-                  messages: &Messages,
-                  max_range: Option<f32>)
-                  -> Option<usize> {
+fn target_monster(
+    tcod: &mut Tcod,
+    objects: &[Object],
+    map: &mut Map,
+    messages: &Messages,
+    max_range: Option<f32>,
+) -> Option<usize> {
     loop {
         match target_tile(tcod, objects, map, messages, max_range) {
             Some((x, y)) => {
                 // return the first clicked monster, otherwise continue looping
                 for (id, obj) in objects.iter().enumerate() {
                     if obj.pos() == (x, y) && obj.fighter.is_some() && id != PLAYER {
-                        return Some(id)
+                        return Some(id);
                     }
                 }
             }
@@ -761,8 +864,11 @@ function with:
 [source]
 ----
 // ask the player for a target to confuse
-message(messages, "Left-click an enemy to confuse it, or right-click to cancel.",
-        colors::LIGHT_CYAN);
+message(
+    messages,
+    "Left-click an enemy to confuse it, or right-click to cancel.",
+    colors::LIGHT_CYAN,
+);
 let monster_id = target_monster(tcod, objects, map, messages, Some(CONFUSE_RANGE as f32));
 ----
 
@@ -778,13 +884,19 @@ player's, so it appears below the player:
 
 [source]
 ----
-fn drop_item(inventory_id: usize,
-             inventory: &mut Vec<Object>,
-             objects: &mut Vec<Object>,
-             messages: &mut Messages) {
+fn drop_item(
+    inventory_id: usize,
+    inventory: &mut Vec<Object>,
+    objects: &mut Vec<Object>,
+    messages: &mut Messages,
+) {
     let mut item = inventory.remove(inventory_id);
     item.set_pos(objects[PLAYER].x, objects[PLAYER].y);
-    message(messages, format!("You dropped a {}.", item.name), colors::YELLOW);
+    message(
+        messages,
+        format!("You dropped a {}.", item.name),
+        colors::YELLOW,
+    );
     objects.push(item);
 }
 ----
@@ -801,7 +913,8 @@ the chosen item. Add this to `handle_keys`, after the inventory key:
     let inventory_index = inventory_menu(
         inventory,
         "Press the key next to an item to drop it, or any other to cancel.\n'",
-        &mut tcod.root);
+        &mut tcod.root,
+    );
     if let Some(inventory_index) = inventory_index {
         drop_item(inventory_index, inventory, objects, messages);
     }
