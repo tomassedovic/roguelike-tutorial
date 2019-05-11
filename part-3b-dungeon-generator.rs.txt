@@ -1,11 +1,8 @@
-extern crate tcod;
-extern crate rand;
-
 use std::cmp;
 
-use tcod::console::*;
-use tcod::colors::{self, Color};
 use rand::Rng;
+use tcod::colors::{self, Color};
+use tcod::console::*;
 
 // actual size of the window
 const SCREEN_WIDTH: i32 = 80;
@@ -20,10 +17,14 @@ const ROOM_MAX_SIZE: i32 = 10;
 const ROOM_MIN_SIZE: i32 = 6;
 const MAX_ROOMS: i32 = 30;
 
-const LIMIT_FPS: i32 = 20;  // 20 frames-per-second maximum
+const LIMIT_FPS: i32 = 20; // 20 frames-per-second maximum
 
 const COLOR_DARK_WALL: Color = Color { r: 0, g: 0, b: 100 };
-const COLOR_DARK_GROUND: Color = Color { r: 50, g: 50, b: 150 };
+const COLOR_DARK_GROUND: Color = Color {
+    r: 50,
+    g: 50,
+    b: 150,
+};
 
 type Map = Vec<Vec<Tile>>;
 
@@ -36,11 +37,17 @@ struct Tile {
 
 impl Tile {
     pub fn empty() -> Self {
-        Tile{blocked: false, block_sight: false}
+        Tile {
+            blocked: false,
+            block_sight: false,
+        }
     }
 
     pub fn wall() -> Self {
-        Tile{blocked: true, block_sight: true}
+        Tile {
+            blocked: true,
+            block_sight: true,
+        }
     }
 }
 
@@ -55,7 +62,12 @@ struct Rect {
 
 impl Rect {
     pub fn new(x: i32, y: i32, w: i32, h: i32) -> Self {
-        Rect { x1: x, y1: y, x2: x + w, y2: y + h }
+        Rect {
+            x1: x,
+            y1: y,
+            x2: x + w,
+            y2: y + h,
+        }
     }
 
     pub fn center(&self) -> (i32, i32) {
@@ -66,8 +78,10 @@ impl Rect {
 
     pub fn intersects_with(&self, other: &Rect) -> bool {
         // returns true if this rectangle intersects with another one
-        (self.x1 <= other.x2) && (self.x2 >= other.x1) &&
-            (self.y1 <= other.y2) && (self.y2 >= other.y1)
+        (self.x1 <= other.x2)
+            && (self.x2 >= other.x1)
+            && (self.y1 <= other.y2)
+            && (self.y2 >= other.y1)
     }
 }
 
@@ -83,12 +97,7 @@ struct Object {
 
 impl Object {
     pub fn new(x: i32, y: i32, char: char, color: Color) -> Self {
-        Object {
-            x: x,
-            y: y,
-            char: char,
-            color: color,
-        }
+        Object { x, y, char, color }
     }
 
     /// move by the given amount, if the destination is not blocked
@@ -148,7 +157,9 @@ fn make_map() -> (Map, (i32, i32)) {
         let new_room = Rect::new(x, y, w, h);
 
         // run through the other rooms and see if they intersect with this one
-        let failed = rooms.iter().any(|other_room| new_room.intersects_with(other_room));
+        let failed = rooms
+            .iter()
+            .any(|other_room| new_room.intersects_with(other_room));
 
         if !failed {
             // this means there are no intersections, so this room is valid
@@ -217,12 +228,16 @@ fn handle_keys(root: &mut Root, player: &mut Object, map: &Map) -> bool {
 
     let key = root.wait_for_keypress(true);
     match key {
-        Key { code: Enter, alt: true, .. } => {
+        Key {
+            code: Enter,
+            alt: true,
+            ..
+        } => {
             // Alt+Enter: toggle fullscreen
             let fullscreen = root.is_fullscreen();
             root.set_fullscreen(!fullscreen);
         }
-        Key { code: Escape, .. } => return true,  // exit game
+        Key { code: Escape, .. } => return true, // exit game
 
         // movement keys
         Key { code: Up, .. } => player.move_by(0, -1, map),
@@ -230,7 +245,7 @@ fn handle_keys(root: &mut Root, player: &mut Object, map: &Map) -> bool {
         Key { code: Left, .. } => player.move_by(-1, 0, map),
         Key { code: Right, .. } => player.move_by(1, 0, map),
 
-        _ => {},
+        _ => {}
     }
 
     false
@@ -272,7 +287,7 @@ fn main() {
         let player = &mut objects[0];
         let exit = handle_keys(&mut root, player, &map);
         if exit {
-            break
+            break;
         }
     }
 }
