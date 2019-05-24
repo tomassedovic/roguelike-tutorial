@@ -1,1 +1,1 @@
-include::part-1-graphics.adoc[tag=**]
+include::../part-1-graphics.adoc[tag=**]
