@@ -120,7 +120,7 @@ tcod = "0.12"
 and use `extern crate` in your Rust file. Rust libraries are called
 _crates_. Next, add some imports via the `use` statements:
 
-[role=hide]
+[source,rust]
 ----
 // tag::extern_and_use_tcod[]
 extern crate tcod;
@@ -128,10 +128,6 @@ extern crate tcod;
 use tcod::colors;
 use tcod::console::*;
 // end::extern_and_use_tcod[]
-----
-[source,rust]
-----
-include::part-1-graphics.adoc[tag=extern_and_use_tcod]
 ----
 
 Like in Python, Rust's code can be structured under modules. We could
@@ -148,7 +144,7 @@ the asterisk (`*`) as the name means to import everything under
 Now we'll add some constants so we don't end up littering the
 source code with a bunch of opaque numbers:
 
-[role=hide]
+[source,rust]
 ----
 // tag::consts[]
 // actual size of the window
@@ -157,11 +153,6 @@ const SCREEN_HEIGHT: i32 = 50;
 
 const LIMIT_FPS: i32 = 20; // 20 frames-per-second maximum
 // end::consts[]
-----
-
-[source,rust]
-----
-include::part-1-graphics.adoc[tag=consts]
 ----
 
 Just like in Python, constants are written using uppercase (as a
@@ -182,7 +173,7 @@ To create a window we call `Root::initializer(). ... .init()`.
 In between go custom settings. Default values are going to be used for
 any option that's not specified.
 
-[role=hide]
+[source,rust]
 ----
 // tag::init[]
 let mut root = Root::initializer()
@@ -194,10 +185,6 @@ let mut root = Root::initializer()
 // end::init[]
 ----
 
-[source,rust]
-----
-include::part-1-graphics.adoc[tag=init]
-----
 
 A bunch of stuff is happening here so let's unpack this.
 
@@ -235,16 +222,11 @@ Calling `init` will finalise the configuration and actually create the
 window.
 
 
-[role=hide]
+[source,rust]
 ----
 // tag::set_fps[]
 tcod::system::set_fps(LIMIT_FPS);
 // end::set_fps[]
-----
-
-[source,rust]
-----
-include::part-1-graphics.adoc[tag=set_fps]
 ----
 
 This line will limit the maximum number of frames per second libtcod
@@ -255,7 +237,7 @@ it will have no effect.
 And speaking of game loops, now's the time to add one! Let's render a
 white `@` on the screen until the libtcod window gets closed:
 
-[role=hide]
+[source,rust]
 ----
 // tag::initial_game_loop[]
 // tag::initial_game_loop_header[]
@@ -270,11 +252,6 @@ while !root.window_closed() {
     root.wait_for_keypress(true);
 }
 // end::initial_game_loop[]
-----
-
-[source,rust]
-----
-include::part-1-graphics.adoc[tag=initial_game_loop]
 ----
 
 Since we've set the FPS limit, this loop will be executed 20 times a
@@ -323,17 +300,12 @@ So that was cool. Now let's make our `@` move!
 We'll need to keep track of the player's position. Let's create
 variables for `x` and `y` and put them right before the game loop:
 
-[role=hide]
+[source,rust]
 ----
 // tag::centre_player_position[]
 let mut player_x = SCREEN_WIDTH / 2;
 let mut player_y = SCREEN_HEIGHT / 2;
 // end::centre_player_position[]
-----
-
-[source,rust]
-----
-include::part-1-graphics.adoc[tag=centre_player_position]
 ----
 
 They are mutable (we will change them when the player presses the
@@ -345,7 +317,7 @@ our game loop more readable. It will need the `root` console because
 that's where we read the pressed keys from and also the player's
 coordinates so we can change them based on the player's actions.
 
-[role=hide]
+[source,rust]
 ----
 // tag::handle_keys_full[]
 // tag::handle_keys_header[]
@@ -358,11 +330,6 @@ fn handle_keys(root: &mut Root, player_x: &mut i32, player_y: &mut i32) -> bool 
 }
 // end::handle_keys_footer[]
 // end::handle_keys_full[]
-----
-
-[source,rust]
-----
-include::part-1-graphics.adoc[tag=handle_keys_full]
 ----
 
 A function signature in Rust is `fn function_name(parameter:
@@ -397,7 +364,7 @@ stuff.
 We use the `wait_for_keypress` method to get the key and then update
 the player's position if it's one of the arrow keys:
 
-[role=hide]
+[source,rust]
 ----
 // tag::match_key_full[]
 // tag::match_key_header[]
@@ -415,11 +382,6 @@ match key {
 }
 // end::movement_keys[]
 // end::match_key_full[]
-----
-
-[source,rust]
-----
-include::part-1-graphics.adoc[tag=match_key_full]
 ----
 
 Instead of chaining a ton of `if/else` expressions together, we use
@@ -450,7 +412,6 @@ the game.
 Put these at the beginning of `match key`:
 
 [source,rust]
-[role=hide]
 ----
 // tag::match_special_keys[]
 Key {
@@ -466,26 +427,16 @@ Key { code: Escape, .. } => return true, // exit game
 // end::match_special_keys[]
 ----
 
-[source,rust]
-----
-include::part-1-graphics.adoc[tag=match_special_keys]
-----
-
 
 And finally we need to `use` the keyboard input types we have in the
 code:
 
-[role=hide]
+[source,rust]
 ----
 // tag::use_input_key[]
 use tcod::input::Key;
 use tcod::input::KeyCode::*;
 // end::use_input_key[]
-----
-
-[source,rust]
-----
-include::part-1-graphics.adoc[tag=use_input_key]
 ----
 
 Now, we could put it on top of the file next to the existing imports,
@@ -498,7 +449,7 @@ And finally, we just update the main loop to use our key handling and
 draw at the player coordinates instead of `(1, 1)`. Put this at the
 end of the `while` block:
 
-[role=hide]
+[source,rust]
 ----
 // tag::handle_exit_keys[]
 // handle keys and exit game if needed
@@ -509,11 +460,6 @@ if exit {
 // end::handle_exit_keys[]
 ----
 
-[source,rust]
-----
-include::part-1-graphics.adoc[tag=handle_exit_keys]
-----
-
 As you can see, we're passing `root` and the coordinates as mutable
 references.
 
@@ -521,16 +467,10 @@ references.
 Now update our drawing function to use the player coordinates:
 
 [source,rust]
-[role=hide]
 ----
 // tag::player_at_position[]
 root.put_char(player_x, player_y, '@', BackgroundFlag::None);
 // end::player_at_position[]
-----
-
-[source,rust]
-----
-include::part-1-graphics.adoc[tag=player_at_position]
 ----
 
 Here's link:part-1b-movement.rs[the complete code so far].
