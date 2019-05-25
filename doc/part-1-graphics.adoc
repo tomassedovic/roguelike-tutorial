@@ -122,7 +122,7 @@ _crates_. Next, add some imports via the `use` statements:
 
 [source,rust]
 ----
-// tag::extern_and_use_tcod[]
+tag::extern_and_use_tcod[]
 tag::extern_tcod[]
 extern crate tcod;
 end::extern_tcod[]
@@ -131,7 +131,7 @@ use tcod::colors;
 tag::use_console[]
 use tcod::console::*;
 end::use_console[]
-// end::extern_and_use_tcod[]
+end::extern_and_use_tcod[]
 ----
 
 Like in Python, Rust's code can be structured under modules. We could
@@ -150,13 +150,13 @@ source code with a bunch of opaque numbers:
 
 [source,rust]
 ----
-// tag::consts[]
+tag::consts[]
 // actual size of the window
 const SCREEN_WIDTH: i32 = 80;
 const SCREEN_HEIGHT: i32 = 50;
 
 const LIMIT_FPS: i32 = 20; // 20 frames-per-second maximum
-// end::consts[]
+end::consts[]
 ----
 
 Just like in Python, constants are written using uppercase (as a
@@ -179,14 +179,14 @@ any option that's not specified.
 
 [source,rust]
 ----
-// tag::init[]
+tag::init[]
 let mut root = Root::initializer()
     .font("arial10x10.png", FontLayout::Tcod)
     .font_type(FontType::Greyscale)
     .size(SCREEN_WIDTH, SCREEN_HEIGHT)
     .title("Rust/libtcod tutorial")
     .init();
-// end::init[]
+end::init[]
 ----
 
 
@@ -228,9 +228,9 @@ window.
 
 [source,rust]
 ----
-// tag::set_fps[]
+tag::set_fps[]
 tcod::system::set_fps(LIMIT_FPS);
-// end::set_fps[]
+end::set_fps[]
 ----
 
 This line will limit the maximum number of frames per second libtcod
@@ -243,21 +243,21 @@ white `@` on the screen until the libtcod window gets closed:
 
 [source,rust]
 ----
-// tag::initial_game_loop[]
-// tag::initial_game_loop_header[]
+tag::initial_game_loop[]
+tag::initial_game_loop_header[]
 tag::game_loop_while_header[]
 while !root.window_closed() {
 end::game_loop_while_header[]
     root.set_default_foreground(colors::WHITE);
     root.clear();
-// end::initial_game_loop_header[]
+end::initial_game_loop_header[]
     root.put_char(1, 1, '@', BackgroundFlag::None);
-// tag::root_flush[]
+tag::root_flush[]
     root.flush();
-// end::root_flush[]
+end::root_flush[]
     root.wait_for_keypress(true);
 }
-// end::initial_game_loop[]
+end::initial_game_loop[]
 ----
 
 Since we've set the FPS limit, this loop will be executed 20 times a
@@ -308,10 +308,10 @@ variables for `x` and `y` and put them right before the game loop:
 
 [source,rust]
 ----
-// tag::centre_player_position[]
+tag::centre_player_position[]
 let mut player_x = SCREEN_WIDTH / 2;
 let mut player_y = SCREEN_HEIGHT / 2;
-// end::centre_player_position[]
+end::centre_player_position[]
 ----
 
 They are mutable (we will change them when the player presses the
@@ -325,17 +325,17 @@ coordinates so we can change them based on the player's actions.
 
 [source,rust]
 ----
-// tag::handle_keys_full[]
-// tag::handle_keys_header[]
+tag::handle_keys_full[]
+tag::handle_keys_header[]
 fn handle_keys(root: &mut Root, player_x: &mut i32, player_y: &mut i32) -> bool {
-// end::handle_keys_header[]
+end::handle_keys_header[]
     // todo: handle keys
 
-// tag::handle_keys_footer[]
+tag::handle_keys_footer[]
     false
 }
-// end::handle_keys_footer[]
-// end::handle_keys_full[]
+end::handle_keys_footer[]
+end::handle_keys_full[]
 ----
 
 A function signature in Rust is `fn function_name(parameter:
@@ -372,24 +372,24 @@ the player's position if it's one of the arrow keys:
 
 [source,rust]
 ----
-// tag::match_key_full[]
-// tag::match_key_header[]
+tag::match_key_full[]
+tag::match_key_header[]
 let key = root.wait_for_keypress(true);
 match key {
-// end::match_key_header[]
-// tag::movement_keys[]
+end::match_key_header[]
+tag::movement_keys[]
     // movement keys
     Key { code: Up, .. } => *player_y -= 1,
     Key { code: Down, .. } => *player_y += 1,
     Key { code: Left, .. } => *player_x -= 1,
     Key { code: Right, .. } => *player_x += 1,
-// end::movement_keys[]
+end::movement_keys[]
 
 tag::match_key_footer[]
     _ => {}
 }
 end::match_key_footer[]
-// end::match_key_full[]
+end::match_key_full[]
 ----
 
 Instead of chaining a ton of `if/else` expressions together, we use
@@ -421,7 +421,7 @@ Put these at the beginning of `match key`:
 
 [source,rust]
 ----
-// tag::match_special_keys[]
+tag::match_special_keys[]
 Key {
     code: Enter,
     alt: true,
@@ -432,7 +432,7 @@ Key {
     root.set_fullscreen(!fullscreen);
 }
 Key { code: Escape, .. } => return true, // exit game
-// end::match_special_keys[]
+end::match_special_keys[]
 ----
 
 
@@ -441,10 +441,10 @@ code:
 
 [source,rust]
 ----
-// tag::use_input_key[]
+tag::use_input_key[]
 use tcod::input::Key;
 use tcod::input::KeyCode::*;
-// end::use_input_key[]
+end::use_input_key[]
 ----
 
 Now, we could put it on top of the file next to the existing imports,
@@ -459,7 +459,7 @@ end of the `while` block:
 
 [source,rust]
 ----
-// tag::handle_exit_keys[]
+tag::handle_exit_keys[]
 // handle keys and exit game if needed
 let exit = handle_keys(&mut root, &mut player_x, &mut player_y);
 tag::exit_game_loop[]
@@ -467,7 +467,7 @@ if exit {
     break;
 }
 end::exit_game_loop[]
-// end::handle_exit_keys[]
+end::handle_exit_keys[]
 ----
 
 As you can see, we're passing `root` and the coordinates as mutable
@@ -478,9 +478,9 @@ Now update our drawing function to use the player coordinates:
 
 [source,rust]
 ----
-// tag::player_at_position[]
+tag::player_at_position[]
 root.put_char(player_x, player_y, '@', BackgroundFlag::None);
-// end::player_at_position[]
+end::player_at_position[]
 ----
 
 Here's link:part-1b-movement.rs[the complete code so far].
