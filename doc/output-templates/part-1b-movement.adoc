@@ -12,7 +12,9 @@ include::../part-1-graphics.adoc[tag=use_input_key,indent=4]
 include::../part-1-graphics.adoc[tag=match_key_header,indent=4]
 include::../part-1-graphics.adoc[tag=match_special_keys,indent=8]
 
-include::../part-1-graphics.adoc[tag=movement_keys,indent=4]
+include::../part-1-graphics.adoc[tag=movement_keys,indent=8]
+
+include::../part-1-graphics.adoc[tag=match_key_footer,indent=4]
 
 include::../part-1-graphics.adoc[tag=handle_keys_footer]
 

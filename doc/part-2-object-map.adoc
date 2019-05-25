@@ -24,11 +24,20 @@ Put this right after we initialise the root console:
 
 [source,rust]
 ----
+tag::offscreen[]
 let mut con = Offscreen::new(SCREEN_WIDTH, SCREEN_HEIGHT);
+end::offscreen[]
 ----
 
 Now call the `set_default_foreground`, `clear` and `put_char` methods
-on `con` instead of `root`.
+on `con` instead of `root`:
+
+[source]
+----
+con.set_default_foreground(colors::WHITE);
+con.clear();
+con.put_char(player_x, player_y, '@', BackgroundFlag::None);
+----
 
 And finally, blit the contents of the new console to the root console
 to display them. The `blit` function takes a lot of parameters, but
@@ -41,7 +50,18 @@ top-left corner) and finally a foreground and background transparency
 
 [source,rust]
 ----
-blit(&mut con, (0, 0), (SCREEN_WIDTH, SCREEN_HEIGHT), &mut root, (0, 0), 1.0, 1.0);
+tag::blit[]
+// blit the contents of "con" to the root console and present it
+blit(
+    &mut con,
+    (0, 0),
+    (SCREEN_WIDTH, SCREEN_HEIGHT),
+    &mut root,
+    (0, 0),
+    1.0,
+    1.0,
+);
+end::blit[]
 ----
 
 
@@ -66,13 +86,18 @@ the player earlier.
 
 [source,rust]
 ----
+tag::object_struct[]
+/// This is a generic object: the player, a monster, an item, the stairs...
+/// It's always represented by a character on screen.
 struct Object {
     x: i32,
     y: i32,
     char: char,
     color: Color,
 }
+end::object_struct[]
 
+tag::object_impl[]
 impl Object {
     pub fn new(x: i32, y: i32, char: char, color: Color) -> Self {
         Object {
@@ -83,8 +108,8 @@ impl Object {
         }
     }
 
+    /// move by the given amount
     pub fn move_by(&mut self, dx: i32, dy: i32) {
-        // move by the given amount
         self.x += dx;
         self.y += dy;
     }
@@ -95,6 +120,32 @@ impl Object {
         con.put_char(self.x, self.y, self.char, BackgroundFlag::None);
     }
 }
+end::object_impl[]
+----
+
+We will need to import the `Color` struct directly as well:
+
+[source,rust]
+----
+tag::use_colors[]
+use tcod::colors::{self, Color};
+end::use_colors[]
+----
+
+This is necessary, because the `Object` code uses `Color` directly, as
+opposed to `colors::Color`. We could have kept using the longer name,
+but `Color` is a common struct that we'll be using quite often so
+we'll save ourselves some typing.
+
+The `self` keyword in the `use` statement means to use the module
+itself as well. If we wrote `use tcod::colors::Color`, that would make
+`Color` available, but not the `colors` module. The `self` item stands
+for `colors` here. It's a shortcut for typing this:
+
+[source,rust]
+----
+use tcod::colors;
+use tcod::colors::Color;
 ----
 
 Now, before the main loop, we will create an actual player `Object`.
@@ -104,9 +155,16 @@ non-player character to test things out:
 
 [source,rust]
 ----
+tag::place_player[]
+// create object representing the player
 let player = Object::new(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, '@', colors::WHITE);
+
+// create an NPC
 let npc = Object::new(SCREEN_WIDTH / 2 - 5, SCREEN_HEIGHT / 2, '@', colors::YELLOW);
+
+// the list of objects with those two
 let mut objects = [player, npc];
+end::place_player[]
 ----
 
 Now we'll need to do a few changes to make it work. First in
@@ -116,26 +174,55 @@ player object.
 
 [source,rust]
 ----
+tag::handle_keys_header[]
 fn handle_keys(root: &mut Root, player: &mut Object) -> bool {
+end::handle_keys_header[]
     // ...
+
+tag::movement_keys[]
+    // movement keys
+    Key { code: Up, .. } => player.move_by(0, -1),
+    Key { code: Down, .. } => player.move_by(0, 1),
+    Key { code: Left, .. } => player.move_by(-1, 0),
+    Key { code: Right, .. } => player.move_by(1, 0),
+end::movement_keys[]
+
+   // ...
 }
 ----
 
-and update the way we call it:
+and update the way we call the function:
 
 [source,rust]
 ----
+tag::handle_keys[]
+// handle keys and exit game if needed
 let player = &mut objects[0];
 let exit = handle_keys(&mut root, player);
+end::handle_keys[]
 ----
 
 Next, the main loop will now draw all objects like so:
 
 [source,rust]
 ----
+tag::draw_objects[]
 for object in &objects {
     object.draw(&mut con);
 }
+end::draw_objects[]
+----
+
+And finally, since we're now handling colour and rendering in the `Object::draw` method,
+we can now remove the `set_default_foreground` and `put_char` calls from the main loop and
+instead just clear the offscreen console:
+
+[source,rust]
+----
+tag::clear_offscreen_console[]
+// clear the screen of the previous frame
+con.clear();
+end::clear_offscreen_console[]
 ----
 
 And that's it! We have a fully generic object system. Later we can
@@ -143,7 +230,7 @@ modify this to have all the info items, monsters and anything else
 will require.
 
 
-Here's link:part-2a-generalising.rs.txt[the code so far].
+Here's link:part-2a-generalising.rs[the code so far].
 
 == The Map
 

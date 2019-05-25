@@ -123,10 +123,14 @@ _crates_. Next, add some imports via the `use` statements:
 [source,rust]
 ----
 // tag::extern_and_use_tcod[]
+tag::extern_tcod[]
 extern crate tcod;
+end::extern_tcod[]
 
 use tcod::colors;
+tag::use_console[]
 use tcod::console::*;
+end::use_console[]
 // end::extern_and_use_tcod[]
 ----
 
@@ -241,7 +245,9 @@ white `@` on the screen until the libtcod window gets closed:
 ----
 // tag::initial_game_loop[]
 // tag::initial_game_loop_header[]
+tag::game_loop_while_header[]
 while !root.window_closed() {
+end::game_loop_while_header[]
     root.set_default_foreground(colors::WHITE);
     root.clear();
 // end::initial_game_loop_header[]
@@ -377,10 +383,12 @@ match key {
     Key { code: Down, .. } => *player_y += 1,
     Key { code: Left, .. } => *player_x -= 1,
     Key { code: Right, .. } => *player_x += 1,
+// end::movement_keys[]
 
+tag::match_key_footer[]
     _ => {}
 }
-// end::movement_keys[]
+end::match_key_footer[]
 // end::match_key_full[]
 ----
 
@@ -454,9 +462,11 @@ end of the `while` block:
 // tag::handle_exit_keys[]
 // handle keys and exit game if needed
 let exit = handle_keys(&mut root, &mut player_x, &mut player_y);
+tag::exit_game_loop[]
 if exit {
     break;
 }
+end::exit_game_loop[]
 // end::handle_exit_keys[]
 ----
 
