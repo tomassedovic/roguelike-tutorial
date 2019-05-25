@@ -1,0 +1,1 @@
+include::../part-9-spells.adoc[tag=**]
