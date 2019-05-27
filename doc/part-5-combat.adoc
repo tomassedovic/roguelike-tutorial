@@ -607,7 +607,7 @@ tag::match_special_keys[]
     root.set_fullscreen(!fullscreen);
     DidntTakeTurn
 }
-(Key { code: Escape, .. }, _) => return Exit, // exit game
+(Key { code: Escape, .. }, _) => Exit, // exit game
 end::match_special_keys[]
 ----
 

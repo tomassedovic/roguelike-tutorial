@@ -21,6 +21,7 @@ hit points (for healing), defense and attack power.
 
 [source]
 ----
+tag::fighter_struct[]
 // combat-related properties and methods (monster, player, NPC).
 #[derive(Clone, Copy, Debug, PartialEq)]
 struct Fighter {
@@ -29,6 +30,7 @@ struct Fighter {
     defense: i32,
     power: i32,
 }
+end::fighter_struct[]
 ----
 
 Next is the component for monster artificial intelligence. For now, it
@@ -36,25 +38,55 @@ will not carry any data, but we'll soon remedy that.
 
 [source]
 ----
+tag::ai_struct[]
 #[derive(Clone, Copy, Debug, PartialEq)]
 struct Ai;
+end::ai_struct[]
 ----
 
 And update the `Object` definition:
 
 [source]
 ----
-fighter: Option<Fighter>,
-ai: Option<Ai>,
+tag::object_struct[]
+struct Object {
+    x: i32,
+    y: i32,
+    char: char,
+    color: Color,
+    name: String,
+    blocks: bool,
+    alive: bool,
+    fighter: Option<Fighter>,  // <1>
+    ai: Option<Ai>,  // <2>
+}
+end::object_struct[]
 ----
+<1> Added the `Fighter` component
+<2> Added the `Ai` component
 
 and `Object::new`:
 
 [source]
 ----
-fighter: None,
-ai: None,
+tag::object_new[]
+pub fn new(x: i32, y: i32, char: char, name: &str, color: Color, blocks: bool) -> Self {
+    Object {
+        x: x,
+        y: y,
+        char: char,
+        color: color,
+        name: name.into(),
+        blocks: blocks,
+        alive: false,
+        fighter: None,  // <1>
+        ai: None,  // <2>
+    }
+}
+end::object_new[]
 ----
+<1> Initialise the `Fighter` component to `None`
+<2> Initialise the `Ai` component to `None`
 
 This means that the newly-created objects will not have any
 components. We can add them ourselves, though!
@@ -63,12 +95,14 @@ First the player:
 
 [source]
 ----
+tag::player_fighter[]
 player.fighter = Some(Fighter {
     max_hp: 30,
     hp: 30,
     defense: 2,
     power: 5,
 });
+end::player_fighter[]
 ----
 
 (you'll need to make the `player` variable mutable because we're
@@ -81,9 +115,11 @@ defined:
 
 [source]
 ----
-if ... {
+tag::generate_monster[]
+let mut monster = if rand::random::<f32>() < 0.8 {
+    // 80% chance of getting an orc
     // create an orc
-    let mut orc = Object::new(x, y, 'o', "orc", colors::DESATURATED_GREEN, true);
+    let mut orc = Object::new(x, y, 'o', "orc", DESATURATED_GREEN, true);
     orc.fighter = Some(Fighter {
         max_hp: 10,
         hp: 10,
@@ -94,7 +130,7 @@ if ... {
     orc
 } else {
     // create a troll
-    let mut troll = Object::new(x, y, 'T', "troll", colors::DARKER_GREEN, true);
+    let mut troll = Object::new(x, y, 'T', "troll", DARKER_GREEN, true);
     troll.fighter = Some(Fighter {
         max_hp: 16,
         hp: 16,
@@ -103,7 +139,8 @@ if ... {
     });
     troll.ai = Some(Ai);
     troll
-}
+};
+end::generate_monster[]
 ----
 
 == AI
@@ -117,6 +154,7 @@ usually) to move towards a position (the player's coordinates, usually).
 
 [source]
 ----
+tag::move_towards[]
 fn move_towards(id: usize, target_x: i32, target_y: i32, map: &Map, objects: &mut [Object]) {
     // vector from this object to the target, and distance
     let dx = target_x - objects[id].x;
@@ -129,6 +167,7 @@ fn move_towards(id: usize, target_x: i32, target_y: i32, map: &Map, objects: &mu
     let dy = (dy as f32 / distance).round() as i32;
     move_by(id, dx, dy, map, objects);
 }
+end::move_towards[]
 ----
 
 Next we'll add a method on `Object` that will tell us the distance to
@@ -136,12 +175,14 @@ another object.
 
 [source]
 ----
+tag::distance_to[]
 /// return the distance to another object
 pub fn distance_to(&self, other: &Object) -> f32 {
     let dx = other.x - self.x;
     let dy = other.y - self.y;
     ((dx.pow(2) + dy.pow(2)) as f32).sqrt()
 }
+end::distance_to[]
 ----
 
 All right, let's use them to implement some basic behaviour: if the
@@ -149,6 +190,7 @@ monster is close, it will attack, otherwise it will move closer.
 
 [source]
 ----
+tag::ai_take_turn[]
 fn ai_take_turn(monster_id: usize, map: &Map, objects: &mut [Object], fov_map: &FovMap) {
     // a basic monster takes its turn. If you can see it, it can see you
     let (monster_x, monster_y) = objects[monster_id].pos();
@@ -167,6 +209,7 @@ fn ai_take_turn(monster_id: usize, map: &Map, objects: &mut [Object], fov_map: &
         }
     }
 }
+end::ai_take_turn[]
 ----
 
 But for any of this to have effect, we need to call it from the main
@@ -174,17 +217,22 @@ loop:
 
 [source]
 ----
-for id in 0..objects.len() {
-    if objects[id].ai.is_some() {
-        ai_take_turn(id, &map, &mut objects, &fov_map);
+tag::monsters_take_turn[]
+// let monsters take their turn
+if objects[PLAYER].alive && player_action != PlayerAction::DidntTakeTurn {
+    for id in 0..objects.len() {
+        if objects[id].ai.is_some() {
+            ai_take_turn(id, &map, &mut objects, &fov_map);
+        }
     }
 }
+end::monsters_take_turn[]
 ----
 
 When you test it now, you can see the monsters following you around
 and trying to attack you.
 
-The whole code is available link:part-6a-ai.rs.txt[here].
+The whole code is available link:part-6a-ai.rs[here].
 
 == Sword-fighting
 
@@ -531,6 +579,6 @@ over them! (_Ugh!_) See if you can finish off all of them before they do
 the same to you.
 
 
-Here's link:part-6b-untimely-deaths.rs.txt[the complete code so far].
+Here's link:part-6b-untimely-deaths.rs[the complete code so far].
 
 Continue to <<part-7-gui#,the next part>>.

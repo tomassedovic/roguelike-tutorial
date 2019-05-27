@@ -373,7 +373,7 @@ fn handle_keys(root: &mut Root, map: &Map, objects: &mut [Object]) -> PlayerActi
             root.set_fullscreen(!fullscreen);
             DidntTakeTurn
         }
-        (Key { code: Escape, .. }, _) => return Exit, // exit game
+        (Key { code: Escape, .. }, _) => Exit, // exit game
 
         // movement keys
         (Key { code: Up, .. }, true) => {
