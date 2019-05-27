@@ -3,6 +3,10 @@ all: clean docs
 docs:
 	@mkdir -p target/tutorial
 	asciidoctor --destination-dir target/tutorial doc/output-templates/*.adoc
+	@# Remove the asciidoc callout comments (e.g. `// <1>`) from the Rust outputs:
+	@sed -i -e 's|\s*//\s*<[0-9]*>||g' target/tutorial/*.rs
+	@# Add trailing newline to the Rust outputs:
+	@for rust in target/tutorial/*.rs; do echo >> $$rust; done
 
 publish:
 	@git diff-index --quiet HEAD || { echo "Error: the repository is dirty."; exit 1; }
