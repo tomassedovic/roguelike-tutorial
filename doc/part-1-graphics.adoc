@@ -100,38 +100,24 @@ Be sure to put it in your game directory -- next to `Cargo.toml`!
 
 == Showing the @ on screen
 
-Now let's open the `src/main.rs` file and tell it to use libtcod. Put
-this as the first line of the file (before the `fn main` block):
-
-[source,rust]
-----
-extern crate tcod;
-----
-
 To use any external library (i.e. code outside of your project) in
 Rust, you need to have it in `Cargo.toml` under `[dependencies]`:
 
 [source,toml]
 ----
 [dependencies]
-tcod = "0.12"
+tcod = "0.13"
 ----
 
-and use `extern crate` in your Rust file. Rust libraries are called
-_crates_. Next, add some imports via the `use` statements:
+Rust libraries are called _crates_. Next, add some imports via the `use`
+statements:
 
 [source,rust]
 ----
-tag::extern_and_use_tcod[]
-tag::extern_tcod[]
-extern crate tcod;
-end::extern_tcod[]
-
-use tcod::colors;
-tag::use_console[]
+tag::use_tcod[]
+use tcod::colors::*;
 use tcod::console::*;
-end::use_console[]
-end::extern_and_use_tcod[]
+end::use_tcod[]
 ----
 
 Like in Python, Rust's code can be structured under modules. We could
@@ -158,7 +144,8 @@ const SCREEN_HEIGHT: i32 = 50;
 end::screen_size[]
 
 tag::limit_fps[]
-const LIMIT_FPS: i32 = 20; // 20 frames-per-second maximum
+
+const LIMIT_FPS: i32 = 20;
 end::limit_fps[]
 end::consts[]
 ----
@@ -252,7 +239,7 @@ tag::initial_game_loop_header[]
 tag::game_loop_while_header[]
 while !root.window_closed() {
 end::game_loop_while_header[]
-    root.set_default_foreground(colors::WHITE);
+    root.set_default_foreground(WHITE);
     root.clear();
 end::initial_game_loop_header[]
     root.put_char(1, 1, '@', BackgroundFlag::None);

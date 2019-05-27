@@ -1,6 +1,4 @@
-extern crate tcod;
-
-use tcod::colors;
+use tcod::colors::*;
 use tcod::console::*;
 
 // actual size of the window
@@ -20,7 +18,7 @@ fn main() {
     tcod::system::set_fps(LIMIT_FPS);
 
     while !root.window_closed() {
-        root.set_default_foreground(colors::WHITE);
+        root.set_default_foreground(WHITE);
         root.clear();
         root.put_char(1, 1, '@', BackgroundFlag::None);
         root.flush();

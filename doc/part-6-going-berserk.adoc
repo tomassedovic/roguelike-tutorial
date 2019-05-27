@@ -63,7 +63,12 @@ First the player:
 
 [source]
 ----
-player.fighter = Some(Fighter{max_hp: 30, hp: 30, defense: 2, power: 5});
+player.fighter = Some(Fighter {
+    max_hp: 30,
+    hp: 30,
+    defense: 2,
+    power: 5,
+});
 ----
 
 (you'll need to make the `player` variable mutable because we're
@@ -79,13 +84,23 @@ defined:
 if ... {
     // create an orc
     let mut orc = Object::new(x, y, 'o', "orc", colors::DESATURATED_GREEN, true);
-    orc.fighter = Some(Fighter{max_hp: 10, hp: 10, defense: 0, power: 3});
+    orc.fighter = Some(Fighter {
+        max_hp: 10,
+        hp: 10,
+        defense: 0,
+        power: 3,
+    });
     orc.ai = Some(Ai);
     orc
 } else {
     // create a troll
     let mut troll = Object::new(x, y, 'T', "troll", colors::DARKER_GREEN, true);
-    troll.fighter = Some(Fighter{max_hp: 16, hp: 16, defense: 1, power: 4});
+    troll.fighter = Some(Fighter {
+        max_hp: 16,
+        hp: 16,
+        defense: 1,
+        power: 4,
+    });
     troll.ai = Some(Ai);
     troll
 }
@@ -145,7 +160,10 @@ fn ai_take_turn(monster_id: usize, map: &Map, objects: &mut [Object], fov_map: &
         } else if objects[PLAYER].fighter.map_or(false, |f| f.hp > 0) {
             // close enough, attack! (if the player is still alive.)
             let monster = &objects[monster_id];
-            println!("The attack of the {} bounces off your shiny metal armor!", monster.name);
+            println!(
+                "The attack of the {} bounces off your shiny metal armor!",
+                monster.name
+            );
         }
     }
 }
@@ -198,10 +216,16 @@ pub fn attack(&mut self, target: &mut Object) {
     let damage = self.fighter.map_or(0, |f| f.power) - target.fighter.map_or(0, |f| f.defense);
     if damage > 0 {
         // make the target take some damage
-        println!("{} attacks {} for {} hit points.", self.name, target.name, damage);
+        println!(
+            "{} attacks {} for {} hit points.",
+            self.name, target.name, damage
+        );
         target.take_damage(damage);
     } else {
-        println!("{} attacks {} but it has no effect!", self.name, target.name);
+        println!(
+            "{} attacks {} but it has no effect!",
+            self.name, target.name
+        );
     }
 }
 ----
@@ -281,8 +305,13 @@ attack you. This is how you make a simple GUI! At the end of the
 ----
 // show the player's stats
 if let Some(fighter) = objects[PLAYER].fighter {
-    root.print_ex(1, SCREEN_HEIGHT - 2, BackgroundFlag::None, TextAlignment::Left,
-                 format!("HP: {}/{} ", fighter.hp, fighter.max_hp));
+    root.print_ex(
+        1,
+        SCREEN_HEIGHT - 2,
+        BackgroundFlag::None,
+        TextAlignment::Left,
+        format!("HP: {}/{} ", fighter.hp, fighter.max_hp),
+    );
 }
 ----
 
@@ -438,9 +467,9 @@ following:
 [source]
 ----
 // try to find an attackable object there
-let target_id = objects.iter().position(|object| {
-    object.fighter.is_some() && object.pos() == (x, y)
-});
+let target_id = objects
+    .iter()
+    .position(|object| object.fighter.is_some() && object.pos() == (x, y));
 ----
 
 `is_some` is a method on `Option` that will tell you whether it's
@@ -482,9 +511,12 @@ we'll only sort items that we actually want to draw.
 
 [source]
 ----
-let mut to_draw: Vec<_> = objects.iter().filter(|o| fov_map.is_in_fov(o.x, o.y)).collect();
+let mut to_draw: Vec<_> = objects
+    .iter()
+    .filter(|o| fov_map.is_in_fov(o.x, o.y))
+    .collect();
 // sort so that non-blocknig objects come first
-to_draw.sort_by(|o1, o2| { o1.blocks.cmp(&o2.blocks) });
+to_draw.sort_by(|o1, o2| o1.blocks.cmp(&o2.blocks));
 // draw the objects in the list
 for object in &to_draw {
     object.draw(con);

@@ -73,19 +73,25 @@ equipment on and off:
 /// Equip object and show a message about it
 pub fn equip(&mut self, log: &mut Vec<(String, Color)>) {
     if self.item.is_none() {
-        log.add(format!("Can't equip {:?} because it's not an Item.", self),
-                colors::RED);
-        return
+        log.add(
+            format!("Can't equip {:?} because it's not an Item.", self),
+            colors::RED,
+        );
+        return;
     };
     if let Some(ref mut equipment) = self.equipment {
         if !equipment.equipped {
             equipment.equipped = true;
-            log.add(format!("Equipped {} on {:?}.", self.name, equipment.slot),
-                    colors::LIGHT_GREEN);
+            log.add(
+                format!("Equipped {} on {}.", self.name, equipment.slot),
+                colors::LIGHT_GREEN,
+            );
         }
     } else {
-        log.add(format!("Can't equip {:?} because it's not an Equipment.", self),
-                colors::RED);
+        log.add(
+            format!("Can't equip {:?} because it's not an Equipment.", self),
+            colors::RED,
+        );
     }
 }
 ----
@@ -106,19 +112,25 @@ Dequip works similarly:
 /// Dequip object and show a message about it
 pub fn dequip(&mut self, log: &mut Vec<(String, Color)>) {
     if self.item.is_none() {
-        log.add(format!("Can't dequip {:?} because it's not an Item.", self),
-                colors::RED);
-        return
+        log.add(
+            format!("Can't dequip {:?} because it's not an Item.", self),
+            colors::RED,
+        );
+        return;
     };
     if let Some(ref mut equipment) = self.equipment {
         if equipment.equipped {
             equipment.equipped = false;
-            log.add(format!("Dequipped {} from {:?}.", self.name, equipment.slot),
-                    colors::LIGHT_YELLOW);
+            log.add(
+                format!("Dequipped {} from {}.", self.name, equipment.slot),
+                colors::LIGHT_YELLOW,
+            );
         }
     } else {
-        log.add(format!("Can't dequip {:?} because it's not an Equipment.", self),
-                colors::RED);
+        log.add(
+            format!("Can't dequip {:?} because it's not an Equipment.", self),
+            colors::RED,
+        );
     }
 }
 ----
@@ -167,9 +179,12 @@ We have to create the `toggle_equipment` function:
 
 [source]
 ----
-fn toggle_equipment(inventory_id: usize, _objects: &mut [Object], game: &mut Game, _tcod: &mut Tcod)
-             -> UseResult
-{
+fn toggle_equipment(
+    inventory_id: usize,
+    _objects: &mut [Object],
+    game: &mut Game,
+    _tcod: &mut Tcod,
+) -> UseResult {
     let equipment = match game.inventory[inventory_id].equipment {
         Some(equipment) => equipment,
         None => return UseResult::Cancelled,
@@ -258,8 +273,12 @@ Here's a function that returns an equipment that occupies a given slot
 ----
 fn get_equipped_in_slot(slot: Slot, inventory: &[Object]) -> Option<usize> {
     for (inventory_id, item) in inventory.iter().enumerate() {
-        if item.equipment.as_ref().map_or(false, |e| e.equipped && e.slot == slot) {
-            return Some(inventory_id)
+        if item
+            .equipment
+            .as_ref()
+            .map_or(false, |e| e.equipped && e.slot == slot)
+        {
+            return Some(inventory_id);
         }
     }
     None
@@ -285,7 +304,8 @@ their slots are available. In the `pick_item_up` function, in the
 [source]
 ----
 let item = objects.swap_remove(object_id);
-game.log.add(format!("You picked up a {}!", item.name), colors::GREEN);
+game.log
+    .add(format!("You picked up a {}!", item.name), colors::GREEN);
 let index = game.inventory.len();
 let slot = item.equipment.map(|e| e.slot);
 game.inventory.push(item);
@@ -320,15 +340,18 @@ inventory screen. Replace the `inventory.iter().map(...)` line in
 
 [source]
 ----
-inventory.iter().map(|item| {
-    // show additional information, in case it's equipped
-    match item.equipment {
-        Some(equipment) if equipment.equipped => {
-            format!("{} (on {:?})", item.name, equipment.slot)
+inventory
+    .iter()
+    .map(|item| {
+        // show additional information, in case it's equipped
+        match item.equipment {
+            Some(equipment) if equipment.equipped => {
+                format!("{} (on {})", item.name, equipment.slot)
+            }
+            _ => item.name.clone(),
         }
-        _ => item.name.clone()
-    }
-}).collect()
+    })
+    .collect()
 ----
 
 We just replace the closure passed to `map` to report the equipped
@@ -437,7 +460,11 @@ through all the object's equipment and sum up their bonuses:
 
 [source]
 ----
-let bonus = self.get_all_equipped(game).iter().fold(0, |sum, e| sum + e.power_bonus);
+let bonus = self
+    .get_all_equipped(game)
+    .iter()
+    .map(|e| e.power_bonus)
+    .sum();
 ----
 
 This is a bit of a handful, so let us unpack it.
@@ -446,17 +473,8 @@ First, we'll have a method called `get_all_equipped` which returns all
 equipment for the given object. Then we go through each equipment (using
 `iter`) and sum up all their power bonuses.
 
-:fold: https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.fold
-
-We use the {fold}[`fold` Iterator method] here to do the sum. Fold
-(also called `reduce`) takes a starter argument (`0`) and runs the
-closure on it and the first element from the iterator. The return
-value is the new starter value for the next iterator element.
-
-NOTE: Rust 1.11.0 will have a `sum` iterator method which just adds all
-numbers from an iterator together (which could be easier to
-understand), but at the time of this writing, it's not been
-released.
+The `sum` iterator method which just adds all
+numbers from an iterator together.
 
 Finally, the `Equipment` component needs to have the `power_bonus`
 property!
@@ -494,13 +512,11 @@ pub fn get_all_equipped(&self, game: &Game) -> Vec<Equipment> {
     if self.name == "player" {
         game.inventory
             .iter()
-            .filter(|item| {
-                item.equipment.map_or(false, |e| e.equipped)
-            })
+            .filter(|item| item.equipment.map_or(false, |e| e.equipped))
             .map(|item| item.equipment.unwrap())
             .collect()
     } else {
-        vec![]
+        vec![] // other objects have no equipment
     }
 }
 ----
@@ -534,7 +550,11 @@ And let's update our `power` method to use `base_power`:
 ----
 pub fn power(&self, game: &Game) -> i32 {
     let base_power = self.fighter.map_or(0, |f| f.base_power);
-    let bonus = self.get_all_equipped(game).iter().fold(0, |sum, e| sum + e.power_bonus);
+    let bonus: i32 = self
+        .get_all_equipped(game)
+        .iter()
+        .map(|e| e.power_bonus)
+        .sum();
     base_power + bonus
 }
 ----
@@ -563,16 +583,28 @@ Next, we have to change `power` to `base_power` in `place_objects`. From:
 
 [source]
 ----
-orc.fighter = Some(Fighter{max_hp: 20, hp: 20, defense: 0, power: 4, xp: 35,
-                                               on_death: DeathCallback::Monster});
+orc.fighter = Some(Fighter {
+    max_hp: 20,
+    hp: 20,
+    defense: 0,
+    base_power: 4,
+    xp: 35,
+    on_death: DeathCallback::Monster,
+});
 ----
 
 to:
 
 [source]
 ----
-orc.fighter = Some(Fighter{max_hp: 20, hp: 20, defense: 0, base_power: 4, xp: 35,
-                                               on_death: DeathCallback::Monster});
+troll.fighter = Some(Fighter {
+    max_hp: 30,
+    hp: 30,
+    defense: 2,
+    base_power: 8,
+    xp: 100,
+    on_death: DeathCallback::Monster,
+});
 ----
 
 And similarly for `troll`.
@@ -590,7 +622,14 @@ Experience to level up: {}
 
 Maximum HP: {}
 Attack: {}
-Defense: {}", level, fighter.xp, level_up_xp, fighter.max_hp, player.power(game), fighter.defense);  // <1>
+Defense: {}",
+    level,
+    fighter.xp,
+    level_up_xp,
+    fighter.max_hp,
+    player.power(game), // <1>
+    fighter.defense
+);
 ----
 <1> `fighter.power` -> `player.power(game)`
 
@@ -600,10 +639,14 @@ But the `level_up` screen should only show the base power:
 ----
 choice = menu(
     "Level up! Choose a stat to raise:\n",
-    &[format!("Constitution (+20 HP, from {})", fighter.max_hp),
-      format!("Strength (+1 attack, from {})", fighter.base_power),  // <1>
-      format!("Agility (+1 defense, from {})", fighter.defense)],
-    LEVEL_SCREEN_WIDTH, &mut tcod.root);
+    &[
+        format!("Constitution (+20 HP, from {})", fighter.max_hp),
+        format!("Strength (+1 attack, from {})", fighter.base_power), // <1>
+        format!("Agility (+1 defense, from {})", fighter.defense),
+    ],
+    LEVEL_SCREEN_WIDTH,
+    &mut tcod.root,
+);
 ----
 <1> `fighter.power` -> `fighter.base_power`
 
@@ -621,8 +664,14 @@ And finally, we need to player's `Fighter` component in `new_game`:
 
 [source]
 ----
-player.fighter = Some(Fighter{max_hp: 100, hp: 100, defense: 1, base_power: 4, xp: 0,  // <1>
-                                  on_death: DeathCallback::Player});
+player.fighter = Some(Fighter {
+    max_hp: 100,
+    hp: 100,
+    defense: 1,
+    base_power: 4, // <1>
+    xp: 0,
+    on_death: DeathCallback::Player,
+});
 ----
 <1> `fighter.power` -> `fighter.base_power`
 
@@ -634,7 +683,11 @@ fix the compilation errors.
 ----
 pub fn defense(&self, game: &Game) -> i32 {
     let base_defense = self.fighter.map_or(0, |f| f.base_defense);
-    let bonus = self.get_all_equipped(game).iter().fold(0, |sum, e| sum + e.defense_bonus);
+    let bonus: i32 = self
+        .get_all_equipped(game)
+        .iter()
+        .map(|e| e.defense_bonus)
+        .sum();
     base_defense + bonus
 }
 ----
@@ -686,7 +739,11 @@ And the and `max_hp` method on `Object`:
 ----
 pub fn max_hp(&self, game: &Game) -> i32 {
     let base_max_hp = self.fighter.map_or(0, |f| f.base_max_hp);
-    let bonus = self.get_all_equipped(game).iter().fold(0, |sum, e| sum + e.max_hp_bonus);
+    let bonus: i32 = self
+        .get_all_equipped(game)
+        .iter()
+        .map(|e| e.max_hp_bonus)
+        .sum();
     base_max_hp + bonus
 }
 ----
@@ -725,7 +782,8 @@ fn cast_heal(_inventory_id: usize, objects: &mut [Object], game: &mut Game, _tco
             game.log.add("You are already at full health.", colors::RED);
             return UseResult::Cancelled;
         }
-        game.log.add("Your wounds start to feel better!", colors::LIGHT_VIOLET);
+        game.log
+            .add("Your wounds start to feel better!", colors::LIGHT_VIOLET);
         player.heal(HEAL_AMOUNT, game);  // <2>
         return UseResult::UsedUp;
     }
@@ -792,20 +850,57 @@ And assign them chances in `place_objects`. We'll use our
 [source]
 ----
 // item random table
-let item_chances = &mut [
-    // healing potion always shows up, even if all other items have 0 chance
-    Weighted {weight: 35, item: Item::Heal},
-    Weighted {weight: from_dungeon_level(&[Transition{level: 4, value: 25}], level),
-              item: Item::Lightning},
-    Weighted {weight: from_dungeon_level(&[Transition{level: 6, value: 25}], level),
-              item: Item::Fireball},
-    Weighted {weight: from_dungeon_level(&[Transition{level: 2, value: 10}], level),
-              item: Item::Confuse},
-    Weighted {weight: from_dungeon_level(&[Transition{level: 4, value: 5}], level),  // <1>
-              item: Item::Sword},
-    Weighted {weight: from_dungeon_level(&[Transition{level: 8, value: 15}], level),  // <2>
-              item: Item::Shield},
-];
+    let item_chances = &mut [
+        // healing potion always shows up, even if all other items have 0 chance
+        Weighted {
+            weight: 35,
+            item: Item::Heal,
+        },
+        Weighted {
+            weight: from_dungeon_level(
+                &[Transition {
+                    level: 4,
+                    value: 25,
+                }],
+                level,
+            ),
+            item: Item::Lightning,
+        },
+        Weighted {
+            weight: from_dungeon_level(
+                &[Transition {
+                    level: 6,
+                    value: 25,
+                }],
+                level,
+            ),
+            item: Item::Fireball,
+        },
+        Weighted {
+            weight: from_dungeon_level(
+                &[Transition {
+                    level: 2,
+                    value: 10,
+                }],
+                level,
+            ),
+            item: Item::Confuse,
+        },
+        Weighted {
+            weight: from_dungeon_level(&[Transition { level: 4, value: 5 }], level),
+            item: Item::Sword, // <1>
+        },
+        Weighted {
+            weight: from_dungeon_level(
+                &[Transition {
+                    level: 8,
+                    value: 15,
+                }],
+                level,
+            ),
+            item: Item::Shield, // <2>
+        },
+    ];
 ----
 <1> This replaces `Item::Equipment`
 <2> This is new
@@ -819,7 +914,13 @@ Item::Shield => {
     // create a shield
     let mut object = Object::new(x, y, '[', "shield", colors::DARKER_ORANGE, false);
     object.item = Some(Item::Shield);
-    object.equipment = Some(Equipment{equipped: false, slot: Slot::LeftHand, max_hp_bonus: 0, defense_bonus: 1, power_bonus: 0});
+    object.equipment = Some(Equipment {
+        equipped: false,
+        slot: Slot::LeftHand,
+        max_hp_bonus: 0,
+        defense_bonus: 1,
+        power_bonus: 0,
+    });
     object
 }
 ----
@@ -849,8 +950,14 @@ a dungeon of doom after all!
 
 [source]
 ----
-player.fighter = Some(Fighter{base_max_hp: 100, hp: 100, base_defense: 1, base_power: 2, xp: 0,
-                              on_death: DeathCallback::Player});
+player.fighter = Some(Fighter {
+    base_max_hp: 100,
+    hp: 100,
+    base_defense: 1,
+    base_power: 2,
+    xp: 0,
+    on_death: DeathCallback::Player,
+});
 ----
 
 And that's it. We've got a bonus system that's generic enough for all

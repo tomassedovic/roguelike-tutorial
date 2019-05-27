@@ -1,9 +1,5 @@
-extern crate rand;
-extern crate serde;
-extern crate tcod;
 #[macro_use]
 extern crate serde_derive;
-extern crate serde_json;
 
 use std::cmp;
 
@@ -1331,7 +1327,7 @@ fn play_game(objects: &mut Vec<Object>, game: &mut Game, tcod: &mut Tcod) {
             break;
         }
 
-        // let monstars take their turn
+        // let monsters take their turn
         if objects[PLAYER].alive && player_action != PlayerAction::DidntTakeTurn {
             for id in 0..objects.len() {
                 if objects[id].ai.is_some() {

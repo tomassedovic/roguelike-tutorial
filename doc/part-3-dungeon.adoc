@@ -249,10 +249,6 @@ And put this on top of your source file:
 
 [source,rust]
 ----
-tag::extern_rand[]
-extern crate rand;
-end::extern_rand[]
-...
 tag::use_rng[]
 use rand::Rng;
 end::use_rng[]

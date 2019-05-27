@@ -106,12 +106,7 @@ impl Object {
 end::object_impl_header[]
 tag::object_new[]
     pub fn new(x: i32, y: i32, char: char, color: Color) -> Self {
-        Object {
-            x: x,
-            y: y,
-            char: char,
-            color: color,
-        }
+        Object { x, y, char, color }
     }
 end::object_new[]
 tag::object_move_by[]
@@ -130,31 +125,6 @@ tag::object_draw[]
 end::object_draw[]
 }
 end::object_impl[]
-----
-
-We will need to import the `Color` struct directly as well:
-
-[source,rust]
-----
-tag::use_colors[]
-use tcod::colors::{self, Color};
-end::use_colors[]
-----
-
-This is necessary, because the `Object` code uses `Color` directly, as
-opposed to `colors::Color`. We could have kept using the longer name,
-but `Color` is a common struct that we'll be using quite often so
-we'll save ourselves some typing.
-
-The `self` keyword in the `use` statement means to use the module
-itself as well. If we wrote `use tcod::colors::Color`, that would make
-`Color` available, but not the `colors` module. The `self` item stands
-for `colors` here. It's a shortcut for typing this:
-
-[source,rust]
-----
-use tcod::colors;
-use tcod::colors::Color;
 ----
 
 Now, before the main loop, we will create an actual player `Object`.

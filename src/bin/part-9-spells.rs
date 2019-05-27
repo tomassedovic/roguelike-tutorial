@@ -1,6 +1,3 @@
-extern crate rand;
-extern crate tcod;
-
 use std::cmp;
 
 use rand::Rng;
@@ -403,7 +400,7 @@ fn ai_confused(
 ) -> Ai {
     if num_turns >= 0 {
         // still confused ...
-        // move in a random idrection, and decrease the number of turns confused
+        // move in a random direction, and decrease the number of turns confused
         move_by(
             monster_id,
             rand::thread_rng().gen_range(-1, 2),

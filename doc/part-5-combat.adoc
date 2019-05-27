@@ -375,7 +375,11 @@ And then, in the code for fullscreen, return `DidntTakeTurn`:
 
 [source]
 ----
-Key { code: Enter, alt: true, .. } => {
+Key {
+    code: Enter,
+    alt: true,
+    ..
+} => {
     // Alt+Enter: toggle fullscreen
     let fullscreen = root.is_fullscreen();
     root.set_fullscreen(!fullscreen);
@@ -434,8 +438,15 @@ whether the player is alive or dead, so change them to:
 
 [source]
 ----
-(Key { code: Enter, alt: true, .. }, _) =>   // exit
-(Key { code: Escape, .. }, _) =>  // fullscreen
+(
+    Key {
+        code: Enter,
+        alt: true,
+        ..
+    },
+    _,
+) =>   // fullscreen
+(Key { code: Escape, .. }, _) => // exit
 ----
 
 We're taking two values in a tuple `(key, player_alive)` now and
@@ -477,7 +488,7 @@ that the player and the monsters take turns to act.
 
 [source]
 ----
-// let monstars take their turn
+// let monsters take their turn
 if objects[PLAYER].alive && player_action != PlayerAction::DidntTakeTurn {
     for object in &objects {
         // only if object is not player
@@ -527,14 +538,15 @@ fn player_move_or_attack(dx: i32, dy: i32, map: &Map, objects: &mut [Object]) {
     let y = objects[PLAYER].y + dy;
 
     // try to find an attackable object there
-    let target_id = objects.iter().position(|object| {
-        object.pos() == (x, y)
-    });
+    let target_id = objects.iter().position(|object| object.pos() == (x, y));
 
     // attack if target found, move otherwise
     match target_id {
         Some(target_id) => {
-            println!("The {} laughs at your puny efforts to attack him!", objects[target_id].name);
+            println!(
+                "The {} laughs at your puny efforts to attack him!",
+                objects[target_id].name
+            );
         }
         None => {
             move_by(PLAYER, dx, dy, map, objects);

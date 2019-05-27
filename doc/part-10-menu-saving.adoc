@@ -62,9 +62,12 @@ For example the FoV map code now looks like this:
 ----
 for y in 0..MAP_HEIGHT {
     for x in 0..MAP_WIDTH {
-        tcod.fov.set(x, y,
-                     !game.map[x as usize][y as usize].block_sight,
-                     !game.map[x as usize][y as usize].blocked);
+        tcod.fov.set(
+            x,
+            y,
+            !map[x as usize][y as usize].block_sight,
+            !map[x as usize][y as usize].blocked,
+        );
     }
 }
 ----
@@ -282,8 +285,13 @@ fn new_game(tcod: &mut Tcod) -> (Vec<Object>, Game) {
     // create object representing the player
     let mut player = Object::new(0, 0, '@', "player", colors::WHITE, true);
     player.alive = true;
-    player.fighter = Some(Fighter{max_hp: 30, hp: 30, defense: 2, power: 5,
-                                  on_death: DeathCallback::Player});
+    player.fighter = Some(Fighter {
+        max_hp: 30,
+        hp: 30,
+        defense: 2,
+        power: 5,
+        on_death: DeathCallback::Player,
+    });
 
     // the list of objects with just the player
     let mut objects = vec![player];
@@ -299,8 +307,10 @@ fn new_game(tcod: &mut Tcod) -> (Vec<Object>, Game) {
     initialise_fov(&game.map, tcod);
 
     // a warm welcoming message!
-    game.log.add("Welcome stranger! Prepare to perish in the Tombs of the Ancient Kings.",
-                 colors::RED);
+    game.log.add(
+        "Welcome stranger! Prepare to perish in the Tombs of the Ancient Kings.",
+        colors::RED,
+    );
 
     (objects, game)
 }
@@ -318,9 +328,12 @@ fn initialise_fov(map: &Map, tcod: &mut Tcod) {
     // create the FOV map, according to the generated map
     for y in 0..MAP_HEIGHT {
         for x in 0..MAP_WIDTH {
-            tcod.fov.set(x, y,
+            tcod.fov.set(
+                x,
+                y,
                 !map[x as usize][y as usize].block_sight,
-                !map[x as usize][y as usize].blocked);
+                !map[x as usize][y as usize].blocked,
+            );
         }
     }
 }
@@ -360,7 +373,7 @@ fn play_game(objects: &mut Vec<Object>, game: &mut Game, tcod: &mut Tcod) {
             break
         }
 
-        // let monstars take their turn
+        // let monsters take their turn
         if objects[PLAYER].alive && player_action != PlayerAction::DidntTakeTurn {
             for id in 0..objects.len() {
                 if objects[id].ai.is_some() {
@@ -441,8 +454,9 @@ tutorial].
 [source]
 ----
 fn main_menu(tcod: &mut Tcod) {
-    let img = tcod::image::Image::from_file("menu_background.png")  // <1>
-        .ok().expect("Background image not found");  // <2>
+    let img = tcod::image::Image::from_file("menu_background.png") <1>
+        .ok()
+        .expect("Background image not found"); <2>
 
     while !tcod.root.window_closed() {  // <3>
         // show the background image, at twice the regular console resolution
@@ -490,12 +504,20 @@ to modify the values. Put this in the `main_menu` before calling the
 [source]
 ----
 tcod.root.set_default_foreground(colors::LIGHT_YELLOW);
-tcod.root.print_ex(SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 4,
-                   BackgroundFlag::None, TextAlignment::Center,
-                   "TOMBS OF THE ANCIENT KINGS");
-tcod.root.print_ex(SCREEN_WIDTH/2, SCREEN_HEIGHT - 2,
-                   BackgroundFlag::None, TextAlignment::Center,
-                   "By Yours Truly");
+tcod.root.print_ex(
+    SCREEN_WIDTH / 2,
+    SCREEN_HEIGHT / 2 - 4,
+    BackgroundFlag::None,
+    TextAlignment::Center,
+    "TOMBS OF THE ANCIENT KINGS",
+);
+tcod.root.print_ex(
+    SCREEN_WIDTH / 2,
+    SCREEN_HEIGHT - 2,
+    BackgroundFlag::None,
+    TextAlignment::Center,
+    "By Yours Truly",
+);
 ----
 
 You'll notice that the menu rectangle starts with a blank line. That
@@ -599,9 +621,8 @@ function and try to compile:
 
 [source]
 ----
-extern crate serde;
-#[macro_use] extern crate serde_derive;
-extern crate serde_json;
+#[macro_use]
+extern crate serde_derive;
 
 // the existing imports
 use std::io::{Read, Write};

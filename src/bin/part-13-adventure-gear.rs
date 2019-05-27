@@ -1,9 +1,5 @@
-extern crate rand;
-extern crate serde;
-extern crate tcod;
 #[macro_use]
 extern crate serde_derive;
-extern crate serde_json;
 
 use std::cmp;
 
@@ -314,28 +310,31 @@ impl Object {
 
     pub fn power(&self, game: &Game) -> i32 {
         let base_power = self.fighter.map_or(0, |f| f.base_power);
-        let bonus = self
+        let bonus: i32 = self
             .get_all_equipped(game)
             .iter()
-            .fold(0, |sum, e| sum + e.power_bonus);
+            .map(|e| e.power_bonus)
+            .sum();
         base_power + bonus
     }
 
     pub fn defense(&self, game: &Game) -> i32 {
         let base_defense = self.fighter.map_or(0, |f| f.base_defense);
-        let bonus = self
+        let bonus: i32 = self
             .get_all_equipped(game)
             .iter()
-            .fold(0, |sum, e| sum + e.defense_bonus);
+            .map(|e| e.defense_bonus)
+            .sum();
         base_defense + bonus
     }
 
     pub fn max_hp(&self, game: &Game) -> i32 {
         let base_max_hp = self.fighter.map_or(0, |f| f.base_max_hp);
-        let bonus = self
+        let bonus: i32 = self
             .get_all_equipped(game)
             .iter()
-            .fold(0, |sum, e| sum + e.max_hp_bonus);
+            .map(|e| e.max_hp_bonus)
+            .sum();
         base_max_hp + bonus
     }
 

@@ -2,14 +2,10 @@
 :outfilesuffix: .rs
 
 ++++
-include::../part-3-dungeon.adoc[tag=extern_rand]
-include::../part-1-graphics.adoc[tag=extern_tcod]
-
 include::../part-3-dungeon.adoc[tag=use_cmp]
 
 include::../part-3-dungeon.adoc[tag=use_rng]
-include::../part-2-object-map.adoc[tag=use_colors]
-include::../part-1-graphics.adoc[tag=use_console]
+include::../part-1-graphics.adoc[tag=use_tcod]
 
 include::../part-1-graphics.adoc[tag=screen_size]
 
