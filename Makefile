@@ -8,6 +8,9 @@ docs:
 	@# Add trailing newline to the Rust outputs:
 	@for rust in target/tutorial/*.rs; do echo >> $$rust; done
 
+diff-rust: docs
+	cd target/tutorial/ && for rust in *.rs; do diff -u ../../src/bin/$$rust $$rust; done
+
 publish:
 	@git diff-index --quiet HEAD || { echo "Error: the repository is dirty."; exit 1; }
 	rm -rf .deploy
@@ -34,4 +37,4 @@ list-contributor-names:
 list-contributor-links:
 	git log --merges | grep 'Merge pull request' | awk '{print $$6}' | cut -d/ -f1 | sort | uniq | sed -e 's|^|https://github.com/|'
 
-.PHONY: all docs docs-docker preview clean publish list-contributor-names list-contributor-links
+.PHONY: all docs docs-docker preview clean publish list-contributor-names list-contributor-links diff-rust
