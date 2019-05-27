@@ -13,12 +13,15 @@ include::../part-1-graphics.adoc[tag=screen_size]
 include::../part-2-object-map.adoc[tag=map_size_consts]
 
 include::../part-3-dungeon.adoc[tag=room_consts]
+include::../part-5-combat.adoc[tag=max_room_monsters]
 
 include::../part-4-fov-exploration.adoc[tag=fov_consts]
 
 include::../part-1-graphics.adoc[tag=limit_fps]
 
 include::../part-4-fov-exploration.adoc[tag=colors]
+
+include::../part-5-combat.adoc[tag=player_id]
 
 include::../part-2-object-map.adoc[tag=type_map]
 
@@ -38,15 +41,21 @@ include::../part-3-dungeon.adoc[tag=rect_intersects_with,indent=4]
 
 include::../part-2-object-map.adoc[tag=object_doc_comment]
 include::../part-2-object-map.adoc[tag=object_derive]
-include::../part-2-object-map.adoc[tag=object_struct]
+include::../part-5-combat.adoc[tag=object_struct]
 
 include::../part-2-object-map.adoc[tag=object_impl_header]
-include::../part-2-object-map.adoc[tag=object_new]
-
-include::../part-2-object-map.adoc[tag=blocking_move_by,indent=4]
+include::../part-5-combat.adoc[tag=object_new,indent=4]
 
 include::../part-2-object-map.adoc[tag=object_draw]
+
+include::../part-5-combat.adoc[tag=pos,indent=4]
+
+include::../part-5-combat.adoc[tag=set_pos,indent=4]
 }
+
+include::../part-5-combat.adoc[tag=move_by]
+
+include::../part-5-combat.adoc[tag=is_blocked]
 
 include::../part-3-dungeon.adoc[tag=create_room]
 
@@ -54,12 +63,10 @@ include::../part-3-dungeon.adoc[tag=create_h_tunnel]
 
 include::../part-3-dungeon.adoc[tag=create_v_tunnel]
 
-include::../part-3-dungeon.adoc[tag=make_map_header_start]
+include::../part-5-combat.adoc[tag=make_map_header]
 include::../part-3-dungeon.adoc[tag=make_map_fill]
 
 include::../part-3-dungeon.adoc[tag=make_map_empty_rooms_vec,indent=4]
-
-include::../part-3-dungeon.adoc[tag=make_map_init_starting_position,indent=4]
 
 include::../part-3-dungeon.adoc[tag=make_map_for_loop_header,indent=4]
 
@@ -67,18 +74,39 @@ include::../part-3-dungeon.adoc[tag=make_new_room,indent=8]
 
 include::../part-3-dungeon.adoc[tag=room_failed_var,indent=8]
 
-include::../part-3-dungeon.adoc[tag=if_not_failed_block,indent=8]
+include::../part-3-dungeon.adoc[tag=if_not_failed_block_header,indent=8]
+
+include::../part-3-dungeon.adoc[tag=call_create_room,indent=12]
+
+include::../part-5-combat.adoc[tag=call_place_objects,indent=12]
+
+include::../part-3-dungeon.adoc[tag=center_new_room,indent=12]
+
+include::../part-5-combat.adoc[tag=configure_first_room,indent=12]
 include::../part-3-dungeon.adoc[tag=connect_rooms,indent=12]
 
 include::../part-3-dungeon.adoc[tag=push_new_room,indent=12]
         }
     }
 
-include::../part-3-dungeon.adoc[tag=make_map_with_starting_pos_footer]
+include::../part-5-combat.adoc[tag=make_map_footer]
+}
+
+include::../part-5-combat.adoc[tag=place_objects_header]
+include::../part-5-combat.adoc[tag=place_objects_monster_count,indent=4]
+
+include::../part-5-combat.adoc[tag=place_objects_for_loop,indent=4]
+include::../part-5-combat.adoc[tag=place_objects_rand_pos,indent=8]
+
+include::../part-5-combat.adoc[tag=is_blocked_check,indent=8]
+include::../part-5-combat.adoc[tag=generate_monster,indent=12]
+include::../part-5-combat.adoc[tag=push_monster,indent=12]
+        }
+    }
 }
 
 include::../part-4-fov-exploration.adoc[tag=render_all_header_mut_map]
-include::../part-4-fov-exploration.adoc[tag=fov_recompute,indent=4]
+include::../part-5-combat.adoc[tag=fov_recompute,indent=4]
 
 include::../part-4-fov-exploration.adoc[tag=calculate_background,indent=4]
 
@@ -91,17 +119,22 @@ include::../part-4-fov-exploration.adoc[tag=render_objects,indent=4]
 include::../part-2-object-map.adoc[tag=render_blit,indent=4]
 include::../part-2-object-map.adoc[tag=render_all_footer]
 
-include::../part-2-object-map.adoc[tag=handle_keys_map_header]
+include::../part-5-combat.adoc[tag=player_move_or_attack]
+
+include::../part-5-combat.adoc[tag=handle_keys_header]
 include::../part-1-graphics.adoc[tag=use_input_key,indent=4]
+include::../part-5-combat.adoc[tag=use_player_action_wildcard,indent=4]
 
-include::../part-1-graphics.adoc[tag=match_key_header,indent=4]
-include::../part-1-graphics.adoc[tag=match_special_keys,indent=8]
+include::../part-5-combat.adoc[tag=match_key_header,indent=4]
+include::../part-5-combat.adoc[tag=match_special_keys,indent=8]
 
-include::../part-2-object-map.adoc[tag=map_movement_keys,indent=8]
+include::../part-5-combat.adoc[tag=movement_keys,indent=8]
 
-include::../part-1-graphics.adoc[tag=match_key_footer,indent=4]
+include::../part-5-combat.adoc[tag=match_key_footer,indent=8]
+    }
+}
 
-include::../part-1-graphics.adoc[tag=handle_keys_footer]
+include::../part-5-combat.adoc[tag=player_action_enum]
 
 fn main() {
 include::../part-1-graphics.adoc[tag=init,indent=4]
@@ -109,13 +142,11 @@ include::../part-1-graphics.adoc[tag=init,indent=4]
 include::../part-1-graphics.adoc[tag=set_fps,indent=4]
 include::../part-2-object-map.adoc[tag=offscreen_map_console,indent=4]
 
-include::../part-4-fov-exploration.adoc[tag=make_mut_map,indent=4]
+include::../part-5-combat.adoc[tag=create_player,indent=4]
 
-include::../part-3-dungeon.adoc[tag=place_player_generic,indent=4]
+include::../part-5-combat.adoc[tag=create_objects_list,indent=4]
 
-include::../part-2-object-map.adoc[tag=place_npc,indent=4]
-
-include::../part-2-object-map.adoc[tag=create_objects_list,indent=4]
+include::../part-5-combat.adoc[tag=call_make_map,indent=4]
 
 include::../part-4-fov-exploration.adoc[tag=create_fov_map,indent=4]
 
@@ -124,15 +155,14 @@ include::../part-4-fov-exploration.adoc[tag=init_previous_player_pos,indent=4]
 include::../part-1-graphics.adoc[tag=game_loop_while_header,indent=4]
 include::../part-2-object-map.adoc[tag=clear_offscreen_console,indent=8]
 
-include::../part-4-fov-exploration.adoc[tag=check_fov_recompute,indent=8]
+include::../part-5-combat.adoc[tag=check_fov_recompute,indent=8]
 include::../part-4-fov-exploration.adoc[tag=call_render_all_mut,indent=8]
 
 include::../part-1-graphics.adoc[tag=root_flush,indent=8]
 
-include::../part-2-object-map.adoc[tag=get_player,indent=8]
-include::../part-4-fov-exploration.adoc[tag=update_previous_player_pos,indent=8]
-include::../part-2-object-map.adoc[tag=call_handle_keys_map,indent=8]
-include::../part-1-graphics.adoc[tag=exit_game_loop,indent=8]
+include::../part-5-combat.adoc[tag=exit_game_loop,indent=8]
+
+include::../part-5-combat.adoc[tag=monsters_take_turn,indent=8]
     }
 }
 ++++

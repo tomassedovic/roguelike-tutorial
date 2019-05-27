@@ -21,14 +21,21 @@ Let's add a function that takes a room and does exactly that.
 
 [source,rust]
 ----
+tag::place_objects[]
 fn place_objects(room: Rect, objects: &mut Vec<Object>) {
+tag::place_objects_monster_count[]
     // choose random number of monsters
     let num_monsters = rand::thread_rng().gen_range(0, MAX_ROOM_MONSTERS + 1);
+end::place_objects_monster_count[]
 
+tag::place_objects_for_loop[]
     for _ in 0..num_monsters {
+end::place_objects_for_loop[]
+tag::place_objects_rand_pos[]
         // choose random spot for this monster
         let x = rand::thread_rng().gen_range(room.x1 + 1, room.x2);
         let y = rand::thread_rng().gen_range(room.y1 + 1, room.y2);
+end::place_objects_rand_pos[]
 
         let mut monster = if rand::random::<f32>() < 0.8 {  // 80% chance of getting an orc
             // create an orc
@@ -39,10 +46,19 @@ fn place_objects(room: Rect, objects: &mut Vec<Object>) {
 
         objects.push(monster);
     }
+end::place_objects_body[]
 }
+end::place_objects[]
 ----
 
-We'll define the `MAX_ROOM_MONSTERS = 3` constant at the top of the file.
+We'll define the `MAX_ROOM_MONSTERS` constant at the top of the file:
+
+[source,rust]
+----
+tag::max_room_monsters[]
+const MAX_ROOM_MONSTERS: i32 = 3;
+end::max_room_monsters[]
+----
 
 Calling `rand::random::<f32>()` will produce an `f32` number between
 `0.0` and `1.0`. 80% of that is `0.8`.
@@ -66,17 +82,57 @@ place_objects(new_room, objects);
 ----
 
 And update the signature of `make_map` to take in a mutable reference
-to our list of objects, and pass it in to the method when we call it
-just before the main loop:
+to our list of objects. We'll also stop returning the
+`starting_position`. It can be accessed via `objects[PLAYER].pos()`:
 
 [source,rust]
 ----
+tag::make_map_header[]
 fn make_map(objects: &mut Vec<Object>) -> Map {
+end::make_map_header[]
     ...
+
+tag::make_map_footer[]
+    map
+end::make_map_footer[]
+}
+----
+
+Let's set the player's position when we generate the first room:
+
+[source]
+----
+tag::configure_first_room[]
+if rooms.is_empty() {
+    // this is the first room, where the player starts at
+    objects[PLAYER].set_pos(new_x, new_y);
+end::configure_first_room[]
+} else {
+    ...
+}
+----
+
+When we call `make_map` (just before the main loop), we must give a
+mutable reference to the `objects` list:
+
+[source]
+----
+tag::call_make_map[]
+// generate map (at this point it's not drawn to the screen)
+let mut map = make_map(&mut objects);
+end::call_make_map[]
 ----
 
 Let's also remove the dummy NPC from the initial objects list. We
-won't need it anymore.
+won't need it anymore:
+
+[source]
+----
+tag::create_objects_list[]
+// the list of objects with just the player
+let mut objects = vec![player];
+end::create_objects_list[]
+----
 
 
 == Getting hold of the Player's position
@@ -91,13 +147,43 @@ the value `0`. Put this among the other constants:
 
 [source,rust]
 ----
+tag::player_id[]
 // player will always be the first object
 const PLAYER: usize = 0;
+end::player_id[]
 ----
 
 And now we can replace every usage of `objects[0]` with
-`objects[PLAYER]`. We have a few in the `main` function and one more
-in `render_all`.
+`objects[PLAYER]`. We have one in the `main` function:
+
+[source]
+----
+while !root.window_closed() {
+    ...
+
+    tag::check_fov_recompute[]
+    // render the screen
+    let fov_recompute = previous_player_position != (objects[PLAYER].pos());  // <1>
+    end::check_fov_recompute[]
+
+    ...
+}
+----
+<1> `objects[0]` -> `objects[PLAYER]`
+
+And one more in `render_all`:
+
+[source]
+----
+tag::fov_recompute[]
+if fov_recompute {
+    // recompute FOV if needed (the player moved or something)
+    let player = &objects[PLAYER];  // <1>
+    fov_map.compute_fov(player.x, player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALGO);
+}
+end::fov_recompute[]
+----
+<1> `objects[0]` -> `objects[PLAYER]`
 
 It's a bit longer to type, but the intent is much clearer.
 
@@ -105,13 +191,18 @@ Next, add these two methods to `Object`:
 
 [source,rust]
 ----
+tag::pos[]
 pub fn pos(&self) -> (i32, i32) {
     (self.x, self.y)
 }
+end::pos[]
+
+tag::set_pos[]
 pub fn set_pos(&mut self, x: i32, y: i32) {
     self.x = x;
     self.y = y;
 }
+end::set_pos[]
 ----
 
 These give us a shorthand for getting or setting both coordinates (`x`
@@ -138,15 +229,27 @@ or not. And give each object a name while we're at it. Put this in the
 
 [source,rust]
 ----
-name: String,
-blocks: bool,
-alive: bool,
+tag::object_struct[]
+struct Object {
+    x: i32,
+    y: i32,
+    char: char,
+    color: Color,
+    name: String,  // <1>
+    blocks: bool,  // <2>
+    alive: bool,  // <3>
+}
+end::object_struct[]
 ----
+<1> New field: `name`
+<2> New field: `blocks`
+<3> New field: `alive`
 
 And change the `new` method on `Object` to:
 
 [source,rust]
 ----
+tag::object_new[]
 pub fn new(x: i32, y: i32, char: char, name: &str, color: Color, blocks: bool) -> Self {
     Object {
         x: x,
@@ -158,6 +261,7 @@ pub fn new(x: i32, y: i32, char: char, name: &str, color: Color, blocks: bool) -
         alive: false,
     }
 }
+end::object_new[]
 ----
 
 NOTE: All our objects are alive at the moment, but soon we'll add
@@ -170,16 +274,18 @@ due to a wall or an object blocking it.
 
 [source,rust]
 ----
+tag::is_blocked[]
 fn is_blocked(x: i32, y: i32, map: &Map, objects: &[Object]) -> bool {
     // first test the map tile
     if map[x as usize][y as usize].blocked {
         return true;
     }
     // now check for any blocking objects
-    objects.iter().any(|object| {
-        object.blocks && object.pos() == (x, y)
-    })
+    objects
+        .iter()
+        .any(|object| object.blocks && object.pos() == (x, y))
 }
+end::is_blocked[]
 ----
 
 It takes the coordinates we want to check and we must also pass in the
@@ -244,6 +350,7 @@ reference:
 
 [source,rust]
 ----
+tag::move_by[]
 /// move by the given amount, if the destination is not blocked
 fn move_by(id: usize, dx: i32, dy: i32, map: &Map, objects: &mut [Object]) {
     let (x, y) = objects[id].pos();
@@ -251,6 +358,7 @@ fn move_by(id: usize, dx: i32, dy: i32, map: &Map, objects: &mut [Object]) {
         objects[id].set_pos(x + dx, y + dy);
     }
 }
+end::move_by[]
 ----
 
 Now we no longer have the problem, because we first get the
@@ -288,37 +396,72 @@ placing a new monster:
 
 [source,rust]
 ----
+tag::is_blocked_check[]
 // only place it if the tile is not blocked
 if !is_blocked(x, y, map, objects) {
+end::is_blocked_check[]
     // generate the monster
 }
 ----
 
-And since objects have two new properties, we need to pass them along
+That means we now have to pass the `map` to `place_objcets` as well:
+
+[source]
+----
+tag::place_objects_header[]
+fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>) {
+end::place_objects_header[]
+    ...
+}
+----
+
+And of course we have to pass `map` when we call `place_objecs` in
+`make_map` too:
+
+[source]
+----
+tag::call_place_objects[]
+// add some content to this room, such as monsters
+place_objects(new_room, &map, objects);
+end::call_place_objects[]
+----
+
+Since objects have two new properties, we need to pass them along
 to any code that creates one. Update the player creation to:
 
 [source,rust]
 ----
-let mut player = Object::new(0, 0, '@', "player", colors::WHITE, true);
+tag::create_player[]
+// create object representing the player
+let mut player = Object::new(0, 0, '@', "player", WHITE, true);
 player.alive = true;
+end::create_player[]
 ----
 
 And update the code that creates the monsters:
 
 [source,rust]
 ----
-// create an orc
-Object::new(x, y, 'o', "orc", colors::DESATURATED_GREEN, true)
-
-// create a troll
-Object::new(x, y, 'T', "troll", colors::DARKER_GREEN, true)
+tag::generate_monster[]
+let mut monster = if rand::random::<f32>() < 0.8 {
+    // 80% chance of getting an orc
+    // create an orc
+    Object::new(x, y, 'o', "orc", DESATURATED_GREEN, true)
+} else {
+    // create a troll
+    Object::new(x, y, 'T', "troll", DARKER_GREEN, true)
+};
+end::generate_monster[]
 ----
 
 Let's make the monsters alive as well. Right before `objects.push(monster)`:
 
 [source]
 ----
+tag::push_monster[]
 monster.alive = true;
+objects.push(monster);
+end::push_monster[]
 ----
 
 And in `handle_keys`, we'll change the movement code from
@@ -346,12 +489,14 @@ the game loop with:
 
 [source]
 ----
+tag::player_action_enum[]
 #[derive(Clone, Copy, Debug, PartialEq)]
 enum PlayerAction {
     TookTurn,
     DidntTakeTurn,
     Exit,
 }
+end::player_action_enum[]
 ----
 
 (deriving `PartialEq` lets us use `==` and `!=` to compare the enums together)
@@ -360,7 +505,11 @@ Change `handle_keys` to return `PlayerAction` instead of `bool`.
 
 [source]
 ----
-fn handle_keys(root: &mut Root, map: &Map, objects: &mut [Object]) -> PlayerAction
+tag::handle_keys_header[]
+fn handle_keys(root: &mut Root, map: &Map, objects: &mut [Object]) -> PlayerAction {
+end::handle_keys_header[]
+   ...
+}
 ----
 
 We're going to be using the enum values heavily in `handle_keys`, so
@@ -368,7 +517,9 @@ let's import them on top of the function:
 
 [source]
 ----
+tag::use_player_action_wildcard[]
 use PlayerAction::*;
+end::use_player_action_wildcard[]
 ----
 
 And then, in the code for fullscreen, return `DidntTakeTurn`:
@@ -406,7 +557,9 @@ Key { code: Up, .. } => {
 
 // and so on for Down, Left and Right
 
+tag::match_key_footer[]
 _ => DidntTakeTurn,
+end::match_key_footer[]
 ----
 
 This will ensure that pressing an unknown key will not do anything and
@@ -425,9 +578,11 @@ Let's update our match to include the `game_state`, too:
 
 [source]
 ----
-
+tag::match_key_header[]
+let key = root.wait_for_keypress(true);
 let player_alive = objects[PLAYER].alive;
 match (key, player_alive) {
+end::match_key_header[]
     // key handling
 }
 ----
@@ -438,6 +593,7 @@ whether the player is alive or dead, so change them to:
 
 [source]
 ----
+tag::match_special_keys[]
 (
     Key {
         code: Enter,
@@ -445,8 +601,14 @@ whether the player is alive or dead, so change them to:
         ..
     },
     _,
-) =>   // fullscreen
-(Key { code: Escape, .. }, _) => // exit
+) => {
+    // Alt+Enter: toggle fullscreen
+    let fullscreen = root.is_fullscreen();
+    root.set_fullscreen(!fullscreen);
+    DidntTakeTurn
+}
+(Key { code: Escape, .. }, _) => return Exit, // exit game
+end::match_special_keys[]
 ----
 
 We're taking two values in a tuple `(key, player_alive)` now and
@@ -456,10 +618,26 @@ For movement, we only want it to work when the player is alive so:
 
 [source]
 ----
-(Key { code: Up, .. }, true) =>  // move player
+tag::movement_keys[]
+// movement keys
+(Key { code: Up, .. }, true) => {
+    player_move_or_attack(0, -1, map, objects);
+    TookTurn
+}
+(Key { code: Down, .. }, true) => {
+    player_move_or_attack(0, 1, map, objects);
+    TookTurn
+}
+(Key { code: Left, .. }, true) => {
+    player_move_or_attack(-1, 0, map, objects);
+    TookTurn
+}
+(Key { code: Right, .. }, true) => {
+    player_move_or_attack(1, 0, map, objects);
+    TookTurn
+}
+end::movement_keys[]
 ----
-
-and so on.
 
 NOTE: There are other ways to handle this. We could use use the `if`
 syntax in the match arm (so e.g. `Key { code: Down, .. } if game_state
@@ -474,10 +652,14 @@ And now we need to go back to the main loop and handle
 
 [source]
 ----
+tag::exit_game_loop[]
+// handle keys and exit game if needed
+previous_player_position = objects[PLAYER].pos();
 let player_action = handle_keys(&mut root, &map, &mut objects);
 if player_action == PlayerAction::Exit {
-    break
+    break;
 }
+end::exit_game_loop[]
 ----
 
 == Fighting orderly
@@ -488,6 +670,7 @@ that the player and the monsters take turns to act.
 
 [source]
 ----
+tag::monsters_take_turn[]
 // let monsters take their turn
 if objects[PLAYER].alive && player_action != PlayerAction::DidntTakeTurn {
     for object in &objects {
@@ -497,6 +680,7 @@ if objects[PLAYER].alive && player_action != PlayerAction::DidntTakeTurn {
         }
     }
 }
+end::monsters_take_turn[]
 ----
 
 The `as *const _` bit is there to do a pointer comparison. Rust's
@@ -532,6 +716,7 @@ Now let's write the function itself:
 
 [source]
 ----
+tag::player_move_or_attack[]
 fn player_move_or_attack(dx: i32, dy: i32, map: &Map, objects: &mut [Object]) {
     // the coordinates the player is moving to/attacking
     let x = objects[PLAYER].x + dx;
@@ -553,6 +738,7 @@ fn player_move_or_attack(dx: i32, dy: i32, map: &Map, objects: &mut [Object]) {
         }
     }
 }
+end::player_move_or_attack[]
 ----
 
 The `position` method on an iterator runs a test on each object and as
@@ -570,7 +756,7 @@ And that's it! Test it out. No one's dealing any damage, but the
 game now detects when you're trying to attack a monster. And you can
 see the monsters taking their turns after you.
 
-Here's link:part-5-combat.rs.txt[the complete code so far].
+Here's link:part-5-combat.rs[the complete code so far].
 
 Guess what's next?
 

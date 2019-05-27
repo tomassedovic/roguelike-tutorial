@@ -328,18 +328,26 @@ end::make_map_init_starting_position[]
         // ...
 
 tag::if_not_failed_block[]
+tag::if_not_failed_block_header[]
         if !failed {
             // this means there are no intersections, so this room is valid
+end::if_not_failed_block_header[]
 
+tag::call_create_room[]
             // "paint" it to the map's tiles
             create_room(new_room, &mut map);
+end::call_create_room[]
 
+tag::center_new_room[]
             // center coordinates of the new room, will be useful later
             let (new_x, new_y) = new_room.center();
+end::center_new_room[]
 
+tag::configure_first_room[]
             if rooms.is_empty() {
                 // this is the first room, where the player starts at
                 starting_position = (new_x, new_y);
+end::configure_first_room[]
 end::if_not_failed_block[]
             }
         }

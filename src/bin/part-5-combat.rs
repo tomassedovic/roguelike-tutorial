@@ -1,7 +1,7 @@
 use std::cmp;
 
 use rand::Rng;
-use tcod::colors::{self, Color};
+use tcod::colors::*;
 use tcod::console::*;
 use tcod::map::{FovAlgorithm, Map as FovMap};
 
@@ -268,10 +268,10 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>) {
             let mut monster = if rand::random::<f32>() < 0.8 {
                 // 80% chance of getting an orc
                 // create an orc
-                Object::new(x, y, 'o', "orc", colors::DESATURATED_GREEN, true)
+                Object::new(x, y, 'o', "orc", DESATURATED_GREEN, true)
             } else {
                 // create a troll
-                Object::new(x, y, 'T', "troll", colors::DARKER_GREEN, true)
+                Object::new(x, y, 'T', "troll", DARKER_GREEN, true)
             };
             monster.alive = true;
             objects.push(monster);
@@ -411,11 +411,12 @@ fn main() {
         .size(SCREEN_WIDTH, SCREEN_HEIGHT)
         .title("Rust/libtcod tutorial")
         .init();
+
     tcod::system::set_fps(LIMIT_FPS);
     let mut con = Offscreen::new(MAP_WIDTH, MAP_HEIGHT);
 
     // create object representing the player
-    let mut player = Object::new(0, 0, '@', "player", colors::WHITE, true);
+    let mut player = Object::new(0, 0, '@', "player", WHITE, true);
     player.alive = true;
 
     // the list of objects with just the player

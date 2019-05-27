@@ -329,9 +329,11 @@ Then, we pass a _mutable reference_ to `map` to `render_all`:
 
 [source,rust]
 ----
-tag::call_render_all_mut[]
+tag::check_fov_recompute[]
 // render the screen
 let fov_recompute = previous_player_position != (objects[0].x, objects[0].y);
+end::check_fov_recompute[]
+tag::call_render_all_mut[]
 render_all(
     &mut root,
     &mut con,
