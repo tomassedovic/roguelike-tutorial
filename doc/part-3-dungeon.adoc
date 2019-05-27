@@ -1,4 +1,5 @@
 = The Dungeon
+:icons: font
 :source-highlighter: pygments
 ifdef::env-github[:outfilesuffix: .adoc]
 

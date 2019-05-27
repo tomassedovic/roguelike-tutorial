@@ -1,4 +1,5 @@
 = Field-of-view and exploration
+:icons: font
 :source-highlighter: pygments
 ifdef::env-github[:outfilesuffix: .adoc]
 
@@ -185,6 +186,7 @@ they will get their `light` colours:
 [source,rust]
 ----
 tag::fov_set_tile_background[]
+tag::calculate_background[]
 // go through all tiles, and set their background color
 for y in 0..MAP_HEIGHT {
     for x in 0..MAP_WIDTH {
@@ -198,6 +200,7 @@ for y in 0..MAP_HEIGHT {
             (true, true) => COLOR_LIGHT_WALL,
             (true, false) => COLOR_LIGHT_GROUND,
         };
+end::calculate_background[]
         con.set_char_background(x, y, color, BackgroundFlag::Set);
     }
 }
@@ -247,29 +250,44 @@ start unexplored. Put this in the definition of the `Tile` struct:
 
 [source,rust]
 ----
-explored: bool,
+tag::tile_struct[]
+/// A tile of the map and its properties
+#[derive(Clone, Copy, Debug)]
+struct Tile {
+    blocked: bool,
+    explored: bool,  // <1>
+    block_sight: bool,
+}
+end::tile_struct[]
 ----
+<1> Adde the `explored` field
 
 And you need to update the `Tile::empty` and `Tile::wall` bodies:
 
 [source,rust]
 ----
-pub fn empty() -> Self {
-    Tile {
-        blocked: false,
-        explored: false,
-        block_sight: false,
+tag::tile_impl[]
+impl Tile {
+    pub fn empty() -> Self {
+        Tile {
+            blocked: false,
+            explored: false,  // <1>
+            block_sight: false,
+        }
     }
-}
 
-pub fn wall() -> Self {
-    Tile {
-        blocked: true,
-        explored: false,
-        block_sight: true,
+    pub fn wall() -> Self {
+        Tile {
+            blocked: true,
+            explored: false,  // <2>
+            block_sight: true,
+        }
     }
 }
+end::tile_impl[]
 ----
+<1> Added the `explored` field
+<2> Added the `explored` field
 
 Now, in the `render_all` function, after the `(visible, wall)` match
 make sure the visible tiles are explored and only render those that
@@ -277,6 +295,7 @@ are:
 
 [source,rust]
 ----
+tag::exploration_visibility[]
 let explored = &mut map[x as usize][y as usize].explored;
 if visible {
     // since it's visible, explore it
@@ -286,6 +305,7 @@ if *explored {
     // show explored tiles only (any visible tile is explored already)
     con.set_char_background(x, y, color, BackgroundFlag::Set);
 }
+end::exploration_visibility[]
 ----
 
 (we take a mutable reference to the `explored` field so we don't have
@@ -293,6 +313,53 @@ to write the full `map[x as usize][y as usize].explored` bit twice)
 
 And finally, since we're now actually modifying the `map`, we'll need
 to pass a _mutable_ reference to `render_all`.
+
+First, we declare the `map` variable we get from `make_map` as
+mutable:
+
+[source,rust]
+----
+tag::make_mut_map[]
+// generate map (at this point it's not drawn to the screen)
+let (mut map, (player_x, player_y)) = make_map();
+end::make_mut_map[]
+----
+
+Then, we pass a _mutable reference_ to `map` to `render_all`:
+
+[source,rust]
+----
+tag::call_render_all_mut[]
+// render the screen
+let fov_recompute = previous_player_position != (objects[0].x, objects[0].y);
+render_all(
+    &mut root,
+    &mut con,
+    &objects,
+    &mut map,  // <1>
+    &mut fov_map,
+    fov_recompute,
+);
+end::call_render_all_mut[]
+----
+<1> `map` is now `&mut`
+
+And last, the `render_all` function definition:
+
+[source,rust]
+----
+tag::render_all_header_mut_map[]
+fn render_all(
+    root: &mut Root,
+    con: &mut Offscreen,
+    objects: &[Object],
+    map: &mut Map,  // <1>
+    fov_map: &mut FovMap,
+    fov_recompute: bool,
+) {
+end::render_all_header_mut_map[]
+----
+<1> `map` is now `&mut Map`
 
 And that's that! If you run the game now, you start in mostly black
 space except for your immediate surroundings and the map fills in as
