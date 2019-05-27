@@ -1,4 +1,4 @@
-use tcod::colors::{self, Color};
+use tcod::colors::*;
 use tcod::console::*;
 
 // actual size of the window
@@ -55,12 +55,7 @@ struct Object {
 
 impl Object {
     pub fn new(x: i32, y: i32, char: char, color: Color) -> Self {
-        Object {
-            x: x,
-            y: y,
-            char: char,
-            color: color,
-        }
+        Object { x, y, char, color }
     }
 
     /// move by the given amount, if the destination is not blocked
@@ -147,14 +142,15 @@ fn main() {
         .size(SCREEN_WIDTH, SCREEN_HEIGHT)
         .title("Rust/libtcod tutorial")
         .init();
+
     tcod::system::set_fps(LIMIT_FPS);
     let mut con = Offscreen::new(MAP_WIDTH, MAP_HEIGHT);
 
     // create object representing the player
-    let player = Object::new(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, '@', colors::WHITE);
+    let player = Object::new(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, '@', WHITE);
 
     // create an NPC
-    let npc = Object::new(SCREEN_WIDTH / 2 - 5, SCREEN_HEIGHT / 2, '@', colors::YELLOW);
+    let npc = Object::new(SCREEN_WIDTH / 2 - 5, SCREEN_HEIGHT / 2, '@', YELLOW);
 
     // the list of objects with those two
     let mut objects = [player, npc];

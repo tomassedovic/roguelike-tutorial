@@ -1,7 +1,7 @@
 use std::cmp;
 
 use rand::Rng;
-use tcod::colors::{self, Color};
+use tcod::colors::*;
 use tcod::console::*;
 use tcod::map::{FovAlgorithm, Map as FovMap};
 
@@ -298,6 +298,7 @@ fn main() {
         .size(SCREEN_WIDTH, SCREEN_HEIGHT)
         .title("Rust/libtcod tutorial")
         .init();
+
     tcod::system::set_fps(LIMIT_FPS);
     let mut con = Offscreen::new(MAP_WIDTH, MAP_HEIGHT);
 
@@ -306,10 +307,10 @@ fn main() {
 
     // create object representing the player
     // place the player inside the first room
-    let player = Object::new(player_x, player_y, '@', colors::WHITE);
+    let player = Object::new(player_x, player_y, '@', WHITE);
 
     // create an NPC
-    let npc = Object::new(SCREEN_WIDTH / 2 - 5, SCREEN_HEIGHT / 2, '@', colors::YELLOW);
+    let npc = Object::new(SCREEN_WIDTH / 2 - 5, SCREEN_HEIGHT / 2, '@', YELLOW);
 
     // the list of objects with those two
     let mut objects = [player, npc];

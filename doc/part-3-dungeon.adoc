@@ -112,7 +112,7 @@ first room:
 ----
 tag::place_player_hardcoded[]
 // place the player inside the first room
-let player = Object::new(25, 23, '@', colors::WHITE);
+let player = Object::new(25, 23, '@', WHITE);
 end::place_player_hardcoded[]
 ----
 
@@ -363,7 +363,7 @@ end::make_map[]
 tag::place_player_generic[]
 // create object representing the player
 // place the player inside the first room
-let player = Object::new(player_x, player_y, '@', colors::WHITE);
+let player = Object::new(player_x, player_y, '@', WHITE);
 end::place_player_generic[]
 ----
 

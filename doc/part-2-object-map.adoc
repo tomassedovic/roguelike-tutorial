@@ -109,6 +109,7 @@ tag::object_new[]
         Object { x, y, char, color }
     }
 end::object_new[]
+
 tag::object_move_by[]
     /// move by the given amount
     pub fn move_by(&mut self, dx: i32, dy: i32) {
@@ -116,6 +117,7 @@ tag::object_move_by[]
         self.y += dy;
     }
 end::object_move_by[]
+
 tag::object_draw[]
     /// set the color and then draw the character that represents this object at its position
     pub fn draw(&self, con: &mut Console) {
@@ -138,11 +140,11 @@ tag::create_objects[]
 tag::place_player_comment[]
 // create object representing the player
 end::place_player_comment[]
-let player = Object::new(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, '@', colors::WHITE);
+let player = Object::new(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, '@', WHITE);
 
 tag::place_npc[]
 // create an NPC
-let npc = Object::new(SCREEN_WIDTH / 2 - 5, SCREEN_HEIGHT / 2, '@', colors::YELLOW);
+let npc = Object::new(SCREEN_WIDTH / 2 - 5, SCREEN_HEIGHT / 2, '@', YELLOW);
 end::place_npc[]
 
 tag::create_objects_list[]

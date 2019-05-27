@@ -144,8 +144,7 @@ const SCREEN_HEIGHT: i32 = 50;
 end::screen_size[]
 
 tag::limit_fps[]
-
-const LIMIT_FPS: i32 = 20;
+const LIMIT_FPS: i32 = 20; // 20 frames-per-second maximum
 end::limit_fps[]
 end::consts[]
 ----

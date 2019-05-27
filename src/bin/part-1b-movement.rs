@@ -1,4 +1,4 @@
-use tcod::colors;
+use tcod::colors::*;
 use tcod::console::*;
 
 // actual size of the window
@@ -50,7 +50,7 @@ fn main() {
     let mut player_y = SCREEN_HEIGHT / 2;
 
     while !root.window_closed() {
-        root.set_default_foreground(colors::WHITE);
+        root.set_default_foreground(WHITE);
         root.clear();
         root.put_char(player_x, player_y, '@', BackgroundFlag::None);
         root.flush();
