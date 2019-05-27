@@ -167,7 +167,7 @@ visible objects.
 
 And look how much better it looks now!
 
-link:part-4a-fov.rs.txt[The whole code for this section is here].
+link:part-4a-fov.rs[The whole code for this section is here].
 
 == Exploration
 
@@ -229,6 +229,6 @@ modify anything and that the FOV/exploration code belongs somewhere
 else. They wouldn't necessarily be wrong. But let's just roll with it
 for now.
 
-Here's link:part-4b-exploration.rs.txt[the complete code so far].
+Here's link:part-4b-exploration.rs[the complete code so far].
 
 Continue to <<part-5-combat#,the next part>>.
