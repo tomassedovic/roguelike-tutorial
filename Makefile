@@ -1,4 +1,4 @@
-all: clean docs
+all: clean docs diff-rust
 
 docs:
 	@mkdir -p target/tutorial
