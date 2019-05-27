@@ -2,14 +2,20 @@
 :outfilesuffix: .rs
 
 ++++
+include::../part-3-dungeon.adoc[tag=extern_rand]
 include::../part-1-graphics.adoc[tag=extern_tcod]
 
+include::../part-3-dungeon.adoc[tag=use_cmp]
+
+include::../part-3-dungeon.adoc[tag=use_rng]
 include::../part-2-object-map.adoc[tag=use_colors]
 include::../part-1-graphics.adoc[tag=use_console]
 
 include::../part-1-graphics.adoc[tag=screen_size]
 
 include::../part-2-object-map.adoc[tag=map_size_consts]
+
+include::../part-3-dungeon.adoc[tag=room_consts]
 
 include::../part-1-graphics.adoc[tag=limit_fps]
 
@@ -20,6 +26,16 @@ include::../part-2-object-map.adoc[tag=type_map]
 include::../part-2-object-map.adoc[tag=tile_struct]
 
 include::../part-2-object-map.adoc[tag=tile_impl]
+
+include::../part-3-dungeon.adoc[tag=rect_struct]
+
+include::../part-3-dungeon.adoc[tag=rect_impl_header]
+include::../part-3-dungeon.adoc[tag=rect_new]
+
+include::../part-3-dungeon.adoc[tag=rect_center,indent=4]
+
+include::../part-3-dungeon.adoc[tag=rect_intersects_with,indent=4]
+}
 
 include::../part-2-object-map.adoc[tag=object_doc_comment]
 include::../part-2-object-map.adoc[tag=object_derive]
@@ -33,11 +49,34 @@ include::../part-2-object-map.adoc[tag=blocking_move_by,indent=4]
 include::../part-2-object-map.adoc[tag=object_draw]
 }
 
-include::../part-2-object-map.adoc[tag=make_map_header]
+include::../part-3-dungeon.adoc[tag=create_room]
 
-include::../part-2-object-map.adoc[tag=make_map_pillars,indent=4]
+include::../part-3-dungeon.adoc[tag=create_h_tunnel]
 
-include::../part-2-object-map.adoc[tag=make_map_footer]
+include::../part-3-dungeon.adoc[tag=create_v_tunnel]
+
+include::../part-3-dungeon.adoc[tag=make_map_header_start]
+include::../part-3-dungeon.adoc[tag=make_map_fill]
+
+include::../part-3-dungeon.adoc[tag=make_map_empty_rooms_vec,indent=4]
+
+include::../part-3-dungeon.adoc[tag=make_map_init_starting_position,indent=4]
+
+include::../part-3-dungeon.adoc[tag=make_map_for_loop_header,indent=4]
+
+include::../part-3-dungeon.adoc[tag=make_new_room,indent=8]
+
+include::../part-3-dungeon.adoc[tag=room_failed_var,indent=8]
+
+include::../part-3-dungeon.adoc[tag=if_not_failed_block,indent=8]
+include::../part-3-dungeon.adoc[tag=connect_rooms,indent=12]
+
+include::../part-3-dungeon.adoc[tag=push_new_room,indent=12]
+        }
+    }
+
+include::../part-3-dungeon.adoc[tag=make_map_with_starting_pos_footer]
+}
 
 include::../part-2-object-map.adoc[tag=render_all_header]
 include::../part-2-object-map.adoc[tag=render_map,indent=4]
@@ -65,9 +104,13 @@ include::../part-1-graphics.adoc[tag=init,indent=4]
 include::../part-1-graphics.adoc[tag=set_fps,indent=4]
 include::../part-2-object-map.adoc[tag=offscreen_map_console,indent=4]
 
-include::../part-2-object-map.adoc[tag=create_objects,indent=4]
+include::../part-3-dungeon.adoc[tag=make_map,indent=4]
 
-include::../part-2-object-map.adoc[tag=make_map,indent=4]
+include::../part-3-dungeon.adoc[tag=place_player_generic,indent=4]
+
+include::../part-2-object-map.adoc[tag=place_npc,indent=4]
+
+include::../part-2-object-map.adoc[tag=create_objects_list,indent=4]
 
 include::../part-1-graphics.adoc[tag=game_loop_while_header,indent=4]
 include::../part-2-object-map.adoc[tag=clear_offscreen_console,indent=8]

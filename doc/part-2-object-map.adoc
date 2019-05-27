@@ -164,16 +164,22 @@ non-player character to test things out:
 
 [source,rust]
 ----
-tag::place_player[]
+tag::create_objects[]
+tag::place_player_comment[]
 // create object representing the player
+end::place_player_comment[]
 let player = Object::new(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, '@', colors::WHITE);
 
+tag::place_npc[]
 // create an NPC
 let npc = Object::new(SCREEN_WIDTH / 2 - 5, SCREEN_HEIGHT / 2, '@', colors::YELLOW);
+end::place_npc[]
 
+tag::create_objects_list[]
 // the list of objects with those two
 let mut objects = [player, npc];
-end::place_player[]
+end::create_objects_list[]
+end::create_objects[]
 ----
 
 Now we'll need to do a few changes to make it work. First in

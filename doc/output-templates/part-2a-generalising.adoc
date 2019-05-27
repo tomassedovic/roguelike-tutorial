@@ -32,7 +32,7 @@ include::../part-1-graphics.adoc[tag=init,indent=4]
 include::../part-1-graphics.adoc[tag=set_fps,indent=4]
 include::../part-2-object-map.adoc[tag=offscreen,indent=4]
 
-include::../part-2-object-map.adoc[tag=place_player,indent=4]
+include::../part-2-object-map.adoc[tag=create_objects,indent=4]
 
 include::../part-1-graphics.adoc[tag=game_loop_while_header,indent=4]
 include::../part-2-object-map.adoc[tag=clear_offscreen_console,indent=8]
