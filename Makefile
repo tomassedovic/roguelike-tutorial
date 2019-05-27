@@ -2,7 +2,7 @@ all: clean docs diff-rust
 
 docs:
 	@mkdir -p target/tutorial
-	asciidoctor --destination-dir target/tutorial doc/output-templates/*.adoc
+	asciidoctor --destination-dir target/tutorial doc/adoc/*.adoc doc/rs/*.adoc
 	@# Remove the asciidoc callout comments (e.g. `// <1>`) from the Rust outputs:
 	@sed -i -e 's|\s*//\s*<[0-9]*>||g' target/tutorial/*.rs
 	@# Add trailing newline to the Rust outputs:
