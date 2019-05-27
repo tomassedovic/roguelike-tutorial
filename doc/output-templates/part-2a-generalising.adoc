@@ -9,6 +9,7 @@ include::../part-1-graphics.adoc[tag=use_console]
 
 include::../part-1-graphics.adoc[tag=consts]
 
+include::../part-2-object-map.adoc[tag=object_doc_comment]
 include::../part-2-object-map.adoc[tag=object_struct]
 
 include::../part-2-object-map.adoc[tag=object_impl]

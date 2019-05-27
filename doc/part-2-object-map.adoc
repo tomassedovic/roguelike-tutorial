@@ -1,4 +1,5 @@
 = The object and the map
+:icons: font
 :source-highlighter: pygments
 ifdef::env-github[:outfilesuffix: .adoc]
 
@@ -86,9 +87,11 @@ the player earlier.
 
 [source,rust]
 ----
-tag::object_struct[]
+tag::object_doc_comment[]
 /// This is a generic object: the player, a monster, an item, the stairs...
 /// It's always represented by a character on screen.
+end::object_doc_comment[]
+tag::object_struct[]
 struct Object {
     x: i32,
     y: i32,
@@ -98,7 +101,10 @@ struct Object {
 end::object_struct[]
 
 tag::object_impl[]
+tag::object_impl_header[]
 impl Object {
+end::object_impl_header[]
+tag::object_new[]
     pub fn new(x: i32, y: i32, char: char, color: Color) -> Self {
         Object {
             x: x,
@@ -107,18 +113,21 @@ impl Object {
             color: color,
         }
     }
-
+end::object_new[]
+tag::object_move_by[]
     /// move by the given amount
     pub fn move_by(&mut self, dx: i32, dy: i32) {
         self.x += dx;
         self.y += dy;
     }
-
+end::object_move_by[]
+tag::object_draw[]
     /// set the color and then draw the character that represents this object at its position
     pub fn draw(&self, con: &mut Console) {
         con.set_default_foreground(self.color);
         con.put_char(self.x, self.y, self.char, BackgroundFlag::None);
     }
+end::object_draw[]
 }
 end::object_impl[]
 ----
@@ -196,9 +205,13 @@ and update the way we call the function:
 [source,rust]
 ----
 tag::handle_keys[]
+tag::get_player[]
 // handle keys and exit game if needed
 let player = &mut objects[0];
+end::get_player[]
+tag::handle_keys_no_map[]
 let exit = handle_keys(&mut root, player);
+end::handle_keys_no_map[]
 end::handle_keys[]
 ----
 
@@ -241,8 +254,11 @@ leave some space for a panel with stats that we'll add later.
 
 [source,rust]
 ----
+tag::map_size_consts[]
+// size of the map
 const MAP_WIDTH: i32 = 80;
 const MAP_HEIGHT: i32 = 45;
+end::map_size_consts[]
 ----
 
 Next we'll define colours for the tiles. We'll have two tiles for now:
@@ -251,8 +267,14 @@ field of view, we'll have to add a set for when they're lit.
 
 [source,rust]
 ----
+tag::color_consts[]
 const COLOR_DARK_WALL: Color = Color { r: 0, g: 0, b: 100 };
-const COLOR_DARK_GROUND: Color = Color { r: 50, g: 50, b: 150 };
+const COLOR_DARK_GROUND: Color = Color {
+    r: 50,
+    g: 50,
+    b: 150,
+};
+end::color_consts[]
 ----
 
 Since the map is going to be built from tiles, we need to define them!
@@ -266,21 +288,32 @@ passable tiles that block sight for secret passages. We'll create a
 
 [source,rust]
 ----
+tag::tile_struct[]
+/// A tile of the map and its properties
 #[derive(Clone, Copy, Debug)]
 struct Tile {
     blocked: bool,
     block_sight: bool,
 }
+end::tile_struct[]
 
+tag::tile_impl[]
 impl Tile {
     pub fn empty() -> Self {
-        Tile{blocked: false, block_sight: false}
+        Tile {
+            blocked: false,
+            block_sight: false,
+        }
     }
 
     pub fn wall() -> Self {
-        Tile{blocked: true, block_sight: true}
+        Tile {
+            blocked: true,
+            block_sight: true,
+        }
     }
 }
+end::tile_impl[]
 ----
 
 The `#[derive(...)]` bit automatically implements certain behaviours
@@ -292,12 +325,18 @@ respect.
 
 We don't want the `Copy` behaviour for `Object` (we could accidentally
 modify a copy instead of the original and get our changes lost for
-example), but `Debug` is useful, so let's add `#[derive(Debug)]` to
-our `Object` as well.
+example), but `Debug` is useful, so let's add the `Debug` derive to
+our `Object` as well:
+
+[source,rust]
+----
+tag::object_derive[]
+#[derive(Debug)]
+end::object_derive[]
+----
 
 We've also added helper methods to build the two types of `Tiles`
 we're going to be using the most.
-
 
 And now the map! It's a two-dimensional array (`Vec`) of tiles. The
 full type is `Vec<Vec<Tile>>` (a vec composed of vecs of tiles). Since
@@ -305,7 +344,9 @@ we're going to be passing it around a lot, let's define a shortcut:
 
 [source,rust]
 ----
+tag::type_map[]
 type Map = Vec<Vec<Tile>>;
+end::type_map[]
 ----
 
 This let's use write `Map` wherever we'd have to write
@@ -316,12 +357,16 @@ Now we'll build it using nested `vec!` macros:
 
 [source,rust]
 ----
+tag::make_map_header[]
 fn make_map() -> Map {
     // fill map with "unblocked" tiles
     let mut map = vec![vec![Tile::empty(); MAP_HEIGHT as usize]; MAP_WIDTH as usize];
+end::make_map_header[]
 
+tag::make_map_footer[]
     map
 }
+end::make_map_footer[]
 ----
 
 The `vec!` macro is a shortcut that creates a `Vec` and fills it with
@@ -334,8 +379,11 @@ We can access any tile with `map[x][y]`. Let's add two pillars
 
 [source,rust]
 ----
+tag::make_map_pillars[]
+// place two pillars to test the map
 map[30][22] = Tile::wall();
 map[50][22] = Tile::wall();
+end::make_map_pillars[]
 ----
 
 (you can also access the tile's properties directly like so:
@@ -348,12 +396,18 @@ renders everything and call it from the main loop.
 
 [source,rust]
 ----
+tag::render_all_header[]
 fn render_all(root: &mut Root, con: &mut Offscreen, objects: &[Object], map: &Map) {
+end::render_all_header[]
+tag::render_objects[]
     // draw all objects in the list
     for object in objects {
         object.draw(con);
     }
+end::render_objects[]
+tag::render_all_footer[]
 }
+end::render_all_footer[]
 ----
 
 Still in the same function, we can go through all the tiles and draw
@@ -361,6 +415,8 @@ them to the screen:
 
 [source,rust]
 ----
+tag::render_map[]
+// go through all tiles, and set their background color
 for y in 0..MAP_HEIGHT {
     for x in 0..MAP_WIDTH {
         let wall = map[x as usize][y as usize].block_sight;
@@ -371,16 +427,53 @@ for y in 0..MAP_HEIGHT {
         }
     }
 }
+end::render_map[]
 ----
 
-Also, move the `blit` call at the end of `render_all` since
-it's part of the rendering code.
-
-Make sure to create the map before the rendering code:
+And let's move the `blit` call to the end of `render_all`:
 
 [source,rust]
 ----
+tag::render_blit[]
+// blit the contents of "con" to the root console
+blit(con, (0, 0), (MAP_WIDTH, MAP_HEIGHT), root, (0, 0), 1.0, 1.0);
+end::render_blit[]
+----
+
+We've replaced the `SCREEN_*` dimensions with the `MAP` ones. From now
+on, the `con` offscreen console object will represents the map only.
+
+This gives some space at the bottom for the message log, status bar, etc.
+
+And we need to update its dimensions (in the `main` fn) as well:
+
+[source,rust]
+----
+tag::offscreen_map_console[]
+let mut con = Offscreen::new(MAP_WIDTH, MAP_HEIGHT);
+end::offscreen_map_console[]
+----
+
+Now that we've got the map and rendering updated, let's actually
+create it. In `main` before the game loop:
+
+[source,rust]
+----
+tag::make_map[]
+// generate map (at this point it's not drawn to the screen)
 let map = make_map();
+end::make_map[]
+----
+
+And don't forget to call `render_all` from the main loop too (right
+before `tcod.flush`):
+
+[source,rust]
+----
+tag::call_render_all[]
+// render the screen
+render_all(&mut root, &mut con, &objects, &map);
+end::call_render_all[]
 ----
 
 You should be able to see two pillars and walk around the map now!
@@ -391,34 +484,62 @@ beginning of the Object's `move_by` method:
 
 [source,rust]
 ----
-if !map[(self.x + dx) as usize][(self.y + dy) as usize].blocked {
-    // the move code
+tag::blocking_move_by[]
+/// move by the given amount, if the destination is not blocked
+pub fn move_by(&mut self, dx: i32, dy: i32, map: &Map) {  // <1>
+    if !map[(self.x + dx) as usize][(self.y + dy) as usize].blocked {  // <2>
+        self.x += dx;  // <3>
+        self.y += dy;
+    }
+}
+end::blocking_move_by[]
+----
+<1> We need to pass `Map` in to check if a tile is blocking
+<2> Only move if the destination is not blocking
+<3> The movement code is the same
+
+We'll also need to pass a reference to the map to `handle_keys`
+because it calls `move_by`. This may look annoying now but as the code
+grows, it will be good to know which functions can see (and change!)
+what.
+
+[source,rust]
+----
+tag::handle_keys_map_header[]
+fn handle_keys(root: &mut Root, player: &mut Object, map: &Map) -> bool {  // <1>
+end::handle_keys_map_header[]
+    //...
+
+    match key {
+        // ...
+
+tag::map_movement_keys[]
+        // movement keys
+        Key { code: Up, .. } => player.move_by(0, -1, map),  // <2>
+        Key { code: Down, .. } => player.move_by(0, 1, map),
+        Key { code: Left, .. } => player.move_by(-1, 0, map),
+        Key { code: Right, .. } => player.move_by(1, 0, map),
+end::map_movement_keys[]
+
+        // ...
+    }
+
+    // ...
 }
 ----
+<1> Added `Map` to `handle_keys`
+<2> And to `move_by`
 
-We'll have to pass a reference to the map to `move_by` and
-`handle_keys` which calls it. This may look annoying now but as the
-code grows, it will be good to know which functions can see (and
-change!) what.
+And finally, we need to pass the map to `handle_keys` from the main loop:
 
-Finally, since the `con` console is for objects and the map only, we
-update its size to that of the map:
-
-[source]
+[source,rust]
 ----
-let mut con = Offscreen::new(MAP_WIDTH, MAP_HEIGHT);
+tag::call_handle_keys_map[]
+let exit = handle_keys(&mut root, player, &map);
+end::call_handle_keys_map[]
 ----
 
-And update the `blit` call, too:
-
-[source]
-----
-blit(con, (0, 0), (MAP_WIDTH, MAP_HEIGHT), root, (0, 0), 1.0, 1.0);
-----
-
-Now we have some space at the bottom for the message log, status bar, etc.
-
-Here's link:part-2b-map.rs.txt[the complete code so far].
+Here's link:part-2b-map.rs[the complete code so far].
 
 NOTE: There's a ton of different ways to create the map. One common
 alternative is one continuous Vec with `MAP_HEIGHT * MAP_WIDTH` items.

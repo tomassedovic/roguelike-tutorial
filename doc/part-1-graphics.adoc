@@ -151,11 +151,15 @@ source code with a bunch of opaque numbers:
 [source,rust]
 ----
 tag::consts[]
+tag::screen_size[]
 // actual size of the window
 const SCREEN_WIDTH: i32 = 80;
 const SCREEN_HEIGHT: i32 = 50;
+end::screen_size[]
 
+tag::limit_fps[]
 const LIMIT_FPS: i32 = 20; // 20 frames-per-second maximum
+end::limit_fps[]
 end::consts[]
 ----
 
