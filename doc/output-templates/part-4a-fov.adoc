@@ -6,6 +6,7 @@ include::../part-3-dungeon.adoc[tag=use_cmp]
 
 include::../part-3-dungeon.adoc[tag=use_rng]
 include::../part-1-graphics.adoc[tag=use_tcod]
+include::../part-4-fov-exploration.adoc[tag=use_fov_map]
 
 include::../part-1-graphics.adoc[tag=screen_size]
 
@@ -13,9 +14,11 @@ include::../part-2-object-map.adoc[tag=map_size_consts]
 
 include::../part-3-dungeon.adoc[tag=room_consts]
 
+include::../part-4-fov-exploration.adoc[tag=fov_consts]
+
 include::../part-1-graphics.adoc[tag=limit_fps]
 
-include::../part-2-object-map.adoc[tag=color_consts]
+include::../part-4-fov-exploration.adoc[tag=colors]
 
 include::../part-2-object-map.adoc[tag=type_map]
 
@@ -74,10 +77,12 @@ include::../part-3-dungeon.adoc[tag=push_new_room,indent=12]
 include::../part-3-dungeon.adoc[tag=make_map_with_starting_pos_footer]
 }
 
-include::../part-2-object-map.adoc[tag=render_all_header]
-include::../part-2-object-map.adoc[tag=render_map,indent=4]
+include::../part-4-fov-exploration.adoc[tag=render_all_header]
+include::../part-4-fov-exploration.adoc[tag=fov_recompute,indent=4]
 
-include::../part-2-object-map.adoc[tag=render_objects,indent=4]
+include::../part-4-fov-exploration.adoc[tag=fov_set_tile_background,indent=4]
+
+include::../part-4-fov-exploration.adoc[tag=render_objects,indent=4]
 
 include::../part-2-object-map.adoc[tag=render_blit,indent=4]
 include::../part-2-object-map.adoc[tag=render_all_footer]
@@ -108,14 +113,19 @@ include::../part-2-object-map.adoc[tag=place_npc,indent=4]
 
 include::../part-2-object-map.adoc[tag=create_objects_list,indent=4]
 
+include::../part-4-fov-exploration.adoc[tag=create_fov_map,indent=4]
+
+include::../part-4-fov-exploration.adoc[tag=init_previous_player_pos,indent=4]
+
 include::../part-1-graphics.adoc[tag=game_loop_while_header,indent=4]
 include::../part-2-object-map.adoc[tag=clear_offscreen_console,indent=8]
 
-include::../part-2-object-map.adoc[tag=call_render_all,indent=8]
+include::../part-4-fov-exploration.adoc[tag=call_render_all,indent=8]
 
 include::../part-1-graphics.adoc[tag=root_flush,indent=8]
 
 include::../part-2-object-map.adoc[tag=get_player,indent=8]
+include::../part-4-fov-exploration.adoc[tag=update_previous_player_pos,indent=8]
 include::../part-2-object-map.adoc[tag=call_handle_keys_map,indent=8]
 include::../part-1-graphics.adoc[tag=exit_game_loop,indent=8]
     }

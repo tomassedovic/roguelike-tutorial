@@ -112,12 +112,7 @@ struct Object {
 
 impl Object {
     pub fn new(x: i32, y: i32, char: char, color: Color) -> Self {
-        Object {
-            x: x,
-            y: y,
-            char: char,
-            color: color,
-        }
+        Object { x, y, char, color }
     }
 
     /// move by the given amount, if the destination is not blocked
