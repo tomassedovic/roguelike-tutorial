@@ -717,27 +717,33 @@ Now let's write the function itself:
 [source]
 ----
 tag::player_move_or_attack[]
+tag::player_move_or_attack_header[]
 fn player_move_or_attack(dx: i32, dy: i32, map: &Map, objects: &mut [Object]) {
     // the coordinates the player is moving to/attacking
     let x = objects[PLAYER].x + dx;
     let y = objects[PLAYER].y + dy;
+end::player_move_or_attack_header[]
 
     // try to find an attackable object there
     let target_id = objects.iter().position(|object| object.pos() == (x, y));
 
+tag::player_move_or_attack_target_some[]
     // attack if target found, move otherwise
     match target_id {
         Some(target_id) => {
+end::player_move_or_attack_target_some[]
             println!(
                 "The {} laughs at your puny efforts to attack him!",
                 objects[target_id].name
             );
+tag::player_move_or_attack_target_none[]
         }
         None => {
             move_by(PLAYER, dx, dy, map, objects);
         }
     }
 }
+end::player_move_or_attack_target_none[]
 end::player_move_or_attack[]
 ----
 

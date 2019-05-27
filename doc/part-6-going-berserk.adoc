@@ -191,6 +191,7 @@ monster is close, it will attack, otherwise it will move closer.
 [source]
 ----
 tag::ai_take_turn[]
+tag::ai_take_turn_header[]
 fn ai_take_turn(monster_id: usize, map: &Map, objects: &mut [Object], fov_map: &FovMap) {
     // a basic monster takes its turn. If you can see it, it can see you
     let (monster_x, monster_y) = objects[monster_id].pos();
@@ -200,6 +201,7 @@ fn ai_take_turn(monster_id: usize, map: &Map, objects: &mut [Object], fov_map: &
             let (player_x, player_y) = objects[PLAYER].pos();
             move_towards(monster_id, player_x, player_y, map, objects);
         } else if objects[PLAYER].fighter.map_or(false, |f| f.hp > 0) {
+end::ai_take_turn_header[]
             // close enough, attack! (if the player is still alive.)
             let monster = &objects[monster_id];
             println!(
@@ -244,6 +246,7 @@ damage system, whatever it may be.
 
 [source]
 ----
+tag::take_damage[]
 pub fn take_damage(&mut self, damage: i32) {
     // apply damage if possible
     if let Some(fighter) = self.fighter.as_mut() {
@@ -251,6 +254,7 @@ pub fn take_damage(&mut self, damage: i32) {
             fighter.hp -= damage;
         }
     }
+end::take_damage[]
 }
 ----
 
@@ -259,6 +263,7 @@ there's the method to attack another object:
 
 [source]
 ----
+tag::attack[]
 pub fn attack(&mut self, target: &mut Object) {
     // a simple formula for attack damage
     let damage = self.fighter.map_or(0, |f| f.power) - target.fighter.map_or(0, |f| f.defense);
@@ -276,6 +281,7 @@ pub fn attack(&mut self, target: &mut Object) {
         );
     }
 }
+end::attack[]
 ----
 
 It calls the previous method in order to handle taking damage. We
@@ -311,6 +317,7 @@ our object from both:
 
 [source]
 ----
+tag::mut_two[]
 /// Mutably borrow two *separate* elements from the given slice.
 /// Panics when the indexes are equal or out of bounds.
 fn mut_two<T>(first_index: usize, second_index: usize, items: &mut [T]) -> (&mut T, &mut T) {
@@ -323,23 +330,28 @@ fn mut_two<T>(first_index: usize, second_index: usize, items: &mut [T]) -> (&mut
         (&mut second_slice[0], &mut first_slice[second_index])
     }
 }
+end::mut_two[]
 ----
 
 And now monster's attack looks like this:
 
 [source]
 ----
+tag::monster_attack[]
 // close enough, attack! (if the player is still alive.)
 let (monster, player) = mut_two(monster_id, PLAYER, objects);
 monster.attack(player);
+end::monster_attack[]
 ----
 
 And do the same to the player's dummy attack code in `player_move_or_attack`:
 
 [source]
 ----
+tag::player_attack[]
 let (player, target) = mut_two(PLAYER, target_id, objects);
 player.attack(target);
+end::player_attack[]
 ----
 
 
@@ -351,7 +363,9 @@ attack you. This is how you make a simple GUI! At the end of the
 
 [source]
 ----
+tag::show_player_stats[]
 // show the player's stats
+root.set_default_foreground(WHITE);
 if let Some(fighter) = objects[PLAYER].fighter {
     root.print_ex(
         1,
@@ -361,6 +375,7 @@ if let Some(fighter) = objects[PLAYER].fighter {
         format!("HP: {}/{} ", fighter.hp, fighter.max_hp),
     );
 }
+end::show_player_stats[]
 ----
 
 NOTE: We render the hitpoints only when the _player_ has the `Fighter`
@@ -383,17 +398,31 @@ parameter when creating a `Fighter` instance.
 
 [source]
 ----
+tag::fighter_struct_with_cb[]
+// combat-related properties and methods (monster, player, NPC).
+#[derive(Clone, Copy, Debug, PartialEq)]
 struct Fighter {
-   // ...
-   on_death: DeathCallback,
+    max_hp: i32,
+    hp: i32,
+    defense: i32,
+    power: i32,
+    on_death: DeathCallback,  // <1>
 }
+end::fighter_struct_with_cb[]
+----
+<1> New `on_death` callback field
 
+Let us define the callback as well:
 
+[source]
+----
+tag::death_callback_enum[]
 #[derive(Clone, Copy, Debug, PartialEq)]
 enum DeathCallback {
     Player,
     Monster,
 }
+end::death_callback_enum[]
 ----
 
 We're adding another field to `Fighter` of a new enum `DeathCallback`.
@@ -404,6 +433,7 @@ Next, we'll add a method that will let us call the callback:
 
 [source]
 ----
+tag::death_callback_impl[]
 impl DeathCallback {
     fn callback(self, object: &mut Object) {
         use DeathCallback::*;
@@ -414,6 +444,7 @@ impl DeathCallback {
         callback(object);
     }
 }
+end::death_callback_impl[]
 ----
 
 It checks to see which callback it represents and invokes the right
@@ -421,8 +452,62 @@ function (`player_death` or `monster_death`). The callback functions
 take one parameter -- the mutable reference to the dying object. This
 is so we can change its properties on death.
 
-Before we get to writing those, lets make sure our callbacks actually
-get triggered when an object dies!
+And we also need to set the callback for every `Fighter` instance.
+Here's the player's one:
+
+[source]
+----
+tag::player_fighter_cb[]
+player.fighter = Some(Fighter {
+    max_hp: 30,
+    hp: 30,
+    defense: 2,
+    power: 5,
+    on_death: DeathCallback::Player,  // <1>
+});
+end::player_fighter_cb[]
+----
+<1> Added `on_death` callback
+
+
+And this is for the monsters (in `place_objects`):
+
+[source]
+----
+tag::generate_monster_cb[]
+let mut monster = if rand::random::<f32>() < 0.8 {
+    // 80% chance of getting an orc
+    // create an orc
+    let mut orc = Object::new(x, y, 'o', "orc", DESATURATED_GREEN, true);
+    orc.fighter = Some(Fighter {
+        max_hp: 10,
+        hp: 10,
+        defense: 0,
+        power: 3,
+        on_death: DeathCallback::Monster,  // <1>
+    });
+    orc.ai = Some(Ai);
+    orc
+} else {
+    // create a troll
+    let mut troll = Object::new(x, y, 'T', "troll", DARKER_GREEN, true);
+    troll.fighter = Some(Fighter {
+        max_hp: 16,
+        hp: 16,
+        defense: 1,
+        power: 4,
+        on_death: DeathCallback::Monster,  // <2>
+    });
+    troll.ai = Some(Ai);
+    troll
+};
+end::generate_monster_cb[]
+----
+<1> Added `on_death` callback
+<2> Added `on_death` callback
+
+Before we get to writing the concrete callback implementations, lets
+make sure our they actually get triggered when an object dies!
 
 We'll do that in `take_damage` rather than `attack`, because an object
 may die from causes other than combat, such as a trap, hunger or
@@ -436,6 +521,7 @@ Put this at the end of the `take_damage` method:
 if let Some(fighter) = self.fighter.as_mut() {
     // ...
 }
+tag::execute_death_callback[]
 // check for death, call the death function
 if let Some(fighter) = self.fighter {
     if fighter.hp <= 0 {
@@ -443,6 +529,7 @@ if let Some(fighter) = self.fighter {
         fighter.on_death.callback(self);
     }
 }
+end::execute_death_callback[]
 ----
 
 The first `if let` check looks almost identical to the one that's already
@@ -475,26 +562,30 @@ callbacks!
 
 [source]
 ----
+tag::player_death[]
 fn player_death(player: &mut Object) {
     // the game ended!
     println!("You died!");
 
     // for added effect, transform the player into a corpse!
     player.char = '%';
-    player.color = colors::DARK_RED;
+    player.color = DARK_RED;
 }
+end::player_death[]
 
+tag::monster_death[]
 fn monster_death(monster: &mut Object) {
     // transform it into a nasty corpse! it doesn't block, can't be
     // attacked and doesn't move
     println!("{} is dead!", monster.name);
     monster.char = '%';
-    monster.color = colors::DARK_RED;
+    monster.color = DARK_RED;
     monster.blocks = false;
     monster.fighter = None;
     monster.ai = None;
     monster.name = format!("remains of {}", monster.name);
 }
+end::monster_death[]
 ----
 
 Notice that the monster's components were disabled, so it doesn't run
@@ -514,10 +605,12 @@ following:
 
 [source]
 ----
+tag::attack_target_id[]
 // try to find an attackable object there
 let target_id = objects
     .iter()
     .position(|object| object.fighter.is_some() && object.pos() == (x, y));
+end::attack_target_id[]
 ----
 
 `is_some` is a method on `Option` that will tell you whether it's
@@ -559,6 +652,7 @@ we'll only sort items that we actually want to draw.
 
 [source]
 ----
+tag::objects_to_draw[]
 let mut to_draw: Vec<_> = objects
     .iter()
     .filter(|o| fov_map.is_in_fov(o.x, o.y))
@@ -569,6 +663,7 @@ to_draw.sort_by(|o1, o2| o1.blocks.cmp(&o2.blocks));
 for object in &to_draw {
     object.draw(con);
 }
+end::objects_to_draw[]
 ----
 
 It's finally ready to play, and it actually feels like a game! It's been
