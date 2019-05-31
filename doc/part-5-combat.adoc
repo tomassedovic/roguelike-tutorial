@@ -719,9 +719,11 @@ Now let's write the function itself:
 tag::player_move_or_attack[]
 tag::player_move_or_attack_header[]
 fn player_move_or_attack(dx: i32, dy: i32, map: &Map, objects: &mut [Object]) {
+tag::player_move_or_attack_coords[]
     // the coordinates the player is moving to/attacking
     let x = objects[PLAYER].x + dx;
     let y = objects[PLAYER].y + dy;
+end::player_move_or_attack_coords[]
 end::player_move_or_attack_header[]
 
     // try to find an attackable object there

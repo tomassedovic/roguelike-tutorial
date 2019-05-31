@@ -7,7 +7,7 @@ use rand::Rng;
 use std::error::Error;
 use std::fs::File;
 use std::io::{Read, Write};
-use tcod::colors::{self, Color};
+use tcod::colors::*;
 use tcod::console::*;
 use tcod::input::{self, Event, Key, Mouse};
 use tcod::map::{FovAlgorithm, Map as FovMap};
@@ -230,7 +230,7 @@ impl Object {
                     "{} attacks {} for {} hit points.",
                     self.name, target.name, damage
                 ),
-                colors::WHITE,
+                WHITE,
             );
             if let Some(xp) = target.take_damage(damage, game) {
                 // yield experience to the player
@@ -242,7 +242,7 @@ impl Object {
                     "{} attacks {} but it has no effect!",
                     self.name, target.name
                 ),
-                colors::WHITE,
+                WHITE,
             );
         }
     }
@@ -300,7 +300,7 @@ fn pick_item_up(object_id: usize, objects: &mut Vec<Object>, game: &mut Game) {
                 "Your inventory is full, cannot pick up {}.",
                 objects[object_id].name
             ),
-            colors::RED,
+            RED,
         );
     } else {
         let item = objects.swap_remove(object_id);
@@ -414,7 +414,7 @@ fn ai_confused(
         // restore the previous AI (this one will be deleted)
         game.log.add(
             format!("The {} is no longer confused!", objects[monster_id].name),
-            colors::RED,
+            RED,
         );
         *previous_ai
     }
@@ -449,13 +449,13 @@ fn use_item(inventory_id: usize, objects: &mut [Object], game: &mut Game, tcod: 
                 game.inventory.remove(inventory_id);
             }
             UseResult::Cancelled => {
-                game.log.add("Cancelled", colors::WHITE);
+                game.log.add("Cancelled", WHITE);
             }
         }
     } else {
         game.log.add(
             format!("The {} cannot be used.", game.inventory[inventory_id].name),
-            colors::WHITE,
+            WHITE,
         );
     }
 }
@@ -561,7 +561,7 @@ fn cast_heal(
     // heal the player
     if let Some(fighter) = objects[PLAYER].fighter {
         if fighter.hp == fighter.max_hp {
-            game.log.add("You are already at full health.", colors::RED);
+            game.log.add("You are already at full health.", RED);
             return UseResult::Cancelled;
         }
         game.log
@@ -596,8 +596,7 @@ fn cast_lightning(
         UseResult::UsedUp
     } else {
         // no enemy found within maximum range
-        game.log
-            .add("No enemy is close enough to strike.", colors::RED);
+        game.log.add("No enemy is close enough to strike.", RED);
         UseResult::Cancelled
     }
 }
@@ -632,8 +631,7 @@ fn cast_confuse(
         UseResult::UsedUp
     } else {
         // no enemy fonud within maximum range
-        game.log
-            .add("No enemy is close enough to strike.", colors::RED);
+        game.log.add("No enemy is close enough to strike.", RED);
         UseResult::Cancelled
     }
 }
@@ -658,7 +656,7 @@ fn cast_fireball(
             "The fireball explodes, burning everything within {} tiles!",
             FIREBALL_RADIUS
         ),
-        colors::ORANGE,
+        ORANGE,
     );
 
     let mut xp_to_gain = 0;
@@ -669,7 +667,7 @@ fn cast_fireball(
                     "The {} gets burned for {} hit points.",
                     obj.name, FIREBALL_DAMAGE
                 ),
-                colors::ORANGE,
+                ORANGE,
             );
             if let Some(xp) = obj.take_damage(FIREBALL_DAMAGE, game) {
                 if id != PLAYER {
@@ -774,14 +772,7 @@ fn make_map(objects: &mut Vec<Object>) -> Map {
 
     // create stairs at the center of the last room
     let (last_room_x, last_room_y) = rooms[rooms.len() - 1].center();
-    let mut stairs = Object::new(
-        last_room_x,
-        last_room_y,
-        '<',
-        "stairs",
-        colors::WHITE,
-        false,
-    );
+    let mut stairs = Object::new(last_room_x, last_room_y, '<', "stairs", WHITE, false);
     stairs.always_visible = true;
     objects.push(stairs);
 
@@ -802,7 +793,7 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>) {
             let mut monster = if rand::random::<f32>() < 0.8 {
                 // 80% chance of getting an orc
                 // create an orc
-                let mut orc = Object::new(x, y, 'o', "orc", colors::DESATURATED_GREEN, true);
+                let mut orc = Object::new(x, y, 'o', "orc", DESATURATED_GREEN, true);
                 orc.fighter = Some(Fighter {
                     max_hp: 10,
                     hp: 10,
@@ -815,7 +806,7 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>) {
                 orc
             } else {
                 // create a troll
-                let mut troll = Object::new(x, y, 'T', "troll", colors::DARKER_GREEN, true);
+                let mut troll = Object::new(x, y, 'T', "troll", DARKER_GREEN, true);
                 troll.fighter = Some(Fighter {
                     max_hp: 16,
                     hp: 16,
@@ -897,7 +888,7 @@ fn next_level(tcod: &mut Tcod, objects: &mut Vec<Object>, game: &mut Game) {
     game.log.add(
         "After a rare moment of peace, you descend deeper into \
          the heart of the dungeon...",
-        colors::RED,
+        RED,
     );
     game.dungeon_level += 1;
     game.map = make_map(objects);
@@ -929,7 +920,7 @@ fn render_bar(
     }
 
     // finally, some centered text with the values
-    panel.set_default_foreground(colors::WHITE);
+    panel.set_default_foreground(WHITE);
     panel.print_ex(
         x + total_width / 2,
         y,
@@ -1040,8 +1031,8 @@ fn render_all(tcod: &mut Tcod, objects: &[Object], game: &mut Game, fov_recomput
         "HP",
         hp,
         max_hp,
-        colors::LIGHT_RED,
-        colors::DARKER_RED,
+        LIGHT_RED,
+        DARKER_RED,
     );
 
     tcod.panel.print_ex(
@@ -1114,7 +1105,7 @@ fn menu<T: AsRef<str>>(header: &str, options: &[T], width: i32, root: &mut Root)
     let mut window = Offscreen::new(width, height);
 
     // print the header, with auto-wrap
-    window.set_default_foreground(colors::WHITE);
+    window.set_default_foreground(WHITE);
     window.print_rect_ex(
         0,
         0,
@@ -1377,11 +1368,11 @@ enum PlayerAction {
 
 fn player_death(player: &mut Object, game: &mut Game) {
     // the game ended!
-    game.log.add("You died!", colors::RED);
+    game.log.add("You died!", RED);
 
     // for added effect, transform the player into a corpse!
     player.char = '%';
-    player.color = colors::DARK_RED;
+    player.color = DARK_RED;
 }
 
 fn monster_death(monster: &mut Object, game: &mut Game) {
@@ -1393,10 +1384,10 @@ fn monster_death(monster: &mut Object, game: &mut Game) {
             monster.name,
             monster.fighter.unwrap().xp
         ),
-        colors::ORANGE,
+        ORANGE,
     );
     monster.char = '%';
-    monster.color = colors::DARK_RED;
+    monster.color = DARK_RED;
     monster.blocks = false;
     monster.fighter = None;
     monster.ai = None;
@@ -1431,7 +1422,7 @@ impl MessageLog for Vec<(String, Color)> {
 
 fn new_game(tcod: &mut Tcod) -> (Vec<Object>, Game) {
     // create object representing the player
-    let mut player = Object::new(0, 0, '@', "player", colors::WHITE, true);
+    let mut player = Object::new(0, 0, '@', "player", WHITE, true);
     player.alive = true;
     player.fighter = Some(Fighter {
         max_hp: 30,
@@ -1459,7 +1450,7 @@ fn new_game(tcod: &mut Tcod) -> (Vec<Object>, Game) {
     // a warm welcoming message!
     game.log.add(
         "Welcome stranger! Prepare to perish in the Tombs of the Ancient Kings.",
-        colors::RED,
+        RED,
     );
 
     (objects, game)
@@ -1515,7 +1506,7 @@ fn play_game(objects: &mut Vec<Object>, game: &mut Game, tcod: &mut Tcod) {
             break;
         }
 
-        // let monstars take their turn
+        // let monsters take their turn
         if objects[PLAYER].alive && player_action != PlayerAction::DidntTakeTurn {
             for id in 0..objects.len() {
                 if objects[id].ai.is_some() {

@@ -567,9 +567,11 @@ fn player_death(player: &mut Object) {
     // the game ended!
     println!("You died!");
 
+tag::player_death_modifications[]
     // for added effect, transform the player into a corpse!
     player.char = '%';
     player.color = DARK_RED;
+end::player_death_modifications[]
 }
 end::player_death[]
 
@@ -578,12 +580,14 @@ fn monster_death(monster: &mut Object) {
     // transform it into a nasty corpse! it doesn't block, can't be
     // attacked and doesn't move
     println!("{} is dead!", monster.name);
+tag::monster_death_modifications[]
     monster.char = '%';
     monster.color = DARK_RED;
     monster.blocks = false;
     monster.fighter = None;
     monster.ai = None;
     monster.name = format!("remains of {}", monster.name);
+end::monster_death_modifications[]
 }
 end::monster_death[]
 ----

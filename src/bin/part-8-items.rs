@@ -1,7 +1,7 @@
 use std::cmp;
 
 use rand::Rng;
-use tcod::colors::{self, Color};
+use tcod::colors::*;
 use tcod::console::*;
 use tcod::input::{self, Event, Key, Mouse};
 use tcod::map::{FovAlgorithm, Map as FovMap};
@@ -202,7 +202,7 @@ impl Object {
                     "{} attacks {} for {} hit points.",
                     self.name, target.name, damage
                 ),
-                colors::WHITE,
+                WHITE,
             );
             target.take_damage(damage, messages);
         } else {
@@ -212,7 +212,7 @@ impl Object {
                     "{} attacks {} but it has no effect!",
                     self.name, target.name
                 ),
-                colors::WHITE,
+                WHITE,
             );
         }
     }
@@ -276,7 +276,7 @@ fn pick_item_up(
                 "Your inventory is full, cannot pick up {}.",
                 objects[object_id].name
             ),
-            colors::RED,
+            RED,
         );
     } else {
         let item = objects.swap_remove(object_id);
@@ -380,14 +380,14 @@ fn use_item(
                 inventory.remove(inventory_id);
             }
             UseResult::Cancelled => {
-                message(messages, "Cancelled", colors::WHITE);
+                message(messages, "Cancelled", WHITE);
             }
         }
     } else {
         message(
             messages,
             format!("The {} cannot be used.", inventory[inventory_id].name),
-            colors::WHITE,
+            WHITE,
         );
     }
 }
@@ -396,7 +396,7 @@ fn cast_heal(_inventory_id: usize, objects: &mut [Object], messages: &mut Messag
     // heal the player
     if let Some(fighter) = objects[PLAYER].fighter {
         if fighter.hp == fighter.max_hp {
-            message(messages, "You are already at full health.", colors::RED);
+            message(messages, "You are already at full health.", RED);
             return UseResult::Cancelled;
         }
         message(
@@ -510,7 +510,7 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>) {
             let mut monster = if rand::random::<f32>() < 0.8 {
                 // 80% chance of getting an orc
                 // create an orc
-                let mut orc = Object::new(x, y, 'o', "orc", colors::DESATURATED_GREEN, true);
+                let mut orc = Object::new(x, y, 'o', "orc", DESATURATED_GREEN, true);
                 orc.fighter = Some(Fighter {
                     max_hp: 10,
                     hp: 10,
@@ -522,7 +522,7 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>) {
                 orc
             } else {
                 // create a troll
-                let mut troll = Object::new(x, y, 'T', "troll", colors::DARKER_GREEN, true);
+                let mut troll = Object::new(x, y, 'T', "troll", DARKER_GREEN, true);
                 troll.fighter = Some(Fighter {
                     max_hp: 16,
                     hp: 16,
@@ -581,7 +581,7 @@ fn render_bar(
     }
 
     // finally, some centered text with the values
-    panel.set_default_foreground(colors::WHITE);
+    panel.set_default_foreground(WHITE);
     panel.print_ex(
         x + total_width / 2,
         y,
@@ -682,15 +682,7 @@ fn render_all(
     let hp = objects[PLAYER].fighter.map_or(0, |f| f.hp);
     let max_hp = objects[PLAYER].fighter.map_or(0, |f| f.max_hp);
     render_bar(
-        panel,
-        1,
-        1,
-        BAR_WIDTH,
-        "HP",
-        hp,
-        max_hp,
-        colors::LIGHT_RED,
-        colors::DARKER_RED,
+        panel, 1, 1, BAR_WIDTH, "HP", hp, max_hp, LIGHT_RED, DARKER_RED,
     );
 
     // display names of objects under the mouse
@@ -766,7 +758,7 @@ fn menu<T: AsRef<str>>(header: &str, options: &[T], width: i32, root: &mut Root)
     let mut window = Offscreen::new(width, height);
 
     // print the header, with auto-wrap
-    window.set_default_foreground(colors::WHITE);
+    window.set_default_foreground(WHITE);
     window.print_rect_ex(
         0,
         0,
@@ -913,23 +905,19 @@ enum PlayerAction {
 
 fn player_death(player: &mut Object, messages: &mut Messages) {
     // the game ended!
-    message(messages, "You died!", colors::RED);
+    message(messages, "You died!", RED);
 
     // for added effect, transform the player into a corpse!
     player.char = '%';
-    player.color = colors::DARK_RED;
+    player.color = DARK_RED;
 }
 
 fn monster_death(monster: &mut Object, messages: &mut Messages) {
     // transform it into a nasty corpse! it doesn't block, can't be
     // attacked and doesn't move
-    message(
-        messages,
-        format!("{} is dead!", monster.name),
-        colors::ORANGE,
-    );
+    message(messages, format!("{} is dead!", monster.name), ORANGE);
     monster.char = '%';
-    monster.color = colors::DARK_RED;
+    monster.color = DARK_RED;
     monster.blocks = false;
     monster.fighter = None;
     monster.ai = None;
@@ -948,7 +936,7 @@ fn main() {
     let mut panel = Offscreen::new(SCREEN_WIDTH, PANEL_HEIGHT);
 
     // create object representing the player
-    let mut player = Object::new(0, 0, '@', "player", colors::WHITE, true);
+    let mut player = Object::new(0, 0, '@', "player", WHITE, true);
     player.alive = true;
     player.fighter = Some(Fighter {
         max_hp: 30,
@@ -986,7 +974,7 @@ fn main() {
     message(
         &mut messages,
         "Welcome stranger! Prepare to perish in the Tombs of the Ancient Kings.",
-        colors::RED,
+        RED,
     );
 
     // force FOV "recompute" first time through the game loop
@@ -1035,7 +1023,7 @@ fn main() {
             break;
         }
 
-        // let monstars take their turn
+        // let monsters take their turn
         if objects[PLAYER].alive && player_action != PlayerAction::DidntTakeTurn {
             for id in 0..objects.len() {
                 if objects[id].ai.is_some() {

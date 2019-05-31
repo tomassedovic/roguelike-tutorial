@@ -1,7 +1,7 @@
 use std::cmp;
 
 use rand::Rng;
-use tcod::colors::{self, Color};
+use tcod::colors::*;
 use tcod::console::*;
 use tcod::input::{self, Event, Key, Mouse};
 use tcod::map::{FovAlgorithm, Map as FovMap};
@@ -196,7 +196,7 @@ impl Object {
                     "{} attacks {} for {} hit points.",
                     self.name, target.name, damage
                 ),
-                colors::WHITE,
+                WHITE,
             );
             target.take_damage(damage, messages);
         } else {
@@ -206,7 +206,7 @@ impl Object {
                     "{} attacks {} but it has no effect!",
                     self.name, target.name
                 ),
-                colors::WHITE,
+                WHITE,
             );
         }
     }
@@ -254,7 +254,7 @@ fn is_blocked(x: i32, y: i32, map: &Map, objects: &[Object]) -> bool {
     // now check for any blocking objects
     objects
         .iter()
-        .any(|object| object.blocks && object.x == x && object.y == y)
+        .any(|object| object.blocks && object.pos() == (x, y))
 }
 
 // combat-related properties and methods (monster, player, NPC).
@@ -409,7 +409,7 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>) {
             let mut monster = if rand::random::<f32>() < 0.8 {
                 // 80% chance of getting an orc
                 // create an orc
-                let mut orc = Object::new(x, y, 'o', "orc", colors::DESATURATED_GREEN, true);
+                let mut orc = Object::new(x, y, 'o', "orc", DESATURATED_GREEN, true);
                 orc.fighter = Some(Fighter {
                     max_hp: 10,
                     hp: 10,
@@ -421,7 +421,7 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>) {
                 orc
             } else {
                 // create a troll
-                let mut troll = Object::new(x, y, 'T', "troll", colors::DARKER_GREEN, true);
+                let mut troll = Object::new(x, y, 'T', "troll", DARKER_GREEN, true);
                 troll.fighter = Some(Fighter {
                     max_hp: 16,
                     hp: 16,
@@ -463,7 +463,7 @@ fn render_bar(
     }
 
     // finally, some centered text with the values
-    panel.set_default_foreground(colors::WHITE);
+    panel.set_default_foreground(WHITE);
     panel.print_ex(
         x + total_width / 2,
         y,
@@ -545,7 +545,7 @@ fn render_all(
     blit(con, (0, 0), (MAP_WIDTH, MAP_HEIGHT), root, (0, 0), 1.0, 1.0);
 
     // prepare to render the GUI panel
-    panel.set_default_background(colors::BLACK);
+    panel.set_default_background(BLACK);
     panel.clear();
 
     // print the game messages, one line at a time
@@ -564,19 +564,11 @@ fn render_all(
     let hp = objects[PLAYER].fighter.map_or(0, |f| f.hp);
     let max_hp = objects[PLAYER].fighter.map_or(0, |f| f.max_hp);
     render_bar(
-        panel,
-        1,
-        1,
-        BAR_WIDTH,
-        "HP",
-        hp,
-        max_hp,
-        colors::LIGHT_RED,
-        colors::DARKER_RED,
+        panel, 1, 1, BAR_WIDTH, "HP", hp, max_hp, LIGHT_RED, DARKER_RED,
     );
 
     // display names of objects under the mouse
-    panel.set_default_foreground(colors::LIGHT_GREY);
+    panel.set_default_foreground(LIGHT_GREY);
     panel.print_ex(
         1,
         0,
@@ -692,23 +684,19 @@ enum PlayerAction {
 
 fn player_death(player: &mut Object, messages: &mut Messages) {
     // the game ended!
-    message(messages, "You died!", colors::RED);
+    message(messages, "You died!", RED);
 
     // for added effect, transform the player into a corpse!
     player.char = '%';
-    player.color = colors::DARK_RED;
+    player.color = DARK_RED;
 }
 
 fn monster_death(monster: &mut Object, messages: &mut Messages) {
     // transform it into a nasty corpse! it doesn't block, can't be
     // attacked and doesn't move
-    message(
-        messages,
-        format!("{} is dead!", monster.name),
-        colors::ORANGE,
-    );
+    message(messages, format!("{} is dead!", monster.name), ORANGE);
     monster.char = '%';
-    monster.color = colors::DARK_RED;
+    monster.color = DARK_RED;
     monster.blocks = false;
     monster.fighter = None;
     monster.ai = None;
@@ -722,12 +710,13 @@ fn main() {
         .size(SCREEN_WIDTH, SCREEN_HEIGHT)
         .title("Rust/libtcod tutorial")
         .init();
+
     tcod::system::set_fps(LIMIT_FPS);
     let mut con = Offscreen::new(MAP_WIDTH, MAP_HEIGHT);
     let mut panel = Offscreen::new(SCREEN_WIDTH, PANEL_HEIGHT);
 
     // create object representing the player
-    let mut player = Object::new(0, 0, '@', "player", colors::WHITE, true);
+    let mut player = Object::new(0, 0, '@', "player", WHITE, true);
     player.alive = true;
     player.fighter = Some(Fighter {
         max_hp: 30,
@@ -763,7 +752,7 @@ fn main() {
     message(
         &mut messages,
         "Welcome stranger! Prepare to perish in the Tombs of the Ancient Kings.",
-        colors::RED,
+        RED,
     );
 
     // force FOV "recompute" first time through the game loop
@@ -805,7 +794,7 @@ fn main() {
             break;
         }
 
-        // let monstars take their turn
+        // let monsters take their turn
         if objects[PLAYER].alive && player_action != PlayerAction::DidntTakeTurn {
             for id in 0..objects.len() {
                 if objects[id].ai.is_some() {
