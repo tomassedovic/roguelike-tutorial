@@ -37,4 +37,4 @@ list-contributor-names:
 list-contributor-links:
 	git log --merges | grep 'Merge pull request' | awk '{print $$6}' | cut -d/ -f1 | sort | uniq | sed -e 's|^|https://github.com/|'
 
-.PHONY: all docs docs-docker preview clean publish list-contributor-names list-contributor-links diff-rust
+.PHONY: all docs preview clean publish list-contributor-names list-contributor-links diff-rust
