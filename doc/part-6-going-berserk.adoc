@@ -193,6 +193,7 @@ monster is close, it will attack, otherwise it will move closer.
 tag::ai_take_turn[]
 tag::ai_take_turn_header[]
 fn ai_take_turn(monster_id: usize, map: &Map, objects: &mut [Object], fov_map: &FovMap) {
+tag::ai_take_turn_monster_move[]
     // a basic monster takes its turn. If you can see it, it can see you
     let (monster_x, monster_y) = objects[monster_id].pos();
     if fov_map.is_in_fov(monster_x, monster_y) {
@@ -201,6 +202,7 @@ fn ai_take_turn(monster_id: usize, map: &Map, objects: &mut [Object], fov_map: &
             let (player_x, player_y) = objects[PLAYER].pos();
             move_towards(monster_id, player_x, player_y, map, objects);
         } else if objects[PLAYER].fighter.map_or(false, |f| f.hp > 0) {
+end::ai_take_turn_monster_move[]
 end::ai_take_turn_header[]
             // close enough, attack! (if the player is still alive.)
             let monster = &objects[monster_id];
@@ -248,12 +250,14 @@ damage system, whatever it may be.
 ----
 tag::take_damage[]
 pub fn take_damage(&mut self, damage: i32) {
+tag::apply_damage[]
     // apply damage if possible
     if let Some(fighter) = self.fighter.as_mut() {
         if damage > 0 {
             fighter.hp -= damage;
         }
     }
+end::apply_damage[]
 end::take_damage[]
 }
 ----

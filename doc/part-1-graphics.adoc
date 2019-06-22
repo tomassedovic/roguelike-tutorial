@@ -433,7 +433,9 @@ code:
 ----
 tag::use_input_key[]
 use tcod::input::Key;
+tag::use_input_keycode[]
 use tcod::input::KeyCode::*;
+end::use_input_keycode[]
 end::use_input_key[]
 ----
 

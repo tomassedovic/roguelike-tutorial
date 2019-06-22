@@ -107,7 +107,17 @@ const PANEL_Y: i32 = SCREEN_HEIGHT - PANEL_HEIGHT;
 end::panel_consts[]
 ----
 
-We also changed `MAP_HEIGHT` to `43` to give the panel more room.
+We also changed `MAP_HEIGHT` to `43` to give the panel more room:
+
+[source]
+----
+tag::map_size_consts[]
+// size of the map
+const MAP_WIDTH: i32 = 80;
+const MAP_HEIGHT: i32 = 43;  // <1>
+end::map_size_consts[]
+----
+<1> Changed from `45` to `43`
 
 At the end of `render_all`, replace the code that shows the player's
 stats as text with the following code. It re-initializes the panel to
@@ -268,7 +278,9 @@ fn render_all(
     messages: &Messages,  // <1>
     fov_map: &mut FovMap,
     fov_recompute: bool,
-)
+) {
+  ...
+}
 ----
 <1> Added `messages`
 
@@ -357,6 +369,120 @@ tag::player_attack[]
     player.attack(target, messages);  // <6>
 end::player_attack[]
 }
+
+tag::monsters_take_turn[]
+// let monsters take their turn
+if objects[PLAYER].alive && player_action != PlayerAction::DidntTakeTurn {
+    for id in 0..objects.len() {
+        if objects[id].ai.is_some() {
+            ai_take_turn(id, &map, &mut objects, &fov_map, &mut messages);  // <7>
+        }
+    }
+}
+end::monsters_take_turn[]
+
+tag::handle_player_action[]
+// handle keys and exit game if needed
+previous_player_position = objects[PLAYER].pos();
+let player_action = handle_keys(key, &mut root, &map, &mut objects, &mut messages);  // <8>
+if player_action == PlayerAction::Exit {
+    break;
+}
+end::handle_player_action[]
+
+tag::movement_keys[]
+// movement keys
+(Key { code: Up, .. }, true) => {
+    player_move_or_attack(0, -1, map, objects, messages);  // <9>
+    TookTurn
+}
+(Key { code: Down, .. }, true) => {
+    player_move_or_attack(0, 1, map, objects, messages);  // <10>
+    TookTurn
+}
+(Key { code: Left, .. }, true) => {
+    player_move_or_attack(-1, 0, map, objects, messages);  // <11>
+    TookTurn
+}
+(Key { code: Right, .. }, true) => {
+    player_move_or_attack(1, 0, map, objects, messages);  // <12>
+    TookTurn
+}
+end::movement_keys[]
+
+tag::take_damage_header[]
+pub fn take_damage(&mut self, damage: i32, messages: &mut Messages) {
+end::take_damage_header[]
+    ...
+
+tag::execute_death_callback[]
+    // check for death, call the death function
+    if let Some(fighter) = self.fighter {
+        if fighter.hp <= 0 {
+            self.alive = false;
+            fighter.on_death.callback(self, messages);
+        }
+    }
+end::execute_death_callback[]
+}
+
+tag::ai_take_turn_header[]
+fn ai_take_turn(
+    monster_id: usize,
+    map: &Map,
+    objects: &mut [Object],
+    fov_map: &FovMap,
+    messages: &mut Messages,  // <13>
+) {
+end::ai_take_turn_header[]
+    ...
+tag::ai_take_turn_monster_attack[]
+    // close enough, attack! (if the player is still alive.)
+    let (monster, player) = mut_two(monster_id, PLAYER, objects);
+    monster.attack(player, messages);  // <14>
+end::ai_take_turn_monster_attack[]
+}
+
+tag::death_callback_impl[]
+impl DeathCallback {
+    fn callback(self, object: &mut Object, messages: &mut Messages) {  // <15>
+        use DeathCallback::*;
+        let callback: fn(&mut Object, &mut Messages) = match self {  // <16>
+            Player => player_death,
+            Monster => monster_death,
+        };
+        callback(object, messages);  // <17>
+    }
+}
+end::death_callback_impl[]
+
+tag::attack[]
+pub fn attack(&mut self, target: &mut Object, messages: &mut Messages) {
+    // a simple formula for attack damage
+    let damage = self.fighter.map_or(0, |f| f.power) - target.fighter.map_or(0, |f| f.defense);
+    if damage > 0 {
+        // make the target take some damage
+        message(
+            messages,
+            format!(
+                "{} attacks {} for {} hit points.",
+                self.name, target.name, damage
+            ),
+            WHITE,
+        );
+        target.take_damage(damage, messages);
+    } else {
+        message(
+            messages,
+            format!(
+                "{} attacks {} but it has no effect!",
+                self.name, target.name
+            ),
+            WHITE,
+        );
+    }
+}
+end::attack[]
 ----
 <1> Added `messages` to the function's arguments
 <2> Calling `message` instead of `println!`
@@ -364,6 +490,18 @@ end::player_attack[]
 <4> Calling `message` instead of `println!`
 <5> Added `messages` to the function's arguments
 <6> Passing `messages` to the function
+<7> Passing `messages` to the function call
+<8> Passing `messages` to the function call
+<9> Passing `messages` to the function call
+<10> Passing `messages` to the function call
+<11> Passing `messages` to the function call
+<12> Passing `messages` to the function call
+<13> Added `messages` to the function's arguments
+<14> Passing `messages` to the function call
+<15> Added `messages` to the function's arguments
+<16> Passing `messages` to the callback function pointer type
+<17> Passing `messages` to the function call
+
 
 :lazy_static: https://crates.io/crates/lazy_static/
 
@@ -459,10 +597,17 @@ fn handle_keys(
 ) -> PlayerAction {
 end::handle_keys_header[]
     ...
+tag::match_key_header[]
+    let player_alive = objects[PLAYER].alive;  // <3>
+    match (key, player_alive) {
+end::match_key_header[]
+        ...
+    }
 }
 ----
 <1> Added `key`
 <2> Added `messages`
+<3> Removed `root.wait_for_keypress`
 
 Next we'll write a function that lists names of all objects at the
 current mouse position. We'll use the `cx` and `cy` fields of the
@@ -517,12 +662,28 @@ Of course, we need to pass the `mouse: Mouse` argument to `render_all`:
 
 [source]
 ----
+tag::render_all_header[]
+fn render_all(
+    root: &mut Root,
+    con: &mut Offscreen,
+    panel: &mut Offscreen,
+    mouse: Mouse,  // <1>
+    objects: &[Object],
+    map: &mut Map,
+    messages: &Messages,
+    fov_map: &mut FovMap,
+    fov_recompute: bool,
+) {
+end::render_all_header[]
+  ...
+}
+
 tag::call_render_all[]
 render_all(
     &mut root,
     &mut con,
     &mut panel,
-    mouse,  // <1>
+    mouse,  // <2>
     &objects,
     &mut map,
     &messages,
@@ -531,7 +692,8 @@ render_all(
 );
 end::call_render_all[]
 ----
-<1> Passing in `mouse`
+<1> Added `mouse` argument
+<2> Passing in `mouse`
 
 But wait! If you recall, in a turn-based game, the rendering is done
 only once per turn; the rest of the time, the game is blocked on
@@ -556,6 +718,6 @@ the player moves to make their move. Makes sense!
 
 
 
-Here's link:part-7-gui.rs.txt[the complete code so far].
+Here's link:part-7-gui.rs[the complete code so far].
 
 Continue to <<part-8-items#,the next part>>.
