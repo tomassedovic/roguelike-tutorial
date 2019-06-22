@@ -49,6 +49,7 @@ And update the `Object` definition:
 [source]
 ----
 tag::object_struct[]
+tag::object_fields[]
 struct Object {
     x: i32,
     y: i32,
@@ -57,8 +58,11 @@ struct Object {
     name: String,
     blocks: bool,
     alive: bool,
+end::object_fields[]
+tag::object_components[]
     fighter: Option<Fighter>,  // <1>
     ai: Option<Ai>,  // <2>
+end::object_components[]
 }
 end::object_struct[]
 ----
@@ -70,7 +74,10 @@ and `Object::new`:
 [source]
 ----
 tag::object_new[]
+tag::object_new_header[]
 pub fn new(x: i32, y: i32, char: char, name: &str, color: Color, blocks: bool) -> Self {
+end::object_new_header[]
+tag::object_new_fields[]
     Object {
         x: x,
         y: y,
@@ -79,8 +86,11 @@ pub fn new(x: i32, y: i32, char: char, name: &str, color: Color, blocks: bool) -
         name: name.into(),
         blocks: blocks,
         alive: false,
+end::object_new_fields[]
+tag::object_new_components[]
         fighter: None,  // <1>
         ai: None,  // <2>
+end::object_new_components[]
     }
 }
 end::object_new[]

@@ -381,10 +381,14 @@ if objects[PLAYER].alive && player_action != PlayerAction::DidntTakeTurn {
 }
 end::monsters_take_turn[]
 
-tag::handle_player_action[]
+tag::previous_player_position[]
 // handle keys and exit game if needed
 previous_player_position = objects[PLAYER].pos();
+end::previous_player_position[]
+tag::call_handle_keys[]
 let player_action = handle_keys(key, &mut root, &map, &mut objects, &mut messages);  // <8>
+end::call_handle_keys[]
+tag::handle_player_action[]
 if player_action == PlayerAction::Exit {
     break;
 }

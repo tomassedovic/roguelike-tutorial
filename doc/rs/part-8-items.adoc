@@ -15,9 +15,13 @@ include::../part-7-gui.adoc[tag=map_size_consts]
 
 include::../part-7-gui.adoc[tag=panel_consts]
 include::../part-7-gui.adoc[tag=msg_consts]
+include::../part-8-items.adoc[tag=inventory_consts]
 
 include::../part-3-dungeon.adoc[tag=room_consts]
 include::../part-5-combat.adoc[tag=max_room_monsters]
+include::../part-8-items.adoc[tag=max_room_items_const]
+
+include::../part-8-items.adoc[tag=heal_consts]
 
 include::../part-4-fov-exploration.adoc[tag=fov_consts]
 
@@ -46,10 +50,16 @@ include::../part-3-dungeon.adoc[tag=rect_intersects_with,indent=4]
 
 include::../part-2-object-map.adoc[tag=object_doc_comment]
 include::../part-2-object-map.adoc[tag=object_derive]
-include::../part-6-going-berserk.adoc[tag=object_struct]
+include::../part-6-going-berserk.adoc[tag=object_fields]
+include::../part-8-items.adoc[tag=object_components,indent=4]
+}
 
 include::../part-2-object-map.adoc[tag=object_impl_header]
-include::../part-6-going-berserk.adoc[tag=object_new,indent=4]
+include::../part-6-going-berserk.adoc[tag=object_new_header,indent=4]
+include::../part-6-going-berserk.adoc[tag=object_new_fields,indent=8]
+include::../part-8-items.adoc[tag=object_new_components,indent=12]
+        }
+    }
 
 include::../part-2-object-map.adoc[tag=object_draw]
 
@@ -65,6 +75,8 @@ include::../part-7-gui.adoc[tag=execute_death_callback,indent=8]
     }
 
 include::../part-7-gui.adoc[tag=attack,indent=4]
+
+include::../part-8-items.adoc[tag=heal_fn,indent=4]
 }
 
 include::../part-5-combat.adoc[tag=move_by]
@@ -72,6 +84,8 @@ include::../part-5-combat.adoc[tag=move_by]
 include::../part-6-going-berserk.adoc[tag=move_towards]
 
 include::../part-6-going-berserk.adoc[tag=mut_two]
+
+include::../part-8-items.adoc[tag=pick_item_up_fn]
 
 include::../part-5-combat.adoc[tag=is_blocked]
 
@@ -89,6 +103,14 @@ include::../part-7-gui.adoc[tag=ai_take_turn_monster_attack,indent=12]
         }
     }
 }
+
+include::../part-8-items.adoc[tag=enum_item]
+
+include::../part-8-items.adoc[tag=use_result_enum]
+
+include::../part-8-items.adoc[tag=use_item_fn]
+
+include::../part-8-items.adoc[tag=cast_heal_fn]
 
 include::../part-3-dungeon.adoc[tag=create_room]
 
@@ -136,6 +158,16 @@ include::../part-6-going-berserk.adoc[tag=generate_monster_cb,indent=12]
 include::../part-5-combat.adoc[tag=push_monster,indent=12]
         }
     }
+
+include::../part-8-items.adoc[tag=random_item_count,indent=4]
+
+include::../part-8-items.adoc[tag=place_item_for_loop,indent=4]
+include::../part-8-items.adoc[tag=choose_item_random_pos,indent=8]
+
+include::../part-8-items.adoc[tag=item_pos_not_blocked,indent=8]
+include::../part-8-items.adoc[tag=place_healing_potion,indent=12]
+        }
+    }
 }
 
 include::../part-7-gui.adoc[tag=render_bar_header]
@@ -181,7 +213,27 @@ include::../part-5-combat.adoc[tag=player_move_or_attack_target_some]
 include::../part-7-gui.adoc[tag=player_attack,indent=12]
 include::../part-5-combat.adoc[tag=player_move_or_attack_target_none]
 
-include::../part-7-gui.adoc[tag=handle_keys_header]
+include::../part-8-items.adoc[tag=menu_header]
+include::../part-8-items.adoc[tag=menu_option_count_assert,indent=4]
+
+include::../part-8-items.adoc[tag=menu_calculate_header,indent=4]
+
+include::../part-8-items.adoc[tag=menu_create_window_console,indent=4]
+
+include::../part-8-items.adoc[tag=menu_print_header,indent=4]
+
+include::../part-8-items.adoc[tag=menu_print_options,indent=4]
+
+include::../part-8-items.adoc[tag=menu_blit_window,indent=4]
+
+include::../part-8-items.adoc[tag=menu_flush_root_wait_for_keypress,indent=4]
+
+include::../part-8-items.adoc[tag=menu_convert_key_to_index,indent=4]
+}
+
+include::../part-8-items.adoc[tag=inventory_menu_fn]
+
+include::../part-8-items.adoc[tag=handle_keys_header]
 include::../part-1-graphics.adoc[tag=use_input_keycode,indent=4]
 include::../part-5-combat.adoc[tag=use_player_action_wildcard,indent=4]
 
@@ -189,6 +241,10 @@ include::../part-7-gui.adoc[tag=match_key_header,indent=4]
 include::../part-5-combat.adoc[tag=match_special_keys,indent=8]
 
 include::../part-7-gui.adoc[tag=movement_keys,indent=8]
+
+include::../part-8-items.adoc[tag=handle_pick_up_key,indent=8]
+
+include::../part-8-items.adoc[tag=handle_inventory_key,indent=8]
 
 include::../part-5-combat.adoc[tag=match_key_footer,indent=8]
     }
@@ -223,6 +279,8 @@ include::../part-5-combat.adoc[tag=call_make_map,indent=4]
 
 include::../part-4-fov-exploration.adoc[tag=create_fov_map,indent=4]
 
+include::../part-8-items.adoc[tag=create_empty_inventory,indent=4]
+
 include::../part-7-gui.adoc[tag=create_message_list,indent=4]
 
 include::../part-7-gui.adoc[tag=welcome_message,indent=4]
@@ -242,7 +300,7 @@ include::../part-7-gui.adoc[tag=call_render_all,indent=8]
 include::../part-1-graphics.adoc[tag=root_flush,indent=8]
 
 include::../part-7-gui.adoc[tag=previous_player_position,indent=8]
-include::../part-7-gui.adoc[tag=call_handle_keys,indent=8]
+include::../part-8-items.adoc[tag=call_handle_keys,indent=8]
 include::../part-7-gui.adoc[tag=handle_player_action,indent=8]
 
 include::../part-7-gui.adoc[tag=monsters_take_turn,indent=8]

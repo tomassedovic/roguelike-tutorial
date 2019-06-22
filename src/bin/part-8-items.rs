@@ -280,11 +280,7 @@ fn pick_item_up(
         );
     } else {
         let item = objects.swap_remove(object_id);
-        message(
-            messages,
-            format!("You picked up a {}!", item.name),
-            colors::GREEN,
-        );
+        message(messages, format!("You picked up a {}!", item.name), GREEN);
         inventory.push(item);
     }
 }
@@ -297,7 +293,7 @@ fn is_blocked(x: i32, y: i32, map: &Map, objects: &[Object]) -> bool {
     // now check for any blocking objects
     objects
         .iter()
-        .any(|object| object.blocks && object.x == x && object.y == y)
+        .any(|object| object.blocks && object.pos() == (x, y))
 }
 
 // combat-related properties and methods (monster, player, NPC).
@@ -399,11 +395,7 @@ fn cast_heal(_inventory_id: usize, objects: &mut [Object], messages: &mut Messag
             message(messages, "You are already at full health.", RED);
             return UseResult::Cancelled;
         }
-        message(
-            messages,
-            "Your wounds start to feel better!",
-            colors::LIGHT_VIOLET,
-        );
+        message(messages, "Your wounds start to feel better!", LIGHT_VIOLET);
         objects[PLAYER].heal(HEAL_AMOUNT);
         return UseResult::UsedUp;
     }
@@ -549,7 +541,7 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>) {
         // only place it if the tile is not blocked
         if !is_blocked(x, y, map, objects) {
             // create a healing potion
-            let mut object = Object::new(x, y, '!', "healing potion", colors::VIOLET, false);
+            let mut object = Object::new(x, y, '!', "healing potion", VIOLET, false);
             object.item = Some(Item::Heal);
             objects.push(object);
         }
@@ -663,7 +655,7 @@ fn render_all(
     blit(con, (0, 0), (MAP_WIDTH, MAP_HEIGHT), root, (0, 0), 1.0, 1.0);
 
     // prepare to render the GUI panel
-    panel.set_default_background(colors::BLACK);
+    panel.set_default_background(BLACK);
     panel.clear();
 
     // print the game messages, one line at a time
@@ -686,7 +678,7 @@ fn render_all(
     );
 
     // display names of objects under the mouse
-    panel.set_default_foreground(colors::LIGHT_GREY);
+    panel.set_default_foreground(LIGHT_GREY);
     panel.print_ex(
         1,
         0,
@@ -931,6 +923,7 @@ fn main() {
         .size(SCREEN_WIDTH, SCREEN_HEIGHT)
         .title("Rust/libtcod tutorial")
         .init();
+
     tcod::system::set_fps(LIMIT_FPS);
     let mut con = Offscreen::new(MAP_WIDTH, MAP_HEIGHT);
     let mut panel = Offscreen::new(SCREEN_WIDTH, PANEL_HEIGHT);
