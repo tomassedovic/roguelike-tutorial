@@ -291,11 +291,7 @@ fn pick_item_up(
         );
     } else {
         let item = objects.swap_remove(object_id);
-        message(
-            messages,
-            format!("You picked up a {}!", item.name),
-            colors::GREEN,
-        );
+        message(messages, format!("You picked up a {}!", item.name), GREEN);
         inventory.push(item);
     }
 }
@@ -308,7 +304,7 @@ fn is_blocked(x: i32, y: i32, map: &Map, objects: &[Object]) -> bool {
     // now check for any blocking objects
     objects
         .iter()
-        .any(|object| object.blocks && object.x == x && object.y == y)
+        .any(|object| object.blocks && object.pos() == (x, y))
 }
 
 // combat-related properties and methods (monster, player, NPC).
@@ -479,11 +475,7 @@ fn drop_item(
 ) {
     let mut item = inventory.remove(inventory_id);
     item.set_pos(objects[PLAYER].x, objects[PLAYER].y);
-    message(
-        messages,
-        format!("You dropped a {}.", item.name),
-        colors::YELLOW,
-    );
+    message(messages, format!("You dropped a {}.", item.name), YELLOW);
     objects.push(item);
 }
 
@@ -586,11 +578,7 @@ fn cast_heal(
             message(messages, "You are already at full health.", RED);
             return UseResult::Cancelled;
         }
-        message(
-            messages,
-            "Your wounds start to feel better!",
-            colors::LIGHT_VIOLET,
-        );
+        message(messages, "Your wounds start to feel better!", LIGHT_VIOLET);
         objects[PLAYER].heal(HEAL_AMOUNT);
         return UseResult::UsedUp;
     }
@@ -615,7 +603,7 @@ fn cast_lightning(
                  The damage is {} hit points.",
                 objects[monster_id].name, LIGHTNING_DAMAGE
             ),
-            colors::LIGHT_BLUE,
+            LIGHT_BLUE,
         );
         objects[monster_id].take_damage(LIGHTNING_DAMAGE, messages);
         UseResult::UsedUp
@@ -637,7 +625,7 @@ fn cast_confuse(
     message(
         messages,
         "Left-click an enemy to confuse it, or right-click to cancel.",
-        colors::LIGHT_CYAN,
+        LIGHT_CYAN,
     );
     let monster_id = target_monster(tcod, objects, map, messages, Some(CONFUSE_RANGE as f32));
     if let Some(monster_id) = monster_id {
@@ -654,7 +642,7 @@ fn cast_confuse(
                 "The eyes of {} look vacant, as he starts to stumble around!",
                 objects[monster_id].name
             ),
-            colors::LIGHT_GREEN,
+            LIGHT_GREEN,
         );
         UseResult::UsedUp
     } else {
@@ -675,7 +663,7 @@ fn cast_fireball(
     message(
         messages,
         "Left-click a target tile for the fireball, or right-click to cancel.",
-        colors::LIGHT_CYAN,
+        LIGHT_CYAN,
     );
     let (x, y) = match target_tile(tcod, objects, map, messages, None) {
         Some(tile_pos) => tile_pos,
@@ -848,37 +836,23 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>) {
             let dice = rand::random::<f32>();
             let item = if dice < 0.7 {
                 // create a healing potion (70% chance)
-                let mut object = Object::new(x, y, '!', "healing potion", colors::VIOLET, false);
+                let mut object = Object::new(x, y, '!', "healing potion", VIOLET, false);
                 object.item = Some(Item::Heal);
                 object
             } else if dice < 0.7 + 0.1 {
                 // create a lightning bolt scroll (10% chance)
-                let mut object = Object::new(
-                    x,
-                    y,
-                    '#',
-                    "scroll of lightning bolt",
-                    colors::LIGHT_YELLOW,
-                    false,
-                );
+                let mut object =
+                    Object::new(x, y, '#', "scroll of lightning bolt", LIGHT_YELLOW, false);
                 object.item = Some(Item::Lightning);
                 object
             } else if dice < 0.7 + 0.1 + 0.1 {
                 // create a fireball scroll (10% chance)
-                let mut object =
-                    Object::new(x, y, '#', "scroll of fireball", colors::LIGHT_YELLOW, false);
+                let mut object = Object::new(x, y, '#', "scroll of fireball", LIGHT_YELLOW, false);
                 object.item = Some(Item::Fireball);
                 object
             } else {
                 // create a confuse scroll (10% chance)
-                let mut object = Object::new(
-                    x,
-                    y,
-                    '#',
-                    "scroll of confusion",
-                    colors::LIGHT_YELLOW,
-                    false,
-                );
+                let mut object = Object::new(x, y, '#', "scroll of confusion", LIGHT_YELLOW, false);
                 object.item = Some(Item::Confuse);
                 object
             };
@@ -1000,7 +974,7 @@ fn render_all(
     );
 
     // prepare to render the GUI panel
-    tcod.panel.set_default_background(colors::BLACK);
+    tcod.panel.set_default_background(BLACK);
     tcod.panel.clear();
 
     // print the game messages, one line at a time
@@ -1031,7 +1005,7 @@ fn render_all(
     );
 
     // display names of objects under the mouse
-    tcod.panel.set_default_foreground(colors::LIGHT_GREY);
+    tcod.panel.set_default_foreground(LIGHT_GREY);
     tcod.panel.print_ex(
         1,
         0,
@@ -1297,6 +1271,7 @@ fn main() {
         .size(SCREEN_WIDTH, SCREEN_HEIGHT)
         .title("Rust/libtcod tutorial")
         .init();
+
     tcod::system::set_fps(LIMIT_FPS);
 
     let mut tcod = Tcod {
