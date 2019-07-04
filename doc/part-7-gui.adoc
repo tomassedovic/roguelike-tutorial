@@ -554,7 +554,9 @@ the keyboard and mouse states.
 ----
 tag::initialise_mouse_and_key[]
 let mut mouse = Default::default();
+tag::initialise_key[]
 let mut key = Default::default();
+end::initialise_key[]
 end::initialise_mouse_and_key[]
 ----
 

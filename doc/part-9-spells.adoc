@@ -55,6 +55,7 @@ With:
 
 [source]
 ----
+tag::create_tcod_struct[]
 let mut tcod = Tcod {
     root: root,
     con: Offscreen::new(MAP_WIDTH, MAP_HEIGHT),
@@ -62,6 +63,7 @@ let mut tcod = Tcod {
     fov: FovMap::new(MAP_WIDTH, MAP_HEIGHT),
     mouse: Default::default(),
 };
+end::create_tcod_struct[]
 ----
 
 (and remove the `fov_map` and `mouse` initialisation code, too, since
@@ -70,7 +72,72 @@ it's in here)
 And next, let the compiler guide us.
 
 We have to replace a bunch of stuff in the main function: `mouse` with
-`tcod.mouse`, `root` with `tcod.root`, `fov_map` with `tcod.fov`, etc.
+`tcod.mouse`, `root` with `tcod.root`, `fov_map` with `tcod.fov`, etc.:
+
+[source]
+----
+fn main() {
+tag::init[]
+    let root = Root::initializer()  // <1>
+        .font("arial10x10.png", FontLayout::Tcod)
+        .font_type(FontType::Greyscale)
+        .size(SCREEN_WIDTH, SCREEN_HEIGHT)
+        .title("Rust/libtcod tutorial")
+        .init();
+end::init[]
+...
+tag::create_fov_map[]
+    // create the FOV map, according to the generated map
+    for y in 0..MAP_HEIGHT {
+        for x in 0..MAP_WIDTH {
+            tcod.fov.set(  // <2>
+                x,
+                y,
+                !map[x as usize][y as usize].block_sight,
+                !map[x as usize][y as usize].blocked,
+            );
+        }
+    }
+end::create_fov_map[]
+
+tag::game_loop_while_header[]
+    while !tcod.root.window_closed() {  // <3>
+end::game_loop_while_header[]
+tag::clear_offscreen_console[]
+        // clear the screen of the previous frame
+        tcod.con.clear();  // <4>
+end::clear_offscreen_console[]
+
+tag::check_for_event[]
+        match input::check_for_event(input::MOUSE | input::KEY_PRESS) {
+            Some((_, Event::Mouse(m))) => tcod.mouse = m,  // <4>
+            Some((_, Event::Key(k))) => key = k,
+            _ => key = Default::default(),
+        }
+end::check_for_event[]
+        ...
+tag::root_flush[]
+        tcod.root.flush();  // <5>
+end::root_flush[]
+        ...
+tag::monsters_take_turn[]
+        // let monsters take their turn
+        if objects[PLAYER].alive && player_action != PlayerAction::DidntTakeTurn {
+            for id in 0..objects.len() {
+                if objects[id].ai.is_some() {
+                    ai_take_turn(id, &map, &mut objects, &tcod.fov, &mut messages);
+                }
+            }
+        }
+end::monsters_take_turn[]
+    }
+}
+----
+<1> Removed `mut`
+<2> `fov_map` -> `tcod.fov`
+<3> `root` -> `tcod.root`
+<4> `mouse` -> `tcod.mouse`
+<5> `root` -> `tcod.root`
 
 That gets us to a compiling state, but it doesn't seem like much of a
 win yet. Let's make proper use of it, then!
@@ -79,13 +146,16 @@ First, calling `render_all` from `main` can now be just:
 
 [source]
 ----
+tag::call_render_all[]
 render_all(&mut tcod, &objects, &mut map, &messages, fov_recompute);
+end::call_render_all[]
 ----
 
 The new `render_all` function header is:
 
 [source]
 ----
+tag::render_all_header[]
 fn render_all(
     tcod: &mut Tcod,
     objects: &[Object],
@@ -93,6 +163,7 @@ fn render_all(
     messages: &Messages,
     fov_recompute: bool,
 ) {
+end::render_all_header[]
     // ...
 }
 ----
@@ -107,6 +178,7 @@ Main loop:
 
 [source]
 ----
+tag::call_handle_keys[]
 let player_action = handle_keys(
     key,
     &mut tcod,
@@ -115,6 +187,7 @@ let player_action = handle_keys(
     &mut inventory,
     &mut messages,
 );
+end::call_handle_keys[]
 ----
 
 Function definition:
