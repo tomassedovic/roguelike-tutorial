@@ -303,7 +303,7 @@ fn pick_item_up(object_id: usize, objects: &mut Vec<Object>, game: &mut Game) {
     } else {
         let item = objects.swap_remove(object_id);
         game.log
-            .add(format!("You picked up a {}!", item.name), colors::GREEN);
+            .add(format!("You picked up a {}!", item.name), GREEN);
         game.inventory.push(item);
     }
 }
@@ -462,7 +462,7 @@ fn drop_item(inventory_id: usize, objects: &mut Vec<Object>, game: &mut Game) {
     let mut item = game.inventory.remove(inventory_id);
     item.set_pos(objects[PLAYER].x, objects[PLAYER].y);
     game.log
-        .add(format!("You dropped a {}.", item.name), colors::YELLOW);
+        .add(format!("You dropped a {}.", item.name), YELLOW);
     objects.push(item);
 }
 
@@ -563,7 +563,7 @@ fn cast_heal(
             return UseResult::Cancelled;
         }
         game.log
-            .add("Your wounds start to feel better!", colors::LIGHT_VIOLET);
+            .add("Your wounds start to feel better!", LIGHT_VIOLET);
         objects[PLAYER].heal(HEAL_AMOUNT);
         return UseResult::UsedUp;
     }
@@ -586,7 +586,7 @@ fn cast_lightning(
                  The damage is {} hit points.",
                 objects[monster_id].name, LIGHTNING_DAMAGE
             ),
-            colors::LIGHT_BLUE,
+            LIGHT_BLUE,
         );
         if let Some(xp) = objects[monster_id].take_damage(LIGHTNING_DAMAGE, game) {
             objects[PLAYER].fighter.as_mut().unwrap().xp += xp;
@@ -608,7 +608,7 @@ fn cast_confuse(
     // ask the player for a target to confuse
     game.log.add(
         "Left-click an enemy to confuse it, or right-click to cancel.",
-        colors::LIGHT_CYAN,
+        LIGHT_CYAN,
     );
     let monster_id = target_monster(tcod, objects, game, Some(CONFUSE_RANGE as f32));
     if let Some(monster_id) = monster_id {
@@ -624,7 +624,7 @@ fn cast_confuse(
                 "The eyes of {} look vacant, as he starts to stumble around!",
                 objects[monster_id].name
             ),
-            colors::LIGHT_GREEN,
+            LIGHT_GREEN,
         );
         UseResult::UsedUp
     } else {
@@ -643,7 +643,7 @@ fn cast_fireball(
     // ask the player for a target tile to throw a fireball at
     game.log.add(
         "Left-click a target tile for the fireball, or right-click to cancel.",
-        colors::LIGHT_CYAN,
+        LIGHT_CYAN,
     );
     let (x, y) = match target_tile(tcod, objects, game, None) {
         Some(tile_pos) => tile_pos,
@@ -944,41 +944,28 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>, level: u32) {
             let mut item = match item_choice.ind_sample(&mut rand::thread_rng()) {
                 Item::Heal => {
                     // create a healing potion
-                    let mut object =
-                        Object::new(x, y, '!', "healing potion", colors::VIOLET, false);
+                    let mut object = Object::new(x, y, '!', "healing potion", VIOLET, false);
                     object.item = Some(Item::Heal);
                     object
                 }
                 Item::Lightning => {
                     // create a lightning bolt scroll
-                    let mut object = Object::new(
-                        x,
-                        y,
-                        '#',
-                        "scroll of lightning bolt",
-                        colors::LIGHT_YELLOW,
-                        false,
-                    );
+                    let mut object =
+                        Object::new(x, y, '#', "scroll of lightning bolt", LIGHT_YELLOW, false);
                     object.item = Some(Item::Lightning);
                     object
                 }
                 Item::Fireball => {
                     // create a fireball scroll
                     let mut object =
-                        Object::new(x, y, '#', "scroll of fireball", colors::LIGHT_YELLOW, false);
+                        Object::new(x, y, '#', "scroll of fireball", LIGHT_YELLOW, false);
                     object.item = Some(Item::Fireball);
                     object
                 }
                 Item::Confuse => {
                     // create a confuse scroll
-                    let mut object = Object::new(
-                        x,
-                        y,
-                        '#',
-                        "scroll of confusion",
-                        colors::LIGHT_YELLOW,
-                        false,
-                    );
+                    let mut object =
+                        Object::new(x, y, '#', "scroll of confusion", LIGHT_YELLOW, false);
                     object.item = Some(Item::Confuse);
                     object
                 }
@@ -993,7 +980,7 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>, level: u32) {
 fn next_level(tcod: &mut Tcod, objects: &mut Vec<Object>, game: &mut Game) {
     game.log.add(
         "You take a moment to rest, and recover your strength.",
-        colors::VIOLET,
+        VIOLET,
     );
     let heal_hp = objects[PLAYER].fighter.map_or(0, |f| f.max_hp / 2);
     objects[PLAYER].heal(heal_hp);
@@ -1118,7 +1105,7 @@ fn render_all(tcod: &mut Tcod, objects: &[Object], game: &mut Game, fov_recomput
     );
 
     // prepare to render the GUI panel
-    tcod.panel.set_default_background(colors::BLACK);
+    tcod.panel.set_default_background(BLACK);
     tcod.panel.clear();
 
     // print the game messages, one line at a time
@@ -1157,7 +1144,7 @@ fn render_all(tcod: &mut Tcod, objects: &[Object], game: &mut Game, fov_recomput
     );
 
     // display names of objects under the mouse
-    tcod.panel.set_default_foreground(colors::LIGHT_GREY);
+    tcod.panel.set_default_foreground(LIGHT_GREY);
     tcod.panel.print_ex(
         1,
         0,
@@ -1438,7 +1425,7 @@ fn level_up(objects: &mut [Object], game: &mut Game, tcod: &mut Tcod) {
                 "Your battle skills grow stronger! You reached level {}!",
                 player.level
             ),
-            colors::YELLOW,
+            YELLOW,
         );
         let fighter = player.fighter.as_mut().unwrap();
         let mut choice = None;
@@ -1655,7 +1642,7 @@ fn main_menu(tcod: &mut Tcod) {
         // show the background image, at twice the regular console resolution
         tcod::image::blit_2x(&img, (0, 0), (-1, -1), &mut tcod.root, (0, 0));
 
-        tcod.root.set_default_foreground(colors::LIGHT_YELLOW);
+        tcod.root.set_default_foreground(LIGHT_YELLOW);
         tcod.root.print_ex(
             SCREEN_WIDTH / 2,
             SCREEN_HEIGHT / 2 - 4,
