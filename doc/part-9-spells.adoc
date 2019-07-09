@@ -239,12 +239,14 @@ it's done with monsters:
 [source]
 ----
 if !is_blocked(x, y, map, objects) {
+tag::place_healing_potion[]
     let dice = rand::random::<f32>();
     let item = if dice < 0.7 {
         // create a healing potion (70% chance)
         let mut object = Object::new(x, y, '!', "healing potion", VIOLET, false);
         object.item = Some(Item::Heal);
         object
+end::place_healing_potion[]
     } else {
         // create a lightning bolt scroll (30% chance)
         let mut object = Object::new(
@@ -258,7 +260,9 @@ if !is_blocked(x, y, map, objects) {
         object.item = Some(Item::Lightning);
         object
     };
+tag::objects_push_item[]
     objects.push(item);
+end::objects_push_item[]
 }
 ----
 
@@ -556,31 +560,22 @@ getting a lightning bolt scroll must change:
 [source]
 ----
 ...
-} else if dice < 0.7 + 0.15 {
+tag::place_lightning_bolt[]
+} else if dice < 0.7 + 0.1 {
     // create a lightning bolt scroll (10% chance)
-    let mut object = Object::new(
-        x,
-        y,
-        '#',
-        "scroll of lightning bolt",
-        LIGHT_YELLOW,
-        false,
-    );
+    let mut object =
+        Object::new(x, y, '#', "scroll of lightning bolt", LIGHT_YELLOW, false);
     object.item = Some(Item::Lightning);
     object
-}else {
+end::place_lightning_bolt[]
+tag::place_confusion[]
+} else {
     // create a confuse scroll (10% chance)
-    let mut object = Object::new(
-        x,
-        y,
-        '#',
-        "scroll of confusion",
-        LIGHT_YELLOW,
-        false,
-    );
+    let mut object = Object::new(x, y, '#', "scroll of confusion", LIGHT_YELLOW, false);
     object.item = Some(Item::Confuse);
     object
 };
+end::place_confusion[]
 ----
 
 We're making all scrolls look the same here, but in your game that's up
@@ -588,9 +583,12 @@ to you. The `cast_confuse` function can now be defined. It hits the
 closest monster for now, like the lightning bolt; later we'll allow
 targeting.
 
+NOTE: The percentages in the comments aren't quite correct right now, but they will be
+once we've added all the items here.
+
 [source]
 ----
-tag::cast_confuse_fn[]
+tag::cast_confuse_header[]
 fn cast_confuse(
     _inventory_id: usize,
     objects: &mut [Object],
@@ -598,8 +596,10 @@ fn cast_confuse(
     map: &mut Map,
     tcod: &mut Tcod,
 ) -> UseResult {
-    // ask the player for a target to confuse
-    let monster_id = target_monster(tcod, objects, map, messages, Some(CONFUSE_RANGE as f32));
+end::cast_confuse_header[]
+    // find closest enemy in-range and confuse it
+    let monster_id = target_monster(CONFUSE_RANGE, objects, tcod);
+tag::cast_confuse_action[]
     if let Some(monster_id) = monster_id {
         let old_ai = objects[monster_id].ai.take().unwrap_or(Ai::Basic);
         // replace the monster's AI with a "confused" one; after
@@ -622,8 +622,8 @@ fn cast_confuse(
         message(messages, "No enemy is close enough to strike.", RED);
         UseResult::Cancelled
     }
+end::cast_confuse_action[]
 }
-end::cast_confuse_fn[]
 ----
 
 We find the closest enemy again, extract its existing AI and replace
@@ -662,6 +662,7 @@ Finally, to tie it all together, we need to add a new item type:
 
 [source]
 ----
+#[derive(Clone, Copy, Debug, PartialEq)]
 enum Item {
     Heal,
     Lightning,
@@ -752,7 +753,7 @@ tag::target_tile_accept_in_fov[]
 let in_fov = (x < MAP_WIDTH) && (y < MAP_HEIGHT) && tcod.fov.is_in_fov(x, y);
 let in_range = max_range.map_or(true, |range| objects[PLAYER].distance(x, y) <= range);
 if tcod.mouse.lbutton_pressed && in_fov && in_range {
-    return Some((x, y))
+    return Some((x, y));
 }
 end::target_tile_accept_in_fov[]
 ----
@@ -774,7 +775,7 @@ Finally, we need a way to cancel the targeting UI:
 tag::target_tile_handle_cancel[]
 let escape = key.map_or(false, |k| k.code == Escape);
 if tcod.mouse.rbutton_pressed || escape {
-    return None  // cancel if the player right-clicked or pressed Escape
+    return None; // cancel if the player right-clicked or pressed Escape
 }
 end::target_tile_handle_cancel[]
 ----
@@ -863,14 +864,15 @@ scroll:
 
 [source]
 ----
+tag::place_fireball[]
 } else if dice < 0.7 + 0.1 + 0.1 {
     // create a fireball scroll (10% chance)
-    let mut object =
-        Object::new(x, y, '#', "scroll of fireball", LIGHT_YELLOW, false);
+    let mut object = Object::new(x, y, '#', "scroll of fireball", LIGHT_YELLOW, false);
     object.item = Some(Item::Fireball);
     object
+end::place_fireball[]
 }  else {
-    // create a confuse scroll (15% chance)
+    // create a confuse scroll (10% chance)
     // ...
 }
 ----
@@ -884,6 +886,7 @@ If we try to compile it now, Rust will complain that there is no
 [source]
 ----
 tag::enum_item[]
+#[derive(Clone, Copy, Debug, PartialEq)]
 enum Item {
     Heal,
     Lightning,
@@ -916,13 +919,17 @@ Here's what the `on_use` bit looks like now:
 
 [source]
 ----
+tag::use_item_get_on_use[]
 let on_use = match item {
     Heal => cast_heal,
     Lightning => cast_lightning,
     Confuse => cast_confuse,
     Fireball => cast_fireball,
 };
+end::use_item_get_on_use[]
+tag::use_item_match_use[]
 match on_use(inventory_id, objects, messages, map, tcod) {
+end::use_item_match_use[]
     // ...
 }
 ----
@@ -992,6 +999,7 @@ function with:
 
 [source]
 ----
+tag::cast_confuse_target[]
 // ask the player for a target to confuse
 message(
     messages,
@@ -999,6 +1007,7 @@ message(
     LIGHT_CYAN,
 );
 let monster_id = target_monster(tcod, objects, map, messages, Some(CONFUSE_RANGE as f32));
+end::cast_confuse_target[]
 ----
 
 

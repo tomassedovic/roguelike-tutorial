@@ -112,14 +112,22 @@ include::../part-9-spells.adoc[tag=enum_item]
 
 include::../part-8-items.adoc[tag=use_result_enum]
 
-include::../part-8-items.adoc[tag=use_item_fn]
+include::../part-8-items.adoc[tag=use_item_header]
+include::../part-8-items.adoc[tag=use_item_get_function,indent=4]
+include::../part-9-spells.adoc[tag=use_item_get_on_use,indent=8]
+include::../part-9-spells.adoc[tag=use_item_match_use,indent=8]
+include::../part-8-items.adoc[tag=use_item_process_result,indent=8]
+include::../part-8-items.adoc[tag=use_item_else]
+}
 
 include::../part-9-spells.adoc[tag=drop_item_fn]
 
 include::../part-9-spells.adoc[tag=target_tile_header]
 include::../part-9-spells.adoc[tag=target_tile_loop_flush_and_process_events]
-include::../part-9-spells.adoc[tag=target_tile_accept_in_fov,indent=4]
-include::../part-9-spells.adoc[tag=target_tile_handle_cancel,indent=4]
+
+include::../part-9-spells.adoc[tag=target_tile_accept_in_fov,indent=8]
+
+include::../part-9-spells.adoc[tag=target_tile_handle_cancel,indent=8]
     }
 }
 
@@ -131,7 +139,10 @@ include::../part-8-items.adoc[tag=cast_heal_fn]
 
 include::../part-9-spells.adoc[tag=cast_lightning_fn]
 
-include::../part-9-spells.adoc[tag=cast_confuse_fn]
+include::../part-9-spells.adoc[tag=cast_confuse_header]
+include::../part-9-spells.adoc[tag=cast_confuse_target,indent=4]
+include::../part-9-spells.adoc[tag=cast_confuse_action,indent=4]
+}
 
 include::../part-9-spells.adoc[tag=cast_fireball_fn]
 
@@ -188,7 +199,11 @@ include::../part-8-items.adoc[tag=place_item_for_loop,indent=4]
 include::../part-8-items.adoc[tag=choose_item_random_pos,indent=8]
 
 include::../part-8-items.adoc[tag=item_pos_not_blocked,indent=8]
-include::../part-8-items.adoc[tag=place_healing_potion,indent=12]
+include::../part-9-spells.adoc[tag=place_healing_potion,indent=12]
+include::../part-9-spells.adoc[tag=place_lightning_bolt,indent=12]
+include::../part-9-spells.adoc[tag=place_fireball,indent=12]
+include::../part-9-spells.adoc[tag=place_confusion,indent=12]
+include::../part-9-spells.adoc[tag=objects_push_item,indent=12]
         }
     }
 }
