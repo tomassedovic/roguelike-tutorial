@@ -26,18 +26,40 @@ Put this right after we initialise the root console:
 [source,rust]
 ----
 tag::offscreen[]
-let mut con = Offscreen::new(SCREEN_WIDTH, SCREEN_HEIGHT);
+let con = Offscreen::new(SCREEN_WIDTH, SCREEN_HEIGHT);
 end::offscreen[]
 ----
+
+We will want to pass `con` to our `Tcod` struct alongside `root`:
+
+[source]
+----
+tag::tcod_init[]
+let mut tcod = Tcod { root, con };
+end::tcod_init[]
+----
+
+And of course we will need to add the `con` field to the `Tcod` struct definition:
+
+[source]
+----
+tag::tcod_struct[]
+struct Tcod {
+    root: Root,
+    con: Offscreen,  // <1>
+}
+end::tcod_struct[]
+----
+<1> Added `con`
 
 Now call the `set_default_foreground`, `clear` and `put_char` methods
 on `con` instead of `root`:
 
 [source]
 ----
-con.set_default_foreground(colors::WHITE);
-con.clear();
-con.put_char(player_x, player_y, '@', BackgroundFlag::None);
+tcod.con.set_default_foreground(colors::WHITE);
+tcod.con.clear();
+tcod.con.put_char(player_x, player_y, '@', BackgroundFlag::None);
 ----
 
 And finally, blit the contents of the new console to the root console
@@ -54,10 +76,10 @@ top-left corner) and finally a foreground and background transparency
 tag::blit[]
 // blit the contents of "con" to the root console and present it
 blit(
-    &mut con,
+    &mut tcod.con,
     (0, 0),
     (SCREEN_WIDTH, SCREEN_HEIGHT),
-    &mut root,
+    &mut tcod.root,
     (0, 0),
     1.0,
     1.0,
@@ -162,7 +184,7 @@ player object.
 [source,rust]
 ----
 tag::handle_keys_header[]
-fn handle_keys(root: &mut Root, player: &mut Object) -> bool {
+fn handle_keys(tcod: &mut Tcod, player: &mut Object) -> bool {
 end::handle_keys_header[]
     // ...
 
@@ -188,7 +210,7 @@ tag::get_player[]
 let player = &mut objects[0];
 end::get_player[]
 tag::handle_keys_no_map[]
-let exit = handle_keys(&mut root, player);
+let exit = handle_keys(&mut tcod, player);
 end::handle_keys_no_map[]
 end::handle_keys[]
 ----
@@ -199,7 +221,7 @@ Next, the main loop will now draw all objects like so:
 ----
 tag::draw_objects[]
 for object in &objects {
-    object.draw(&mut con);
+    object.draw(&mut tcod.con);
 }
 end::draw_objects[]
 ----
@@ -212,7 +234,7 @@ instead just clear the offscreen console:
 ----
 tag::clear_offscreen_console[]
 // clear the screen of the previous frame
-con.clear();
+tcod.con.clear();
 end::clear_offscreen_console[]
 ----
 
@@ -375,12 +397,12 @@ renders everything and call it from the main loop.
 [source,rust]
 ----
 tag::render_all_header[]
-fn render_all(root: &mut Root, con: &mut Offscreen, objects: &[Object], map: &Map) {
+fn render_all(tcod: &mut Tcod, objects: &[Object], map: &Map) {
 end::render_all_header[]
 tag::render_objects[]
     // draw all objects in the list
     for object in objects {
-        object.draw(con);
+        object.draw(&mut tcod.con);
     }
 end::render_objects[]
 tag::render_all_footer[]
@@ -399,9 +421,11 @@ for y in 0..MAP_HEIGHT {
     for x in 0..MAP_WIDTH {
         let wall = map[x as usize][y as usize].block_sight;
         if wall {
-            con.set_char_background(x, y, COLOR_DARK_WALL, BackgroundFlag::Set);
+            tcod.con
+                .set_char_background(x, y, COLOR_DARK_WALL, BackgroundFlag::Set);
         } else {
-            con.set_char_background(x, y, COLOR_DARK_GROUND, BackgroundFlag::Set);
+            tcod.con
+                .set_char_background(x, y, COLOR_DARK_GROUND, BackgroundFlag::Set);
         }
     }
 }
@@ -414,7 +438,15 @@ And let's move the `blit` call to the end of `render_all`:
 ----
 tag::render_blit[]
 // blit the contents of "con" to the root console
-blit(con, (0, 0), (MAP_WIDTH, MAP_HEIGHT), root, (0, 0), 1.0, 1.0);
+blit(
+    &mut tcod.con,
+    (0, 0),
+    (MAP_WIDTH, MAP_HEIGHT),
+    &mut tcod.root,
+    (0, 0),
+    1.0,
+    1.0,
+);
 end::render_blit[]
 ----
 
@@ -428,7 +460,7 @@ And we need to update its dimensions (in the `main` fn) as well:
 [source,rust]
 ----
 tag::offscreen_map_console[]
-let mut con = Offscreen::new(MAP_WIDTH, MAP_HEIGHT);
+let con = Offscreen::new(MAP_WIDTH, MAP_HEIGHT);
 end::offscreen_map_console[]
 ----
 
@@ -450,7 +482,7 @@ before `tcod.flush`):
 ----
 tag::call_render_all[]
 // render the screen
-render_all(&mut root, &mut con, &objects, &map);
+render_all(&mut tcod, &objects, &map);
 end::call_render_all[]
 ----
 
@@ -484,7 +516,7 @@ what.
 [source,rust]
 ----
 tag::handle_keys_map_header[]
-fn handle_keys(root: &mut Root, player: &mut Object, map: &Map) -> bool {  // <1>
+fn handle_keys(tcod: &mut Tcod, player: &mut Object, map: &Map) -> bool {  // <1>
 end::handle_keys_map_header[]
     //...
 
@@ -513,7 +545,7 @@ And finally, we need to pass the map to `handle_keys` from the main loop:
 [source,rust]
 ----
 tag::call_handle_keys_map[]
-let exit = handle_keys(&mut root, player, &map);
+let exit = handle_keys(&mut tcod, player, &map);
 end::call_handle_keys_map[]
 ----
 

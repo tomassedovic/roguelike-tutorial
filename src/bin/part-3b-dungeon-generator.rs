@@ -28,6 +28,11 @@ const COLOR_DARK_GROUND: Color = Color {
 
 type Map = Vec<Vec<Tile>>;
 
+struct Tcod {
+    root: Root,
+    con: Offscreen,
+}
+
 /// A tile of the map and its properties
 #[derive(Clone, Copy, Debug)]
 struct Tile {
@@ -200,33 +205,43 @@ fn make_map() -> (Map, (i32, i32)) {
     (map, starting_position)
 }
 
-fn render_all(root: &mut Root, con: &mut Offscreen, objects: &[Object], map: &Map) {
+fn render_all(tcod: &mut Tcod, objects: &[Object], map: &Map) {
     // go through all tiles, and set their background color
     for y in 0..MAP_HEIGHT {
         for x in 0..MAP_WIDTH {
             let wall = map[x as usize][y as usize].block_sight;
             if wall {
-                con.set_char_background(x, y, COLOR_DARK_WALL, BackgroundFlag::Set);
+                tcod.con
+                    .set_char_background(x, y, COLOR_DARK_WALL, BackgroundFlag::Set);
             } else {
-                con.set_char_background(x, y, COLOR_DARK_GROUND, BackgroundFlag::Set);
+                tcod.con
+                    .set_char_background(x, y, COLOR_DARK_GROUND, BackgroundFlag::Set);
             }
         }
     }
 
     // draw all objects in the list
     for object in objects {
-        object.draw(con);
+        object.draw(&mut tcod.con);
     }
 
     // blit the contents of "con" to the root console
-    blit(con, (0, 0), (MAP_WIDTH, MAP_HEIGHT), root, (0, 0), 1.0, 1.0);
+    blit(
+        &mut tcod.con,
+        (0, 0),
+        (MAP_WIDTH, MAP_HEIGHT),
+        &mut tcod.root,
+        (0, 0),
+        1.0,
+        1.0,
+    );
 }
 
-fn handle_keys(root: &mut Root, player: &mut Object, map: &Map) -> bool {
+fn handle_keys(tcod: &mut Tcod, player: &mut Object, map: &Map) -> bool {
     use tcod::input::Key;
     use tcod::input::KeyCode::*;
 
-    let key = root.wait_for_keypress(true);
+    let key = tcod.root.wait_for_keypress(true);
     match key {
         Key {
             code: Enter,
@@ -234,8 +249,8 @@ fn handle_keys(root: &mut Root, player: &mut Object, map: &Map) -> bool {
             ..
         } => {
             // Alt+Enter: toggle fullscreen
-            let fullscreen = root.is_fullscreen();
-            root.set_fullscreen(!fullscreen);
+            let fullscreen = tcod.root.is_fullscreen();
+            tcod.root.set_fullscreen(!fullscreen);
         }
         Key { code: Escape, .. } => return true, // exit game
 
@@ -252,15 +267,18 @@ fn handle_keys(root: &mut Root, player: &mut Object, map: &Map) -> bool {
 }
 
 fn main() {
-    let mut root = Root::initializer()
+    tcod::system::set_fps(LIMIT_FPS);
+
+    let root = Root::initializer()
         .font("arial10x10.png", FontLayout::Tcod)
         .font_type(FontType::Greyscale)
         .size(SCREEN_WIDTH, SCREEN_HEIGHT)
         .title("Rust/libtcod tutorial")
         .init();
 
-    tcod::system::set_fps(LIMIT_FPS);
-    let mut con = Offscreen::new(MAP_WIDTH, MAP_HEIGHT);
+    let con = Offscreen::new(MAP_WIDTH, MAP_HEIGHT);
+
+    let mut tcod = Tcod { root, con };
 
     // generate map (at this point it's not drawn to the screen)
     let (map, (player_x, player_y)) = make_map();
@@ -275,18 +293,18 @@ fn main() {
     // the list of objects with those two
     let mut objects = [player, npc];
 
-    while !root.window_closed() {
+    while !tcod.root.window_closed() {
         // clear the screen of the previous frame
-        con.clear();
+        tcod.con.clear();
 
         // render the screen
-        render_all(&mut root, &mut con, &objects, &map);
+        render_all(&mut tcod, &objects, &map);
 
-        root.flush();
+        tcod.root.flush();
 
         // handle keys and exit game if needed
         let player = &mut objects[0];
-        let exit = handle_keys(&mut root, player, &map);
+        let exit = handle_keys(&mut tcod, player, &map);
         if exit {
             break;
         }

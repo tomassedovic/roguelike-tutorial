@@ -136,14 +136,7 @@ And lastly, replace the existing call to `render_all` with these two lines:
 tag::call_render_all[]
 // render the screen
 let fov_recompute = previous_player_position != (objects[0].x, objects[0].y);
-render_all(
-    &mut root,
-    &mut con,
-    &objects,
-    &map,
-    &mut fov_map,
-    fov_recompute,
-);
+render_all(&mut tcod, &objects, &map, &mut fov_map, fov_recompute);
 end::call_render_all[]
 ----
 
@@ -156,8 +149,7 @@ First, update the function definition to accept `fov_map` and `fov_recompute`:
 ----
 tag::render_all_header[]
 fn render_all(
-    root: &mut Root,
-    con: &mut Offscreen,
+    tcod: &mut Tcod,
     objects: &[Object],
     map: &Map,
     fov_map: &mut FovMap,
@@ -201,7 +193,8 @@ for y in 0..MAP_HEIGHT {
             (true, false) => COLOR_LIGHT_GROUND,
         };
 end::calculate_background[]
-        con.set_char_background(x, y, color, BackgroundFlag::Set);
+        tcod.con
+            .set_char_background(x, y, color, BackgroundFlag::Set);
     }
 }
 end::fov_set_tile_background[]
@@ -223,7 +216,7 @@ tag::render_objects[]
 // draw all objects in the list
 for object in objects {
     if fov_map.is_in_fov(object.x, object.y) {
-        object.draw(con);
+        object.draw(&mut tcod.con);
     }
 }
 end::render_objects[]
@@ -334,14 +327,7 @@ tag::check_fov_recompute[]
 let fov_recompute = previous_player_position != (objects[0].x, objects[0].y);
 end::check_fov_recompute[]
 tag::call_render_all_mut[]
-render_all(
-    &mut root,
-    &mut con,
-    &objects,
-    &mut map,  // <1>
-    &mut fov_map,
-    fov_recompute,
-);
+render_all(&mut tcod, &objects, &mut map, &mut fov_map, fov_recompute);  // <1>
 end::call_render_all_mut[]
 ----
 <1> `map` is now `&mut`

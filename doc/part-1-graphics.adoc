@@ -158,6 +158,22 @@ case it's `i32` or a 32-bit signed integer. Rust is able to infer most
 types, but they do need to be explicitly mentioned in function
 definitions and constants.
 
+We will also encapsulate all of our libtcod-related values into a single Rust `struct`:
+
+[source]
+----
+tag::tcod_root_struct[]
+struct Tcod {
+    root: Root,
+}
+end::tcod_root_struct[]
+----
+
+It only has a single value right now, but we'll add more later on.
+Having all the tcod stuff in one place makes it easier to pass it
+around to functions. And doing it now will save us from gnarly
+refactors later. The Rust compiler would help us there, but it's still
+an annoying chore we can avoid.
 
 And now we can dive into the body of the `main` function and replace
 the `println!` macro with code that sets up the libtcod window and
@@ -170,15 +186,18 @@ any option that's not specified.
 [source,rust]
 ----
 tag::init[]
-let mut root = Root::initializer()
+let root = Root::initializer()
     .font("arial10x10.png", FontLayout::Tcod)
     .font_type(FontType::Greyscale)
     .size(SCREEN_WIDTH, SCREEN_HEIGHT)
     .title("Rust/libtcod tutorial")
     .init();
 end::init[]
-----
 
+tag::tcod_init[]
+let mut tcod = Tcod { root };
+end::tcod_init[]
+----
 
 A bunch of stuff is happening here so let's unpack this.
 
@@ -188,14 +207,14 @@ default (so they can't be changed accidentally), but we will want to
 change the root console (e.g. by writing characters to it). To do
 that, we need the `mut` keyword.
 
-So `let mut root = <value>` means "create a variable called `root` that we
+So `let mut tcod = <value>` means "create a variable called `tcod` that we
 can change later". As you can see, we don't have to specify the type
 of the variable -- Rust will figure it out. If we wanted, we could
 type it explicitly, though:
 
 [source,rust]
 ----
-let mut root: Root = Root::initializer(). ... .init();
+let root: Root = Root::initializer(). ... .init();
 ----
 
 Now let's have a look at the window options we're passing in.
@@ -236,16 +255,16 @@ white `@` on the screen until the libtcod window gets closed:
 tag::initial_game_loop[]
 tag::initial_game_loop_header[]
 tag::game_loop_while_header[]
-while !root.window_closed() {
+while !tcod.root.window_closed() {
 end::game_loop_while_header[]
-    root.set_default_foreground(WHITE);
-    root.clear();
+    tcod.root.set_default_foreground(WHITE);
+    tcod.root.clear();
 end::initial_game_loop_header[]
-    root.put_char(1, 1, '@', BackgroundFlag::None);
+    tcod.root.put_char(1, 1, '@', BackgroundFlag::None);
 tag::root_flush[]
-    root.flush();
+    tcod.root.flush();
 end::root_flush[]
-    root.wait_for_keypress(true);
+    tcod.root.wait_for_keypress(true);
 }
 end::initial_game_loop[]
 ----
@@ -317,7 +336,7 @@ coordinates so we can change them based on the player's actions.
 ----
 tag::handle_keys_full[]
 tag::handle_keys_header[]
-fn handle_keys(root: &mut Root, player_x: &mut i32, player_y: &mut i32) -> bool {
+fn handle_keys(tcod: &mut Tcod, player_x: &mut i32, player_y: &mut i32) -> bool {
 end::handle_keys_header[]
     // todo: handle keys
 
@@ -364,7 +383,7 @@ the player's position if it's one of the arrow keys:
 ----
 tag::match_key_full[]
 tag::match_key_header[]
-let key = root.wait_for_keypress(true);
+let key = tcod.root.wait_for_keypress(true);
 match key {
 end::match_key_header[]
 tag::movement_keys[]
@@ -418,8 +437,8 @@ Key {
     ..
 } => {
     // Alt+Enter: toggle fullscreen
-    let fullscreen = root.is_fullscreen();
-    root.set_fullscreen(!fullscreen);
+    let fullscreen = tcod.root.is_fullscreen();
+    tcod.root.set_fullscreen(!fullscreen);
 }
 Key { code: Escape, .. } => return true, // exit game
 end::match_special_keys[]
@@ -453,7 +472,7 @@ end of the `while` block:
 ----
 tag::handle_exit_keys[]
 // handle keys and exit game if needed
-let exit = handle_keys(&mut root, &mut player_x, &mut player_y);
+let exit = handle_keys(&mut tcod, &mut player_x, &mut player_y);
 tag::exit_game_loop[]
 if exit {
     break;
@@ -462,7 +481,7 @@ end::exit_game_loop[]
 end::handle_exit_keys[]
 ----
 
-As you can see, we're passing `root` and the coordinates as mutable
+As you can see, we're passing `tcod` and the coordinates as mutable
 references.
 
 
@@ -471,7 +490,8 @@ Now update our drawing function to use the player coordinates:
 [source,rust]
 ----
 tag::player_at_position[]
-root.put_char(player_x, player_y, '@', BackgroundFlag::None);
+tcod.root
+    .put_char(player_x, player_y, '@', BackgroundFlag::None);
 end::player_at_position[]
 ----
 
