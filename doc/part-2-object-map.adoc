@@ -347,11 +347,23 @@ we're going to be passing it around a lot, let's define a shortcut:
 tag::type_map[]
 type Map = Vec<Vec<Tile>>;
 end::type_map[]
+
+tag::game_struct[]
+struct Game {
+    map: Map,
+}
+end::game_struct[]
 ----
 
 This let's use write `Map` wherever we'd have to write
 `Vec<Vec<Tile>>` and it's also easier to understand.
 
+And we've also created a new `Game` struct. The motivation here is
+identical to the `Tcod` struct: there are going to be things we will
+almost always want to pass together and this will save us some
+refactoring later.
+
+It will also come in super handy when we get to saving and loading.
 
 Now we'll build it using nested `vec!` macros:
 
@@ -397,7 +409,7 @@ renders everything and call it from the main loop.
 [source,rust]
 ----
 tag::render_all_header[]
-fn render_all(tcod: &mut Tcod, objects: &[Object], map: &Map) {
+fn render_all(tcod: &mut Tcod, game: &Game, objects: &[Object]) {
 end::render_all_header[]
 tag::render_objects[]
     // draw all objects in the list
@@ -419,7 +431,7 @@ tag::render_map[]
 // go through all tiles, and set their background color
 for y in 0..MAP_HEIGHT {
     for x in 0..MAP_WIDTH {
-        let wall = map[x as usize][y as usize].block_sight;
+        let wall = game.map[x as usize][y as usize].block_sight;
         if wall {
             tcod.con
                 .set_char_background(x, y, COLOR_DARK_WALL, BackgroundFlag::Set);
@@ -473,6 +485,10 @@ tag::make_map[]
 // generate map (at this point it's not drawn to the screen)
 let map = make_map();
 end::make_map[]
+
+tag::game_init[]
+let game = Game { map };
+end::game_init[]
 ----
 
 And don't forget to call `render_all` from the main loop too (right
@@ -482,7 +498,7 @@ before `tcod.flush`):
 ----
 tag::call_render_all[]
 // render the screen
-render_all(&mut tcod, &objects, &map);
+render_all(&mut tcod, &game, &objects);
 end::call_render_all[]
 ----
 
@@ -516,7 +532,7 @@ what.
 [source,rust]
 ----
 tag::handle_keys_map_header[]
-fn handle_keys(tcod: &mut Tcod, player: &mut Object, map: &Map) -> bool {  // <1>
+fn handle_keys(tcod: &mut Tcod, game: &Game, player: &mut Object) -> bool {  // <1>
 end::handle_keys_map_header[]
     //...
 
@@ -525,10 +541,10 @@ end::handle_keys_map_header[]
 
 tag::map_movement_keys[]
         // movement keys
-        Key { code: Up, .. } => player.move_by(0, -1, map),  // <2>
-        Key { code: Down, .. } => player.move_by(0, 1, map),
-        Key { code: Left, .. } => player.move_by(-1, 0, map),
-        Key { code: Right, .. } => player.move_by(1, 0, map),
+        Key { code: Up, .. } => player.move_by(0, -1, &game.map),  // <2>
+        Key { code: Down, .. } => player.move_by(0, 1, &game.map),
+        Key { code: Left, .. } => player.move_by(-1, 0, &game.map),
+        Key { code: Right, .. } => player.move_by(1, 0, &game.map),
 end::map_movement_keys[]
 
         // ...
@@ -537,15 +553,15 @@ end::map_movement_keys[]
     // ...
 }
 ----
-<1> Added `Map` to `handle_keys`
-<2> And to `move_by`
+<1> Added `Game` to `handle_keys`
+<2> Add `&game.map` to `move_by`
 
 And finally, we need to pass the map to `handle_keys` from the main loop:
 
 [source,rust]
 ----
 tag::call_handle_keys_map[]
-let exit = handle_keys(&mut tcod, player, &map);
+let exit = handle_keys(&mut tcod, &game, player);
 end::call_handle_keys_map[]
 ----
 
