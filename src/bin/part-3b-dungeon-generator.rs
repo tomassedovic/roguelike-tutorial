@@ -147,13 +147,11 @@ fn create_v_tunnel(y1: i32, y2: i32, x: i32, map: &mut Map) {
     }
 }
 
-fn make_map() -> (Map, (i32, i32)) {
+fn make_map(player: &mut Object) -> Map {
     // fill map with "blocked" tiles
     let mut map = vec![vec![Tile::wall(); MAP_HEIGHT as usize]; MAP_WIDTH as usize];
 
     let mut rooms = vec![];
-
-    let mut starting_position = (0, 0);
 
     for _ in 0..MAX_ROOMS {
         // random width and height
@@ -181,7 +179,8 @@ fn make_map() -> (Map, (i32, i32)) {
 
             if rooms.is_empty() {
                 // this is the first room, where the player starts at
-                starting_position = (new_x, new_y);
+                player.x = new_x;
+                player.y = new_y;
             } else {
                 // all rooms after the first:
                 // connect it to the previous room with a tunnel
@@ -206,7 +205,7 @@ fn make_map() -> (Map, (i32, i32)) {
         }
     }
 
-    (map, starting_position)
+    map
 }
 
 fn render_all(tcod: &mut Tcod, game: &Game, objects: &[Object]) {
@@ -284,20 +283,19 @@ fn main() {
 
     let mut tcod = Tcod { root, con };
 
-    // generate map (at this point it's not drawn to the screen)
-    let (map, (player_x, player_y)) = make_map();
-
-    let game = Game { map };
-
     // create object representing the player
-    // place the player inside the first room
-    let player = Object::new(player_x, player_y, '@', WHITE);
+    let player = Object::new(0, 0, '@', WHITE);
 
     // create an NPC
     let npc = Object::new(SCREEN_WIDTH / 2 - 5, SCREEN_HEIGHT / 2, '@', YELLOW);
 
     // the list of objects with those two
     let mut objects = [player, npc];
+
+    // generate map (at this point it's not drawn to the screen)
+    let map = make_map(&mut objects[0]);
+
+    let game = Game { map };
 
     while !tcod.root.window_closed() {
         // clear the screen of the previous frame

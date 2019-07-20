@@ -216,11 +216,6 @@ fn main() {
 
     let mut tcod = Tcod { root, con };
 
-    // generate map (at this point it's not drawn to the screen)
-    let map = make_map();
-
-    let game = Game { map };
-
     // create object representing the player
     // place the player inside the first room
     let player = Object::new(25, 23, '@', WHITE);
@@ -230,6 +225,11 @@ fn main() {
 
     // the list of objects with those two
     let mut objects = [player, npc];
+
+    // generate map (at this point it's not drawn to the screen)
+    let map = make_map();
+
+    let game = Game { map };
 
     while !tcod.root.window_closed() {
         // clear the screen of the previous frame
