@@ -289,14 +289,15 @@ are:
 [source,rust]
 ----
 tag::exploration_visibility[]
-let explored = &mut map[x as usize][y as usize].explored;
+let explored = &mut game.map[x as usize][y as usize].explored;
 if visible {
     // since it's visible, explore it
     *explored = true;
 }
 if *explored {
     // show explored tiles only (any visible tile is explored already)
-    con.set_char_background(x, y, color, BackgroundFlag::Set);
+    tcod.con
+        .set_char_background(x, y, color, BackgroundFlag::Set);
 }
 end::exploration_visibility[]
 ----
@@ -305,20 +306,17 @@ end::exploration_visibility[]
 to write the full `map[x as usize][y as usize].explored` bit twice)
 
 And finally, since we're now actually modifying the `map`, we'll need
-to pass a _mutable_ reference to `render_all`.
-
-First, we declare the `map` variable we get from `make_map` as
-mutable:
+to pass a _mutable_ reference to `render_all`. Since `map` is carried in the `Game` struct,
+we need to make the `game` variable mutable:
 
 [source,rust]
 ----
-tag::make_mut_map[]
-// generate map (at this point it's not drawn to the screen)
-let (mut map, (player_x, player_y)) = make_map();
-end::make_mut_map[]
+tag::game_init[]
+let mut game = Game { map };
+end::game_init[]
 ----
 
-Then, we pass a _mutable reference_ to `map` to `render_all`:
+Then, we pass a _mutable reference_ to `game` to `render_all`:
 
 [source,rust]
 ----
@@ -327,10 +325,10 @@ tag::check_fov_recompute[]
 let fov_recompute = previous_player_position != (objects[0].x, objects[0].y);
 end::check_fov_recompute[]
 tag::call_render_all_mut[]
-render_all(&mut tcod, &objects, &mut map, &mut fov_map, fov_recompute);  // <1>
+render_all(&mut tcod, &mut game, &objects, &mut fov_map, fov_recompute);  // <1>
 end::call_render_all_mut[]
 ----
-<1> `map` is now `&mut`
+<1> `game` is now `&mut`
 
 And last, the `render_all` function definition:
 
@@ -338,16 +336,15 @@ And last, the `render_all` function definition:
 ----
 tag::render_all_header_mut_map[]
 fn render_all(
-    root: &mut Root,
-    con: &mut Offscreen,
+    tcod: &mut Tcod,
+    game: &mut Game,  // <1>
     objects: &[Object],
-    map: &mut Map,  // <1>
     fov_map: &mut FovMap,
     fov_recompute: bool,
 ) {
 end::render_all_header_mut_map[]
 ----
-<1> `map` is now `&mut Map`
+<1> `game` is now `&mut Game`
 
 And that's that! If you run the game now, you start in mostly black
 space except for your immediate surroundings and the map fills in as
