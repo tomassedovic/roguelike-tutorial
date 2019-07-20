@@ -26,11 +26,15 @@ const COLOR_DARK_GROUND: Color = Color {
     b: 150,
 };
 
-type Map = Vec<Vec<Tile>>;
-
 struct Tcod {
     root: Root,
     con: Offscreen,
+}
+
+type Map = Vec<Vec<Tile>>;
+
+struct Game {
+    map: Map,
 }
 
 /// A tile of the map and its properties
@@ -205,11 +209,11 @@ fn make_map() -> (Map, (i32, i32)) {
     (map, starting_position)
 }
 
-fn render_all(tcod: &mut Tcod, objects: &[Object], map: &Map) {
+fn render_all(tcod: &mut Tcod, game: &Game, objects: &[Object]) {
     // go through all tiles, and set their background color
     for y in 0..MAP_HEIGHT {
         for x in 0..MAP_WIDTH {
-            let wall = map[x as usize][y as usize].block_sight;
+            let wall = game.map[x as usize][y as usize].block_sight;
             if wall {
                 tcod.con
                     .set_char_background(x, y, COLOR_DARK_WALL, BackgroundFlag::Set);
@@ -237,7 +241,7 @@ fn render_all(tcod: &mut Tcod, objects: &[Object], map: &Map) {
     );
 }
 
-fn handle_keys(tcod: &mut Tcod, player: &mut Object, map: &Map) -> bool {
+fn handle_keys(tcod: &mut Tcod, game: &Game, player: &mut Object) -> bool {
     use tcod::input::Key;
     use tcod::input::KeyCode::*;
 
@@ -255,10 +259,10 @@ fn handle_keys(tcod: &mut Tcod, player: &mut Object, map: &Map) -> bool {
         Key { code: Escape, .. } => return true, // exit game
 
         // movement keys
-        Key { code: Up, .. } => player.move_by(0, -1, map),
-        Key { code: Down, .. } => player.move_by(0, 1, map),
-        Key { code: Left, .. } => player.move_by(-1, 0, map),
-        Key { code: Right, .. } => player.move_by(1, 0, map),
+        Key { code: Up, .. } => player.move_by(0, -1, &game.map),
+        Key { code: Down, .. } => player.move_by(0, 1, &game.map),
+        Key { code: Left, .. } => player.move_by(-1, 0, &game.map),
+        Key { code: Right, .. } => player.move_by(1, 0, &game.map),
 
         _ => {}
     }
@@ -283,6 +287,8 @@ fn main() {
     // generate map (at this point it's not drawn to the screen)
     let (map, (player_x, player_y)) = make_map();
 
+    let game = Game { map };
+
     // create object representing the player
     // place the player inside the first room
     let player = Object::new(player_x, player_y, '@', WHITE);
@@ -298,13 +304,13 @@ fn main() {
         tcod.con.clear();
 
         // render the screen
-        render_all(&mut tcod, &objects, &map);
+        render_all(&mut tcod, &game, &objects);
 
         tcod.root.flush();
 
         // handle keys and exit game if needed
         let player = &mut objects[0];
-        let exit = handle_keys(&mut tcod, player, &map);
+        let exit = handle_keys(&mut tcod, &game, player);
         if exit {
             break;
         }

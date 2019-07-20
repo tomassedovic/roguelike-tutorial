@@ -14,9 +14,11 @@ include::../part-1-graphics.adoc[tag=limit_fps]
 
 include::../part-2-object-map.adoc[tag=color_consts]
 
+include::../part-2-object-map.adoc[tag=tcod_struct]
+
 include::../part-2-object-map.adoc[tag=type_map]
 
-include::../part-2-object-map.adoc[tag=tcod_struct]
+include::../part-2-object-map.adoc[tag=game_struct]
 
 include::../part-2-object-map.adoc[tag=tile_struct]
 
@@ -79,14 +81,16 @@ include::../part-2-object-map.adoc[tag=offscreen_map_console,indent=4]
 
 include::../part-2-object-map.adoc[tag=tcod_init,indent=4]
 
+include::../part-2-object-map.adoc[tag=make_map,indent=4]
+
+include::../part-2-object-map.adoc[tag=game_init,indent=4]
+
 include::../part-2-object-map.adoc[tag=place_player_comment,indent=4]
 include::../part-3-dungeon.adoc[tag=place_player_hardcoded,indent=4]
 
 include::../part-2-object-map.adoc[tag=place_npc,indent=4]
 
 include::../part-2-object-map.adoc[tag=create_objects_list,indent=4]
-
-include::../part-2-object-map.adoc[tag=make_map,indent=4]
 
 include::../part-1-graphics.adoc[tag=game_loop_while_header,indent=4]
 include::../part-2-object-map.adoc[tag=clear_offscreen_console,indent=8]

@@ -41,11 +41,15 @@ const COLOR_LIGHT_GROUND: Color = Color {
     b: 50,
 };
 
-type Map = Vec<Vec<Tile>>;
-
 struct Tcod {
     root: Root,
     con: Offscreen,
+}
+
+type Map = Vec<Vec<Tile>>;
+
+struct Game {
+    map: Map,
 }
 
 /// A tile of the map and its properties
@@ -222,8 +226,8 @@ fn make_map() -> (Map, (i32, i32)) {
 
 fn render_all(
     tcod: &mut Tcod,
+    game: &Game,
     objects: &[Object],
-    map: &Map,
     fov_map: &mut FovMap,
     fov_recompute: bool,
 ) {
@@ -237,7 +241,7 @@ fn render_all(
     for y in 0..MAP_HEIGHT {
         for x in 0..MAP_WIDTH {
             let visible = fov_map.is_in_fov(x, y);
-            let wall = map[x as usize][y as usize].block_sight;
+            let wall = game.map[x as usize][y as usize].block_sight;
             let color = match (visible, wall) {
                 // outside of field of view:
                 (false, true) => COLOR_DARK_WALL,
@@ -270,7 +274,7 @@ fn render_all(
     );
 }
 
-fn handle_keys(tcod: &mut Tcod, player: &mut Object, map: &Map) -> bool {
+fn handle_keys(tcod: &mut Tcod, game: &Game, player: &mut Object) -> bool {
     use tcod::input::Key;
     use tcod::input::KeyCode::*;
 
@@ -288,10 +292,10 @@ fn handle_keys(tcod: &mut Tcod, player: &mut Object, map: &Map) -> bool {
         Key { code: Escape, .. } => return true, // exit game
 
         // movement keys
-        Key { code: Up, .. } => player.move_by(0, -1, map),
-        Key { code: Down, .. } => player.move_by(0, 1, map),
-        Key { code: Left, .. } => player.move_by(-1, 0, map),
-        Key { code: Right, .. } => player.move_by(1, 0, map),
+        Key { code: Up, .. } => player.move_by(0, -1, &game.map),
+        Key { code: Down, .. } => player.move_by(0, 1, &game.map),
+        Key { code: Left, .. } => player.move_by(-1, 0, &game.map),
+        Key { code: Right, .. } => player.move_by(1, 0, &game.map),
 
         _ => {}
     }
@@ -316,6 +320,8 @@ fn main() {
     // generate map (at this point it's not drawn to the screen)
     let (map, (player_x, player_y)) = make_map();
 
+    let game = Game { map };
+
     // create object representing the player
     // place the player inside the first room
     let player = Object::new(player_x, player_y, '@', WHITE);
@@ -333,8 +339,8 @@ fn main() {
             fov_map.set(
                 x,
                 y,
-                !map[x as usize][y as usize].block_sight,
-                !map[x as usize][y as usize].blocked,
+                !game.map[x as usize][y as usize].block_sight,
+                !game.map[x as usize][y as usize].blocked,
             );
         }
     }
@@ -348,14 +354,14 @@ fn main() {
 
         // render the screen
         let fov_recompute = previous_player_position != (objects[0].x, objects[0].y);
-        render_all(&mut tcod, &objects, &map, &mut fov_map, fov_recompute);
+        render_all(&mut tcod, &game, &objects, &mut fov_map, fov_recompute);
 
         tcod.root.flush();
 
         // handle keys and exit game if needed
         let player = &mut objects[0];
         previous_player_position = (player.x, player.y);
-        let exit = handle_keys(&mut tcod, player, &map);
+        let exit = handle_keys(&mut tcod, &game, player);
         if exit {
             break;
         }

@@ -94,8 +94,8 @@ for y in 0..MAP_HEIGHT {
         fov_map.set(
             x,
             y,
-            !map[x as usize][y as usize].block_sight,
-            !map[x as usize][y as usize].blocked,
+            !game.map[x as usize][y as usize].block_sight,
+            !game.map[x as usize][y as usize].blocked,
         );
     }
 }
@@ -136,7 +136,7 @@ And lastly, replace the existing call to `render_all` with these two lines:
 tag::call_render_all[]
 // render the screen
 let fov_recompute = previous_player_position != (objects[0].x, objects[0].y);
-render_all(&mut tcod, &objects, &map, &mut fov_map, fov_recompute);
+render_all(&mut tcod, &game, &objects, &mut fov_map, fov_recompute);
 end::call_render_all[]
 ----
 
@@ -150,8 +150,8 @@ First, update the function definition to accept `fov_map` and `fov_recompute`:
 tag::render_all_header[]
 fn render_all(
     tcod: &mut Tcod,
+    game: &Game,
     objects: &[Object],
-    map: &Map,
     fov_map: &mut FovMap,
     fov_recompute: bool,
 ) {
@@ -183,7 +183,7 @@ tag::calculate_background[]
 for y in 0..MAP_HEIGHT {
     for x in 0..MAP_WIDTH {
         let visible = fov_map.is_in_fov(x, y);
-        let wall = map[x as usize][y as usize].block_sight;
+        let wall = game.map[x as usize][y as usize].block_sight;
         let color = match (visible, wall) {
             // outside of field of view:
             (false, true) => COLOR_DARK_WALL,
