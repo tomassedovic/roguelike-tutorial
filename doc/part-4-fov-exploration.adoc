@@ -70,9 +70,35 @@ import:
 [source,rust]
 ----
 tag::use_fov_map[]
-use tcod::map::{FovAlgorithm, Map as FovMap};
+use tcod::map::{FovAlgorithm, Map as FovMap};  // <1>
 end::use_fov_map[]
+
+tag::tcod_struct[]
+struct Tcod {
+    root: Root,
+    con: Offscreen,
+    fov: FovMap,  // <2>
+}
+end::tcod_struct[]
 ----
+<1>: Bring the `tcod::map::Map` type in and alias it to `FovMap`
+<2>: Add `FovMap` to the `Tcod` struct
+
+We need to create the FOV map and ad it to our `tcod` variable in `main`.
+While we're at it, we'll initialise the `Offscreen` console directly too:
+
+[source]
+----
+tag::tcod_init[]
+let mut tcod = Tcod {
+    root,
+    con: Offscreen::new(MAP_WIDTH, MAP_HEIGHT),  // <1>
+    fov: FovMap::new(MAP_WIDTH, MAP_HEIGHT),  // <2>
+};
+end::tcod_init[]
+----
+<1> Initialise `con` inline
+<2> Initialise `fov`
 
 The libtcod FOV module needs to know which tiles block sight. So, we
 create a map that libtcod can understand, and fill it with
@@ -87,11 +113,10 @@ main function, before entering the main game loop.
 [source,rust]
 ----
 tag::create_fov_map[]
-// create the FOV map, according to the generated map
-let mut fov_map = FovMap::new(MAP_WIDTH, MAP_HEIGHT);
+// populate the FOV map, according to the generated map
 for y in 0..MAP_HEIGHT {
     for x in 0..MAP_WIDTH {
-        fov_map.set(
+        tcod.fov.set(
             x,
             y,
             !game.map[x as usize][y as usize].block_sight,
@@ -136,7 +161,7 @@ And lastly, replace the existing call to `render_all` with these two lines:
 tag::call_render_all[]
 // render the screen
 let fov_recompute = previous_player_position != (objects[0].x, objects[0].y);
-render_all(&mut tcod, &game, &objects, &mut fov_map, fov_recompute);
+render_all(&mut tcod, &game, &objects, fov_recompute);
 end::call_render_all[]
 ----
 
@@ -148,13 +173,7 @@ First, update the function definition to accept `fov_map` and `fov_recompute`:
 [source,rust]
 ----
 tag::render_all_header[]
-fn render_all(
-    tcod: &mut Tcod,
-    game: &Game,
-    objects: &[Object],
-    fov_map: &mut FovMap,
-    fov_recompute: bool,
-) {
+fn render_all(tcod: &mut Tcod, game: &Game, objects: &[Object], fov_recompute: bool) {
 end::render_all_header[]
 ----
 
@@ -166,7 +185,8 @@ tag::fov_recompute[]
 if fov_recompute {
     // recompute FOV if needed (the player moved or something)
     let player = &objects[0];
-    fov_map.compute_fov(player.x, player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALGO);
+    tcod.fov
+        .compute_fov(player.x, player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALGO);
 }
 end::fov_recompute[]
 ----
@@ -182,7 +202,7 @@ tag::calculate_background[]
 // go through all tiles, and set their background color
 for y in 0..MAP_HEIGHT {
     for x in 0..MAP_WIDTH {
-        let visible = fov_map.is_in_fov(x, y);
+        let visible = tcod.fov.is_in_fov(x, y);
         let wall = game.map[x as usize][y as usize].block_sight;
         let color = match (visible, wall) {
             // outside of field of view:
@@ -215,7 +235,7 @@ check:
 tag::render_objects[]
 // draw all objects in the list
 for object in objects {
-    if fov_map.is_in_fov(object.x, object.y) {
+    if tcod.fov.is_in_fov(object.x, object.y) {
         object.draw(&mut tcod.con);
     }
 }
@@ -325,7 +345,7 @@ tag::check_fov_recompute[]
 let fov_recompute = previous_player_position != (objects[0].x, objects[0].y);
 end::check_fov_recompute[]
 tag::call_render_all_mut[]
-render_all(&mut tcod, &mut game, &objects, &mut fov_map, fov_recompute);  // <1>
+render_all(&mut tcod, &mut game, &objects, fov_recompute);  // <1>
 end::call_render_all_mut[]
 ----
 <1> `game` is now `&mut`
@@ -335,13 +355,7 @@ And last, the `render_all` function definition:
 [source,rust]
 ----
 tag::render_all_header_mut_map[]
-fn render_all(
-    tcod: &mut Tcod,
-    game: &mut Game,  // <1>
-    objects: &[Object],
-    fov_map: &mut FovMap,
-    fov_recompute: bool,
-) {
+fn render_all(tcod: &mut Tcod, game: &mut Game, objects: &[Object], fov_recompute: bool) {  // <1>
 end::render_all_header_mut_map[]
 ----
 <1> `game` is now `&mut Game`

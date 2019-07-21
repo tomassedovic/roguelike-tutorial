@@ -308,21 +308,14 @@ Now we know whether the room is valid. If it is, we can carve it with
 `create_room`! We'll also handle a special case: the player will start
 at the centre of the first room.
 
-We could just pass the player into `make_map` and set its position
-there, but functions that have one clear purpose are easier to read
-and think about. Let's just return the starting position along with
-the map:
+We will pass the player into `make_map` and set its position there.
 
 [source,rust]
 ----
 tag::make_map_header_start[]
-fn make_map() -> (Map, (i32, i32)) {
+fn make_map(player: &mut Object) -> Map {
 end::make_map_header_start[]
     // ...
-
-tag::make_map_init_starting_position[]
-    let mut starting_position = (0, 0);
-end::make_map_init_starting_position[]
 
     for _ in 0..MAX_ROOMS {
         // ...
@@ -346,16 +339,15 @@ end::center_new_room[]
 tag::configure_first_room[]
             if rooms.is_empty() {
                 // this is the first room, where the player starts at
-                starting_position = (new_x, new_y);
+                player.x = new_x;
+                player.y = new_y;
 end::configure_first_room[]
 end::if_not_failed_block[]
             }
         }
     }
 
-tag::make_map_with_starting_pos_footer[]
-    (map, starting_position)
-end::make_map_with_starting_pos_footer[]
+    map
 }
 ----
 
@@ -364,16 +356,15 @@ set player's initial coordinates:
 
 [source,rust]
 ----
-tag::make_map[]
-// generate map (at this point it's not drawn to the screen)
-let (map, (player_x, player_y)) = make_map();
-end::make_map[]
-
 tag::place_player_generic[]
 // create object representing the player
-// place the player inside the first room
-let player = Object::new(player_x, player_y, '@', WHITE);
+let player = Object::new(0, 0, '@', WHITE);
 end::place_player_generic[]
+
+tag::make_map[]
+// generate map (at this point it's not drawn to the screen)
+let map = make_map(&mut objects[0]);
+end::make_map[]
 ----
 
 Now let's get back to our dungeon generator and make sure we add

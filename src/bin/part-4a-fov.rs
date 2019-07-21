@@ -315,7 +315,6 @@ fn main() {
     };
 
     // create object representing the player
-    // place the player inside the first room
     let player = Object::new(0, 0, '@', WHITE);
 
     // create an NPC
