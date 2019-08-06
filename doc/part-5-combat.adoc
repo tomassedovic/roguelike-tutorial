@@ -112,14 +112,13 @@ end::configure_first_room[]
 }
 ----
 
-When we call `make_map` (just before the main loop), we must give a
-mutable reference to the `objects` list:
+When we call `make_map` pass it a mutable reference to the entire `objects` list:
 
 [source]
 ----
 tag::call_make_map[]
 // generate map (at this point it's not drawn to the screen)
-let mut map = make_map(&mut objects);
+let map = make_map(&mut objects);
 end::call_make_map[]
 ----
 
@@ -179,7 +178,8 @@ tag::fov_recompute[]
 if fov_recompute {
     // recompute FOV if needed (the player moved or something)
     let player = &objects[PLAYER];  // <1>
-    fov_map.compute_fov(player.x, player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALGO);
+    tcod.fov
+        .compute_fov(player.x, player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALGO);
 }
 end::fov_recompute[]
 ----
@@ -465,11 +465,11 @@ end::push_monster[]
 ----
 
 And in `handle_keys`, we'll change the movement code from
-`player.move_by(0, -1, map)` to:
+`player.move_by(0, -1, &game.map)` to:
 
 [source,rust]
 ----
-move_by(PLAYER, 0, -1, map, objects)
+move_by(PLAYER, 0, -1, &game.map, objects)
 ----
 
 
@@ -506,7 +506,7 @@ Change `handle_keys` to return `PlayerAction` instead of `bool`.
 [source]
 ----
 tag::handle_keys_header[]
-fn handle_keys(root: &mut Root, map: &Map, objects: &mut [Object]) -> PlayerAction {
+fn handle_keys(tcod: &mut Tcod, game: &Game, objects: &mut [Object]) -> PlayerAction {
 end::handle_keys_header[]
    ...
 }
@@ -579,7 +579,7 @@ Let's update our match to include the `game_state`, too:
 [source]
 ----
 tag::match_key_header[]
-let key = root.wait_for_keypress(true);
+let key = tcod.root.wait_for_keypress(true);
 let player_alive = objects[PLAYER].alive;
 match (key, player_alive) {
 end::match_key_header[]
@@ -603,8 +603,8 @@ tag::match_special_keys[]
     _,
 ) => {
     // Alt+Enter: toggle fullscreen
-    let fullscreen = root.is_fullscreen();
-    root.set_fullscreen(!fullscreen);
+    let fullscreen = tcod.root.is_fullscreen();
+    tcod.root.set_fullscreen(!fullscreen);
     DidntTakeTurn
 }
 (Key { code: Escape, .. }, _) => Exit, // exit game
@@ -621,19 +621,19 @@ For movement, we only want it to work when the player is alive so:
 tag::movement_keys[]
 // movement keys
 (Key { code: Up, .. }, true) => {
-    player_move_or_attack(0, -1, map, objects);
+    player_move_or_attack(0, -1, &game.map, objects);
     TookTurn
 }
 (Key { code: Down, .. }, true) => {
-    player_move_or_attack(0, 1, map, objects);
+    player_move_or_attack(0, 1, &game.map, objects);
     TookTurn
 }
 (Key { code: Left, .. }, true) => {
-    player_move_or_attack(-1, 0, map, objects);
+    player_move_or_attack(-1, 0, &game.map, objects);
     TookTurn
 }
 (Key { code: Right, .. }, true) => {
-    player_move_or_attack(1, 0, map, objects);
+    player_move_or_attack(1, 0, &game.map, objects);
     TookTurn
 }
 end::movement_keys[]
@@ -655,7 +655,7 @@ And now we need to go back to the main loop and handle
 tag::exit_game_loop[]
 // handle keys and exit game if needed
 previous_player_position = objects[PLAYER].pos();
-let player_action = handle_keys(&mut root, &map, &mut objects);
+let player_action = handle_keys(&mut tcod, &game, &mut objects);
 if player_action == PlayerAction::Exit {
     break;
 }

@@ -23,7 +23,11 @@ include::../part-4-fov-exploration.adoc[tag=colors]
 
 include::../part-5-combat.adoc[tag=player_id]
 
+include::../part-4-fov-exploration.adoc[tag=tcod_struct]
+
 include::../part-2-object-map.adoc[tag=type_map]
+
+include::../part-2-object-map.adoc[tag=game_struct]
 
 include::../part-4-fov-exploration.adoc[tag=tile_struct]
 
@@ -137,16 +141,19 @@ include::../part-5-combat.adoc[tag=match_key_footer,indent=8]
 include::../part-5-combat.adoc[tag=player_action_enum]
 
 fn main() {
+include::../part-1-graphics.adoc[tag=set_fps,indent=4]
+
 include::../part-1-graphics.adoc[tag=init,indent=4]
 
-include::../part-1-graphics.adoc[tag=set_fps,indent=4]
-include::../part-2-object-map.adoc[tag=offscreen_map_console,indent=4]
+include::../part-4-fov-exploration.adoc[tag=tcod_init,indent=4]
 
 include::../part-5-combat.adoc[tag=create_player,indent=4]
 
 include::../part-5-combat.adoc[tag=create_objects_list,indent=4]
 
 include::../part-5-combat.adoc[tag=call_make_map,indent=4]
+
+include::../part-4-fov-exploration.adoc[tag=game_init,indent=4]
 
 include::../part-4-fov-exploration.adoc[tag=create_fov_map,indent=4]
 
