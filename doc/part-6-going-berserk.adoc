@@ -379,9 +379,9 @@ attack you. This is how you make a simple GUI! At the end of the
 ----
 tag::show_player_stats[]
 // show the player's stats
-root.set_default_foreground(WHITE);
+tcod.root.set_default_foreground(WHITE);
 if let Some(fighter) = objects[PLAYER].fighter {
-    root.print_ex(
+    tcod.root.print_ex(
         1,
         SCREEN_HEIGHT - 2,
         BackgroundFlag::None,
@@ -648,7 +648,7 @@ let mut to_draw: Vec<_> = objects.iter().collect();
 to_draw.sort_by(|o1, o2| { o1.blocks.cmp(&o2.blocks) });
 // draw the objects in the list
 for object in &to_draw {
-    if fov_map.is_in_fov(object.x, object.y) {
+    if tcod.map.is_in_fov(object.x, object.y) {
         object.draw(con);
     }
 }
@@ -673,13 +673,13 @@ we'll only sort items that we actually want to draw.
 tag::objects_to_draw[]
 let mut to_draw: Vec<_> = objects
     .iter()
-    .filter(|o| fov_map.is_in_fov(o.x, o.y))
+    .filter(|o| tcod.fov.is_in_fov(o.x, o.y))
     .collect();
 // sort so that non-blocknig objects come first
 to_draw.sort_by(|o1, o2| o1.blocks.cmp(&o2.blocks));
 // draw the objects in the list
 for object in &to_draw {
-    object.draw(con);
+    object.draw(&mut tcod.con);
 }
 end::objects_to_draw[]
 ----
