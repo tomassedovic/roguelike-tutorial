@@ -58,8 +58,29 @@ const COLOR_LIGHT_GROUND: Color = Color {
 // player will always be the first object
 const PLAYER: usize = 0;
 
+struct Tcod {
+    root: Root,
+    con: Offscreen,
+    panel: Offscreen,
+    fov: FovMap,
+    mouse: Mouse,
+}
+
 type Map = Vec<Vec<Tile>>;
-type Messages = Vec<(String, Color)>;
+
+struct Messages(Vec<(String, Color)>);
+
+impl Messages {
+    fn add<T: Into<String>>(&mut self, message: T, color: Color) {
+        // add the new message as a tuple, with the text and the color
+        self.0.push((message.into(), color));
+    }
+}
+
+struct Game {
+    map: Map,
+    messages: Messages,
+}
 
 /// A tile of the map and its properties
 #[derive(Clone, Copy, Debug)]
@@ -660,7 +681,7 @@ fn render_all(
 
     // print the game messages, one line at a time
     let mut y = MSG_HEIGHT as i32;
-    for &(ref msg, color) in messages.iter().rev() {
+    for &(ref msg, color) in messages.0.iter().rev() {
         let msg_height = panel.get_height_rect(MSG_X, y, MSG_WIDTH, 0, msg);
         y -= msg_height;
         if y < 0 {
@@ -697,15 +718,6 @@ fn render_all(
         1.0,
         1.0,
     );
-}
-
-fn message<T: Into<String>>(messages: &mut Messages, message: T, color: Color) {
-    // if the buffer is full, remove the first message to make room for the new one
-    if messages.len() == MSG_HEIGHT {
-        messages.remove(0);
-    }
-    // add the new message as a tuple, with the text and the color
-    messages.push((message.into(), color));
 }
 
 fn player_move_or_attack(
@@ -917,16 +929,22 @@ fn monster_death(monster: &mut Object, messages: &mut Messages) {
 }
 
 fn main() {
-    let mut root = Root::initializer()
+    tcod::system::set_fps(LIMIT_FPS);
+
+    let root = Root::initializer()
         .font("arial10x10.png", FontLayout::Tcod)
         .font_type(FontType::Greyscale)
         .size(SCREEN_WIDTH, SCREEN_HEIGHT)
         .title("Rust/libtcod tutorial")
         .init();
 
-    tcod::system::set_fps(LIMIT_FPS);
-    let mut con = Offscreen::new(MAP_WIDTH, MAP_HEIGHT);
-    let mut panel = Offscreen::new(SCREEN_WIDTH, PANEL_HEIGHT);
+    let mut tcod = Tcod {
+        root,
+        con: Offscreen::new(MAP_WIDTH, MAP_HEIGHT),
+        panel: Offscreen::new(SCREEN_WIDTH, PANEL_HEIGHT),
+        fov: FovMap::new(MAP_WIDTH, MAP_HEIGHT),
+        mouse: Default::default(),
+    };
 
     // create object representing the player
     let mut player = Object::new(0, 0, '@', "player", WHITE, true);
@@ -945,27 +963,27 @@ fn main() {
     // generate map (at this point it's not drawn to the screen)
     let mut map = make_map(&mut objects);
 
-    // create the FOV map, according to the generated map
-    let mut fov_map = FovMap::new(MAP_WIDTH, MAP_HEIGHT);
+    let mut game = Game {
+        map,
+        messages: Messages(vec![]),
+    };
+
+    // populate the FOV map, according to the generated map
     for y in 0..MAP_HEIGHT {
         for x in 0..MAP_WIDTH {
-            fov_map.set(
+            tcod.fov.set(
                 x,
                 y,
-                !map[x as usize][y as usize].block_sight,
-                !map[x as usize][y as usize].blocked,
+                !game.map[x as usize][y as usize].block_sight,
+                !game.map[x as usize][y as usize].blocked,
             );
         }
     }
 
     let mut inventory = vec![];
 
-    // create the list of game messages and their colors, starts empty
-    let mut messages = vec![];
-
     // a warm welcoming message!
-    message(
-        &mut messages,
+    game.messages.add(
         "Welcome stranger! Prepare to perish in the Tombs of the Ancient Kings.",
         RED,
     );
@@ -973,45 +991,27 @@ fn main() {
     // force FOV "recompute" first time through the game loop
     let mut previous_player_position = (-1, -1);
 
-    let mut mouse = Default::default();
     let mut key = Default::default();
 
-    while !root.window_closed() {
+    while !tcod.root.window_closed() {
         // clear the screen of the previous frame
-        con.clear();
+        tcod.con.clear();
 
         match input::check_for_event(input::MOUSE | input::KEY_PRESS) {
-            Some((_, Event::Mouse(m))) => mouse = m,
+            Some((_, Event::Mouse(m))) => tcod.mouse = m,
             Some((_, Event::Key(k))) => key = k,
             _ => key = Default::default(),
         }
 
         // render the screen
         let fov_recompute = previous_player_position != (objects[PLAYER].pos());
-        render_all(
-            &mut root,
-            &mut con,
-            &mut panel,
-            mouse,
-            &objects,
-            &mut map,
-            &messages,
-            &mut fov_map,
-            fov_recompute,
-        );
+        render_all(&mut tcod, &mut game, &objects, fov_recompute);
 
-        root.flush();
+        tcod.root.flush();
 
         // handle keys and exit game if needed
         previous_player_position = objects[PLAYER].pos();
-        let player_action = handle_keys(
-            key,
-            &mut root,
-            &map,
-            &mut objects,
-            &mut inventory,
-            &mut messages,
-        );
+        let player_action = handle_keys(key, &mut tcod, &mut game, &mut objects);
         if player_action == PlayerAction::Exit {
             break;
         }
@@ -1020,7 +1020,7 @@ fn main() {
         if objects[PLAYER].alive && player_action != PlayerAction::DidntTakeTurn {
             for id in 0..objects.len() {
                 if objects[id].ai.is_some() {
-                    ai_take_turn(id, &map, &mut objects, &fov_map, &mut messages);
+                    ai_take_turn(id, &tcod, &mut game, &mut objects);
                 }
             }
         }
