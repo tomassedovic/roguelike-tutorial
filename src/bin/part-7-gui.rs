@@ -64,12 +64,22 @@ struct Tcod {
 
 type Map = Vec<Vec<Tile>>;
 
-struct Messages(Vec<(String, Color)>);
+struct Messages {
+    messages: Vec<(String, Color)>,
+}
 
 impl Messages {
+    fn new() -> Self {
+        Self { messages: vec![] }
+    }
+
     fn add<T: Into<String>>(&mut self, message: T, color: Color) {
         // add the new message as a tuple, with the text and the color
-        self.0.push((message.into(), color));
+        self.messages.push((message.into(), color));
+    }
+
+    fn iter(&self) -> impl DoubleEndedIterator<Item = &(String, Color)> {
+        self.messages.iter()
     }
 }
 
@@ -563,7 +573,7 @@ fn render_all(tcod: &mut Tcod, game: &mut Game, objects: &[Object], fov_recomput
 
     // print the game messages, one line at a time
     let mut y = MSG_HEIGHT as i32;
-    for &(ref msg, color) in game.messages.0.iter().rev() {
+    for &(ref msg, color) in game.messages.iter().rev() {
         let msg_height = tcod.panel.get_height_rect(MSG_X, y, MSG_WIDTH, 0, msg);
         y -= msg_height;
         if y < 0 {
@@ -741,7 +751,7 @@ fn main() {
 
     let mut game = Game {
         map,
-        messages: Messages(vec![]),
+        messages: Messages::new(),
     };
 
     // populate the FOV map, according to the generated map
