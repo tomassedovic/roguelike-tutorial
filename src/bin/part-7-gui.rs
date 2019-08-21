@@ -313,8 +313,10 @@ impl DeathCallback {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-struct Ai;
+#[derive(Clone, Debug, PartialEq)]
+enum Ai {
+    Basic,
+}
 
 fn ai_take_turn(monster_id: usize, tcod: &Tcod, game: &mut Game, objects: &mut [Object]) {
     // a basic monster takes its turn. If you can see it, it can see you
@@ -440,7 +442,7 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>) {
                     power: 3,
                     on_death: DeathCallback::Monster,
                 });
-                orc.ai = Some(Ai);
+                orc.ai = Some(Ai::Basic);
                 orc
             } else {
                 // create a troll
@@ -452,7 +454,7 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>) {
                     power: 4,
                     on_death: DeathCallback::Monster,
                 });
-                troll.ai = Some(Ai);
+                troll.ai = Some(Ai::Basic);
                 troll
             };
             monster.alive = true;

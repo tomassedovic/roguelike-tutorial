@@ -211,8 +211,10 @@ struct Fighter {
     power: i32,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-struct Ai;
+#[derive(Clone, Debug, PartialEq)]
+enum Ai {
+    Basic,
+}
 
 fn ai_take_turn(monster_id: usize, tcod: &Tcod, game: &Game, objects: &mut [Object]) {
     // a basic monster takes its turn. If you can see it, it can see you
@@ -340,7 +342,7 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>) {
                     defense: 0,
                     power: 3,
                 });
-                orc.ai = Some(Ai);
+                orc.ai = Some(Ai::Basic);
                 orc
             } else {
                 // create a troll
@@ -351,7 +353,7 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>) {
                     defense: 1,
                     power: 4,
                 });
-                troll.ai = Some(Ai);
+                troll.ai = Some(Ai::Basic);
                 troll
             };
             monster.alive = true;

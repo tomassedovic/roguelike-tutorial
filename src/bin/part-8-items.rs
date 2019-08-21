@@ -348,8 +348,10 @@ impl DeathCallback {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-struct Ai;
+#[derive(Clone, Debug, PartialEq)]
+enum Ai {
+    Basic,
+}
 
 fn ai_take_turn(monster_id: usize, tcod: &Tcod, game: &mut Game, objects: &mut [Object]) {
     // a basic monster takes its turn. If you can see it, it can see you
@@ -377,14 +379,14 @@ enum UseResult {
     Cancelled,
 }
 
-fn use_item(inventory_id: usize, objects: &mut [Object], game: &mut Game) {
+fn use_item(inventory_id: usize, tcod: &mut Tcod, game: &mut Game, objects: &mut [Object]) {
     use Item::*;
     // just call the "use_function" if it is defined
     if let Some(item) = game.inventory[inventory_id].item {
         let on_use = match item {
             Heal => cast_heal,
         };
-        match on_use(inventory_id, objects, game) {
+        match on_use(inventory_id, tcod, game, objects) {
             UseResult::UsedUp => {
                 // destroy after use, unless it was cancelled for some reason
                 game.inventory.remove(inventory_id);
@@ -401,7 +403,12 @@ fn use_item(inventory_id: usize, objects: &mut [Object], game: &mut Game) {
     }
 }
 
-fn cast_heal(_inventory_id: usize, objects: &mut [Object], game: &mut Game) -> UseResult {
+fn cast_heal(
+    _inventory_id: usize,
+    _tcod: &mut Tcod,
+    game: &mut Game,
+    objects: &mut [Object],
+) -> UseResult {
     // heal the player
     if let Some(fighter) = objects[PLAYER].fighter {
         if fighter.hp == fighter.max_hp {
@@ -524,7 +531,7 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>) {
                     power: 3,
                     on_death: DeathCallback::Monster,
                 });
-                orc.ai = Some(Ai);
+                orc.ai = Some(Ai::Basic);
                 orc
             } else {
                 // create a troll
@@ -536,7 +543,7 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>) {
                     power: 4,
                     on_death: DeathCallback::Monster,
                 });
-                troll.ai = Some(Ai);
+                troll.ai = Some(Ai::Basic);
                 troll
             };
             monster.alive = true;
@@ -884,7 +891,7 @@ fn handle_keys(
                 &mut tcod.root,
             );
             if let Some(inventory_index) = inventory_index {
-                use_item(inventory_index, objects, game);
+                use_item(inventory_index, tcod, game, objects);
             }
             DidntTakeTurn
         }
