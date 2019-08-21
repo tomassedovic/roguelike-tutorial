@@ -39,8 +39,10 @@ will not carry any data, but we'll soon remedy that.
 [source]
 ----
 tag::ai_struct[]
-#[derive(Clone, Copy, Debug, PartialEq)]
-struct Ai;
+#[derive(Clone, Debug, PartialEq)]
+enum Ai {
+    Basic,
+}
 end::ai_struct[]
 ----
 
@@ -136,7 +138,7 @@ let mut monster = if rand::random::<f32>() < 0.8 {
         defense: 0,
         power: 3,
     });
-    orc.ai = Some(Ai);
+    orc.ai = Some(Ai::Basic);
     orc
 } else {
     // create a troll
@@ -147,7 +149,7 @@ let mut monster = if rand::random::<f32>() < 0.8 {
         defense: 1,
         power: 4,
     });
-    troll.ai = Some(Ai);
+    troll.ai = Some(Ai::Basic);
     troll
 };
 end::generate_monster[]
@@ -500,7 +502,7 @@ let mut monster = if rand::random::<f32>() < 0.8 {
         power: 3,
         on_death: DeathCallback::Monster,  // <1>
     });
-    orc.ai = Some(Ai);
+    orc.ai = Some(Ai::Basic);
     orc
 } else {
     // create a troll
@@ -512,7 +514,7 @@ let mut monster = if rand::random::<f32>() < 0.8 {
         power: 4,
         on_death: DeathCallback::Monster,  // <2>
     });
-    troll.ai = Some(Ai);
+    troll.ai = Some(Ai::Basic);
     troll
 };
 end::generate_monster_cb[]

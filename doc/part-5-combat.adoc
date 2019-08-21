@@ -465,11 +465,11 @@ end::push_monster[]
 ----
 
 And in `handle_keys`, we'll change the movement code from
-`player.move_by(0, -1, &game.map)` to:
+`player.move_by(0, -1, game)` to:
 
 [source,rust]
 ----
-move_by(PLAYER, 0, -1, &game.map, objects)
+move_by(PLAYER, 0, -1, game, objects)
 ----
 
 
@@ -621,19 +621,19 @@ For movement, we only want it to work when the player is alive so:
 tag::movement_keys[]
 // movement keys
 (Key { code: Up, .. }, true) => {
-    player_move_or_attack(0, -1, &game.map, objects);
+    player_move_or_attack(0, -1, game, objects);
     TookTurn
 }
 (Key { code: Down, .. }, true) => {
-    player_move_or_attack(0, 1, &game.map, objects);
+    player_move_or_attack(0, 1, game, objects);
     TookTurn
 }
 (Key { code: Left, .. }, true) => {
-    player_move_or_attack(-1, 0, &game.map, objects);
+    player_move_or_attack(-1, 0, game, objects);
     TookTurn
 }
 (Key { code: Right, .. }, true) => {
-    player_move_or_attack(1, 0, &game.map, objects);
+    player_move_or_attack(1, 0, game, objects);
     TookTurn
 }
 end::movement_keys[]
@@ -709,7 +709,7 @@ With:
 
 [source]
 ----
-player_move_or_attack(1, 0, map, objects)
+player_move_or_attack(1, 0, game, objects)
 ----
 
 Now let's write the function itself:
@@ -718,7 +718,7 @@ Now let's write the function itself:
 ----
 tag::player_move_or_attack[]
 tag::player_move_or_attack_header[]
-fn player_move_or_attack(dx: i32, dy: i32, map: &Map, objects: &mut [Object]) {
+fn player_move_or_attack(dx: i32, dy: i32, game: &Game, objects: &mut [Object]) {
 tag::player_move_or_attack_coords[]
     // the coordinates the player is moving to/attacking
     let x = objects[PLAYER].x + dx;
@@ -741,7 +741,7 @@ end::player_move_or_attack_target_some[]
 tag::player_move_or_attack_target_none[]
         }
         None => {
-            move_by(PLAYER, dx, dy, map, objects);
+            move_by(PLAYER, dx, dy, &game.map, objects);
         }
     }
 }

@@ -110,8 +110,8 @@ impl Object {
     }
 
     /// move by the given amount, if the destination is not blocked
-    pub fn move_by(&mut self, dx: i32, dy: i32, map: &Map) {
-        if !map[(self.x + dx) as usize][(self.y + dy) as usize].blocked {
+    pub fn move_by(&mut self, dx: i32, dy: i32, game: &Game) {
+        if !game.map[(self.x + dx) as usize][(self.y + dy) as usize].blocked {
             self.x += dx;
             self.y += dy;
         }
@@ -258,10 +258,10 @@ fn handle_keys(tcod: &mut Tcod, game: &Game, player: &mut Object) -> bool {
         Key { code: Escape, .. } => return true, // exit game
 
         // movement keys
-        Key { code: Up, .. } => player.move_by(0, -1, &game.map),
-        Key { code: Down, .. } => player.move_by(0, 1, &game.map),
-        Key { code: Left, .. } => player.move_by(-1, 0, &game.map),
-        Key { code: Right, .. } => player.move_by(1, 0, &game.map),
+        Key { code: Up, .. } => player.move_by(0, -1, game),
+        Key { code: Down, .. } => player.move_by(0, 1, game),
+        Key { code: Left, .. } => player.move_by(-1, 0, game),
+        Key { code: Right, .. } => player.move_by(1, 0, game),
 
         _ => {}
     }
