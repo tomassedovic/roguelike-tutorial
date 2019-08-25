@@ -607,11 +607,10 @@ fn target_tile(
         // objects under the mouse.
         tcod.root.flush();
         let event = input::check_for_event(input::KEY_PRESS | input::MOUSE).map(|e| e.1);
-        let mut key = None;
         match event {
             Some(Event::Mouse(m)) => tcod.mouse = m,
-            Some(Event::Key(k)) => key = Some(k),
-            None => {}
+            Some(Event::Key(k)) => tcod.key = k,
+            None => tcod.key = Default::default(),
         }
         render_all(tcod, objects, game, false);
 
@@ -625,8 +624,7 @@ fn target_tile(
             return Some((x, y));
         }
 
-        let escape = key.map_or(false, |k| k.code == Escape);
-        if tcod.mouse.rbutton_pressed || escape {
+        if tcod.mouse.rbutton_pressed || tcod.key.code == Escape {
             return None; // cancel if the player right-clicked or pressed Escape
         }
     }
@@ -1502,17 +1500,12 @@ fn msgbox(text: &str, width: i32, root: &mut Root) {
     menu(text, options, width, root);
 }
 
-fn handle_keys(
-    key: Key,
-    tcod: &mut Tcod,
-    objects: &mut Vec<Object>,
-    game: &mut Game,
-) -> PlayerAction {
+fn handle_keys(tcod: &mut Tcod, objects: &mut Vec<Object>, game: &mut Game) -> PlayerAction {
     use tcod::input::KeyCode::*;
     use PlayerAction::*;
 
     let player_alive = objects[PLAYER].alive;
-    match (key, player_alive) {
+    match (tcod.key, player_alive) {
         (
             Key {
                 code: Enter,
@@ -1733,6 +1726,7 @@ struct Tcod {
     panel: Offscreen,
     fov: FovMap,
     mouse: Mouse,
+    key: Key,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -1823,16 +1817,14 @@ fn play_game(objects: &mut Vec<Object>, game: &mut Game, tcod: &mut Tcod) {
     // force FOV "recompute" first time through the game loop
     let mut previous_player_position = (-1, -1);
 
-    let mut key = Default::default();
-
     while !tcod.root.window_closed() {
         // clear the screen of the previous frame
         tcod.con.clear();
 
         match input::check_for_event(input::MOUSE | input::KEY_PRESS) {
             Some((_, Event::Mouse(m))) => tcod.mouse = m,
-            Some((_, Event::Key(k))) => key = k,
-            _ => key = Default::default(),
+            Some((_, Event::Key(k))) => tcod.key = k,
+            _ => tcod.key = Default::default(),
         }
 
         // render the screen
@@ -1846,7 +1838,7 @@ fn play_game(objects: &mut Vec<Object>, game: &mut Game, tcod: &mut Tcod) {
 
         // handle keys and exit game if needed
         previous_player_position = objects[PLAYER].pos();
-        let player_action = handle_keys(key, tcod, objects, game);
+        let player_action = handle_keys(tcod, objects, game);
         if player_action == PlayerAction::Exit {
             save_game(objects, game).unwrap();
             break;
@@ -1950,6 +1942,7 @@ fn main() {
         panel: Offscreen::new(SCREEN_WIDTH, PANEL_HEIGHT),
         fov: FovMap::new(MAP_WIDTH, MAP_HEIGHT),
         mouse: Default::default(),
+        key: Default::default(),
     };
 
     main_menu(&mut tcod);
