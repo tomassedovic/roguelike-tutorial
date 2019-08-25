@@ -148,8 +148,8 @@ then shows the panel on the root console.
 ----
 tag::prepare_gui_render[]
 // prepare to render the GUI panel
-panel.set_default_background(BLACK);
-panel.clear();
+tcod.panel.set_default_background(BLACK);
+tcod.panel.clear();
 end::prepare_gui_render[]
 
 tag::show_player_stats[]
@@ -157,7 +157,15 @@ tag::show_player_stats[]
 let hp = objects[PLAYER].fighter.map_or(0, |f| f.hp);
 let max_hp = objects[PLAYER].fighter.map_or(0, |f| f.max_hp);
 render_bar(
-    panel, 1, 1, BAR_WIDTH, "HP", hp, max_hp, LIGHT_RED, DARKER_RED,
+    &mut tcod.panel,
+    1,
+    1,
+    BAR_WIDTH,
+    "HP",
+    hp,
+    max_hp,
+    LIGHT_RED,
+    DARKER_RED,
 );
 end::show_player_stats[]
 
@@ -272,14 +280,14 @@ each (potentially line-wrapped) and draw them onto the panel using the
 tag::render_messages[]
 // print the game messages, one line at a time
 let mut y = MSG_HEIGHT as i32;
-for &(ref msg, color) in messages.iter().rev() {
-    let msg_height = panel.get_height_rect(MSG_X, y, MSG_WIDTH, 0, msg);
+for &(ref msg, color) in game.messages.iter().rev() {
+    let msg_height = tcod.panel.get_height_rect(MSG_X, y, MSG_WIDTH, 0, msg);
     y -= msg_height;
     if y < 0 {
         break;
     }
-    panel.set_default_foreground(color);
-    panel.print_rect(MSG_X, y, MSG_WIDTH, 0, msg);
+    tcod.panel.set_default_foreground(color);
+    tcod.panel.print_rect(MSG_X, y, MSG_WIDTH, 0, msg);
 }
 end::render_messages[]
 ----
@@ -338,8 +346,7 @@ the main loop to welcome the player to our dungeon of doom:
 ----
 tag::welcome_message[]
 // a warm welcoming message!
-message(
-    &mut messages,
+game.messages.add(
     "Welcome stranger! Prepare to perish in the Tombs of the Ancient Kings.",
     RED,
 );
@@ -378,18 +385,14 @@ end::monster_death_header[]
 tag::monster_death_message[]
     // transform it into a nasty corpse! it doesn't block, can't be
     // attacked and doesn't move
-    game.messages.add(messages, format!("{} is dead!", monster.name), ORANGE);  // <4>
+    game.messages
+        .add(format!("{} is dead!", monster.name), ORANGE);  // <4>
 end::monster_death_message[]
     ...
 }
 
 tag::player_move_or_attack_header[]
-fn player_move_or_attack(
-    dx: i32,
-    dy: i32,
-    game: &mut Game,  // <5>
-    objects: &mut [Object],
-) {
+fn player_move_or_attack(dx: i32, dy: i32, game: &mut Game, objects: &mut [Object]) {  // <5>
 end::player_move_or_attack_header[]
     ...
 tag::player_attack[]
@@ -403,7 +406,7 @@ tag::previous_player_position[]
 previous_player_position = objects[PLAYER].pos();
 end::previous_player_position[]
 tag::call_handle_keys[]
-let player_action = handle_keys(key, &mut tcod, &game, &mut objects);  // <8>
+let player_action = handle_keys(&mut tcod, &mut game, &mut objects);  // <7>
 end::call_handle_keys[]
 tag::handle_player_action[]
 if player_action == PlayerAction::Exit {
@@ -428,31 +431,25 @@ end::execute_death_callback[]
 }
 
 tag::ai_take_turn_header[]
-fn ai_take_turn(
-    monster_id: usize,
-    map: &Map,
-    objects: &mut [Object],
-    fov_map: &FovMap,
-    messages: &mut Messages,  // <13>
-) {
+fn ai_take_turn(monster_id: usize, tcod: &Tcod, game: &mut Game, objects: &mut [Object]) {  // <8>
 end::ai_take_turn_header[]
     ...
 tag::ai_take_turn_monster_attack[]
     // close enough, attack! (if the player is still alive.)
     let (monster, player) = mut_two(monster_id, PLAYER, objects);
-    monster.attack(player, messages);  // <14>
+    monster.attack(player, game);  // <9>
 end::ai_take_turn_monster_attack[]
 }
 
 tag::death_callback_impl[]
 impl DeathCallback {
-    fn callback(self, object: &mut Object, messages: &mut Messages) {  // <15>
+    fn callback(self, object: &mut Object, game: &mut Game) {  // <10>
         use DeathCallback::*;
-        let callback: fn(&mut Object, &mut Messages) = match self {  // <16>
+        let callback = match self {  // <11>
             Player => player_death,
             Monster => monster_death,
         };
-        callback(object, messages);  // <17>
+        callback(object, game);  // <12>
     }
 }
 end::death_callback_impl[]
@@ -470,9 +467,9 @@ pub fn attack(&mut self, target: &mut Object, game: &mut Game) {
             ),
             WHITE,
         );
-        target.take_damage(damage, messages);
+        target.take_damage(damage, game);
     } else {
-        game.messages(
+        game.messages.add(
             format!(
                 "{} attacks {} but it has no effect!",
                 self.name, target.name
@@ -482,24 +479,36 @@ pub fn attack(&mut self, target: &mut Object, game: &mut Game) {
     }
 }
 end::attack[]
+
+fn main() {
+   ...
+    while !tcod.root.window_closed() {
+        ...
+tag::monsters_take_turn[]
+        // let monsters take their turn
+        if objects[PLAYER].alive && player_action != PlayerAction::DidntTakeTurn {
+            for id in 0..objects.len() {
+                if objects[id].ai.is_some() {
+                    ai_take_turn(id, &tcod, &mut game, &mut objects);
+                }
+            }
+        }
+end::monsters_take_turn[]
+    }
+}
 ----
 <1> Added `game` to the function's arguments
 <2> Using `Messages` instead of `println!`
 <3> Added `game` to the function's arguments
 <4> Using `Messages` instead of `println!`
-<5> Added `game` to the function's arguments
+<5> Made `game` mutable
 <6> Passing `game` to the function
-<7> Passing `game` to the function call
-<8> Passing `key` to the function call
+<7> Passing a mutable reference to `Game` to the function call
+<8> Made `game` mutable
 <9> Passing `messages` to the function call
-<10> Passing `messages` to the function call
-<11> Passing `messages` to the function call
+<10> Added `messages` to the function's arguments
+<11> Passing `messages` to the callback function pointer type
 <12> Passing `messages` to the function call
-<13> Added `messages` to the function's arguments
-<14> Passing `messages` to the function call
-<15> Added `messages` to the function's arguments
-<16> Passing `messages` to the callback function pointer type
-<17> Passing `messages` to the function call
 
 
 :lazy_static: https://crates.io/crates/lazy_static/
@@ -542,17 +551,38 @@ use tcod::input::{self, Event, Key, Mouse};
 end::use_tcod_input[]
 ----
 
-Now before the `main` loop, create new variables for keeping track of
-the keyboard and mouse states.
+Next we'll add both fields to our `Tcod` struct:
 
 [source]
 ----
-tag::initialise_mouse_and_key[]
-let mut mouse = Default::default();
-tag::initialise_key[]
-let mut key = Default::default();
-end::initialise_key[]
-end::initialise_mouse_and_key[]
+tag::tcod_struct[]
+struct Tcod {
+    root: Root,
+    con: Offscreen,
+    panel: Offscreen,
+    fov: FovMap,
+    key: Key,  // <1>
+    mouse: Mouse,  // <2>
+}
+end::tcod_struct[]
+----
+<1>: New field: `key`
+<2>: New field: `mouse`
+
+Now in the `main` loop, populate the two new fields where we initialise the `Tcod` struct:
+
+[source]
+----
+tag::tcod_init[]
+let mut tcod = Tcod {
+    root,
+    con: Offscreen::new(MAP_WIDTH, MAP_HEIGHT),
+    panel: Offscreen::new(SCREEN_WIDTH, PANEL_HEIGHT),
+    fov: FovMap::new(MAP_WIDTH, MAP_HEIGHT),
+    key: Default::default(),
+    mouse: Default::default(),
+};
+end::tcod_init[]
 ----
 
 :default: http://doc.rust-lang.org/std/default/trait.Default.html
@@ -571,9 +601,9 @@ main loop, right before the call to `render_all`:
 ----
 tag::check_for_event[]
 match input::check_for_event(input::MOUSE | input::KEY_PRESS) {
-    Some((_, Event::Mouse(m))) => mouse = m,
-    Some((_, Event::Key(k))) => key = k,
-    _ => key = Default::default(),
+    Some((_, Event::Mouse(m))) => tcod.mouse = m,
+    Some((_, Event::Key(k))) => tcod.key = k,
+    _ => tcod.key = Default::default(),
 }
 end::check_for_event[]
 ----
@@ -589,26 +619,19 @@ Now pass the key to `handle_keys` and remove the call to
 [source]
 ----
 tag::handle_keys_header[]
-fn handle_keys(
-    key: Key,  // <1>
-    root: &mut Root,
-    map: &Map,
-    objects: &mut [Object],
-    messages: &mut Messages,  // <2>
-) -> PlayerAction {
+fn handle_keys(tcod: &mut Tcod, game: &mut Game, objects: &mut [Object]) -> PlayerAction {  // <1>
 end::handle_keys_header[]
     ...
 tag::match_key_header[]
-    let player_alive = objects[PLAYER].alive;  // <3>
-    match (key, player_alive) {
+    let player_alive = objects[PLAYER].alive;  // <2>
+    match (tcod.key, player_alive) {
 end::match_key_header[]
         ...
     }
 }
 ----
-<1> Added `key`
-<2> Added `messages`
-<3> Removed `root.wait_for_keypress`
+<1> Made `game` mutable
+<2> Removed `root.wait_for_keypress`
 
 Next we'll write a function that lists names of all objects at the
 current mouse position. We'll use the `cx` and `cy` fields of the
@@ -648,53 +671,16 @@ on the mouse's position, after rendering the health bar:
 ----
 tag::hovered_objects[]
 // display names of objects under the mouse
-panel.set_default_foreground(LIGHT_GREY);
-panel.print_ex(
+tcod.panel.set_default_foreground(LIGHT_GREY);
+tcod.panel.print_ex(
     1,
     0,
     BackgroundFlag::None,
     TextAlignment::Left,
-    get_names_under_mouse(mouse, objects, fov_map),
+    get_names_under_mouse(tcod.mouse, objects, &tcod.fov),
 );
 end::hovered_objects[]
 ----
-
-Of course, we need to pass the `mouse: Mouse` argument to `render_all`:
-
-[source]
-----
-tag::render_all_header[]
-fn render_all(
-    root: &mut Root,
-    con: &mut Offscreen,
-    panel: &mut Offscreen,
-    mouse: Mouse,  // <1>
-    objects: &[Object],
-    map: &mut Map,
-    messages: &Messages,
-    fov_map: &mut FovMap,
-    fov_recompute: bool,
-) {
-end::render_all_header[]
-  ...
-}
-
-tag::call_render_all[]
-render_all(
-    &mut root,
-    &mut con,
-    &mut panel,
-    mouse,  // <2>
-    &objects,
-    &mut map,
-    &messages,
-    &mut fov_map,
-    fov_recompute,
-);
-end::call_render_all[]
-----
-<1> Added `mouse` argument
-<2> Passing in `mouse`
 
 But wait! If you recall, in a turn-based game, the rendering is done
 only once per turn; the rest of the time, the game is blocked on
