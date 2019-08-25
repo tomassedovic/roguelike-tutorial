@@ -32,7 +32,6 @@ include::../part-4-fov-exploration.adoc[tag=colors]
 include::../part-5-combat.adoc[tag=player_id]
 
 include::../part-2-object-map.adoc[tag=type_map]
-include::../part-7-gui.adoc[tag=type_messages]
 
 include::../part-4-fov-exploration.adoc[tag=tile_struct]
 
@@ -201,8 +200,6 @@ include::../part-7-gui.adoc[tag=hovered_objects,indent=4]
 
 include::../part-7-gui.adoc[tag=blit_panel,indent=4]
 include::../part-2-object-map.adoc[tag=render_all_footer]
-
-include::../part-7-gui.adoc[tag=message]
 
 include::../part-7-gui.adoc[tag=player_move_or_attack_header]
 include::../part-5-combat.adoc[tag=player_move_or_attack_coords]

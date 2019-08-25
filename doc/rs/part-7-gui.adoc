@@ -27,8 +27,15 @@ include::../part-4-fov-exploration.adoc[tag=colors]
 
 include::../part-5-combat.adoc[tag=player_id]
 
+include::../part-4-fov-exploration.adoc[tag=tcod_struct]
+
 include::../part-2-object-map.adoc[tag=type_map]
-include::../part-7-gui.adoc[tag=type_messages]
+
+include::../part-7-gui.adoc[tag=struct_messages]
+
+include::../part-7-gui.adoc[tag=impl_messages]
+
+include::../part-7-gui.adoc[tag=game_struct]
 
 include::../part-4-fov-exploration.adoc[tag=tile_struct]
 
@@ -170,8 +177,6 @@ include::../part-7-gui.adoc[tag=hovered_objects,indent=4]
 include::../part-7-gui.adoc[tag=blit_panel,indent=4]
 include::../part-2-object-map.adoc[tag=render_all_footer]
 
-include::../part-7-gui.adoc[tag=message]
-
 include::../part-7-gui.adoc[tag=player_move_or_attack_header]
 include::../part-5-combat.adoc[tag=player_move_or_attack_coords]
 
@@ -220,6 +225,8 @@ include::../part-6-going-berserk.adoc[tag=player_fighter_cb,indent=4]
 include::../part-5-combat.adoc[tag=create_objects_list,indent=4]
 
 include::../part-5-combat.adoc[tag=call_make_map,indent=4]
+
+include::../part-7-gui.adoc[tag=game_init,indent=4]
 
 include::../part-4-fov-exploration.adoc[tag=create_fov_map,indent=4]
 

@@ -24,12 +24,32 @@ will hold the player's health bar and a colored message log.
 It's easier to manage GUI windows and panels with an off-screen
 console for each one, created before the main loop:
 
+Let's add another `Ofscreen` console to our `Tcod` struct:
+
 [source]
 ----
-tag::panel_console[]
-let mut panel = Offscreen::new(SCREEN_WIDTH, PANEL_HEIGHT);
-end::panel_console[]
+struct Tcod {
+    root: Root,
+    con: Offscreen,
+    panel: Offscreen,  // <1>
+    fov: FovMap,
+}
+
+...
+
+fn main() {
+   ...
+   let mut tcod = Tcod {
+       root,
+       con: Offscreen::new(MAP_WIDTH, MAP_HEIGHT),
+       panel: Offscreen::new(SCREEN_WIDTH, PANEL_HEIGHT),  // <2>
+       fov: FovMap::new(MAP_WIDTH, MAP_HEIGHT),
+   };
+   ...
+}
 ----
+<1>: New `Tcod` field: `panel`
+<2>: Initialise `panel`
 
 The constant PANEL_HEIGHT is defined later, along with others. Let's
 jump right to the "status bar" rendering code! This is fully generic
@@ -144,10 +164,10 @@ end::show_player_stats[]
 tag::blit_panel[]
 // blit the contents of `panel` to the root console
 blit(
-    panel,
+    &tcod.panel,
     (0, 0),
     (SCREEN_WIDTH, PANEL_HEIGHT),
-    root,
+    &mut tcod.root,
     (0, PANEL_Y),
     1.0,
     1.0,
@@ -182,56 +202,66 @@ rest of the space. The messages will be stored in a vector so they can
 be easily manipulated. Each message is a tuple with 2 fields: the
 message string, and its color.
 
-[source]
-----
-tag::create_message_list[]
-// create the list of game messages and their colors, starts empty
-let mut messages = vec![];
-end::create_message_list[]
-----
-
 The type of that vector will be `Vec<(String, Color)>`. We'll be
 passing it to a lot of our functions, so let's make an alias for it:
 
 [source]
 ----
-tag::type_messages[]
-type Messages = Vec<(String, Color)>;
-end::type_messages[]
+tag::struct_messages[]
+struct Messages {
+    messages: Vec<(String, Color)>,
+}
+end::struct_messages[]
 ----
 
-
-Now we add a function to add messages to the list:
+We will use two operations on the struct: adding a new message and
+iterating over all the existing ones. For convenience, we will also
+add a `new` function so we can create it easily.
 
 [source]
 ----
-tag::message[]
-fn message<T: Into<String>>(messages: &mut Messages, message: T, color: Color) {
-    // if the buffer is full, remove the first message to make room for the new one
-    if messages.len() == MSG_HEIGHT {
-        messages.remove(0);
+tag::impl_messages[]
+impl Messages {
+    pub fn new() -> Self {
+        Self { messages: vec![] }
     }
-    // add the new message as a tuple, with the text and the color
-    messages.push((message.into(), color));
+
+    /// add the new message as a tuple, with the text and the color
+    pub fn add<T: Into<String>>(&mut self, message: T, color: Color) {
+        self.messages.push((message.into(), color));
+    }
+
+    /// Create a `DoubleEndedIterator` over the messages
+    pub fn iter(&self) -> impl DoubleEndedIterator<Item = &(String, Color)> {
+        self.messages.iter()
+    }
 }
-end::message[]
+end::impl_messages[]
 ----
 
-As new messages come in, we remove the old ones to make sure we always
-fit into `MSG_HEIGHT`.
+The `<T: Into<String>>` bit makes the `add` function _generic_.
+Instead of accepting a parameter of a specified type, it can work with
+anything that implements the `Into` trait for `String`, i.e. anything
+that can be converted to `String`. This lets us pass both `&str` (and
+therefore string literals) and `String` (an output of the `format!`
+macro among other things).
 
-The `<T: Into<String>>` bit makes this function _generic_. Instead of
-accepting a parameter of a specified type, it can work with anything
-that implements the `Into` trait for `String`, i.e. anything that can
-be converted to `String`. This lets us pass both `&str` (and therefore
-string literals) and `String` (an output of the `format!` macro among
-other things).
+As we're keeping the inner `messages` field private, we need to
+provide a way for our users to access the messages. In Rust, this is
+typically done via iterators. We could try to find the exact type that
+`Vec::iter` returns (it is: `std::slice::Iter<'a, (String, Color)'`),
+but that's a bit hairy, not always desirable (you might prefer to
+treat the exact iterator type as an implementation detail subject to
+change) and for more complicated scenarios (e.g. returning an iterator
+that has `map` or `filter` called on it) completely impossible.
+Sometimes a function can return a type that you cannot write down in
+your own code.
 
-NOTE: The original tutorial uses the `textwrap` module in
-Python's standard library to split the text into multiple lines based
-on the maximum length. Rust's standard library doesn't have such a
-function, but we can use libtcod's `get_height_rect` and
-`print_rect` to do the wrapping for us.
+What we can do instead is to say: "This function returns some type
+implementing this trait" and let the compiler figure it out.
+
+To do that, you have your function return `impl Trait` and make sure
+whatever value you actually return does indeed implement that trait.
 
 To show the messages, we go through them one by one, get the height of
 each (potentially line-wrapped) and draw them onto the panel using the
@@ -264,43 +294,42 @@ When we have `y` lower than zero, it would mean we'd draw *above* the
 panel. Libtcod wouldn't let us, but since that means we've ran out of
 space, we may as well break out of the loop.
 
-Again, we need to pass the messages argument to `render_all`. Its
-signature is now:
+NOTE: The original Python tutorial uses the `textwrap` module in
+Python's standard library to split the text into multiple lines based
+on the maximum length. Rust's standard library doesn't have such a
+function, but we can use libtcod's `get_height_rect` and
+`print_rect` to do the wrapping for us.
+
+We're going to add the `Messages` type our `Game` struct rather than adding another type to
+every function that will want to print a message:
 
 [source]
 ----
-fn render_all(
-    root: &mut Root,
-    con: &mut Offscreen,
-    panel: &mut Offscreen,
-    objects: &[Object],
-    map: &mut Map,
-    messages: &Messages,  // <1>
-    fov_map: &mut FovMap,
-    fov_recompute: bool,
-) {
-  ...
+tag::game_struct[]
+struct Game {
+    map: Map,
+    messages: Messages,  // <1>
+}
+end::game_struct[]
+----
+<1>: Added `messages`
+
+And we'll initialise it is `main`:
+
+[source]
+----
+fn main() {
+    ...
+tag::game_init[]
+    let mut game = Game {
+        map,
+        messages: Messages::new(),  // <1>
+    };
+end::game_init[]
+    ...
 }
 ----
-<1> Added `messages`
-
-
-And in the `main` loop:
-
-[source]
-----
-render_all(
-    &mut root,
-    &mut con,
-    &mut panel,
-    &objects,
-    &mut map,
-    &messages,  // <1>
-    &mut fov_map,
-    fov_recompute,
-);
-----
-<1> Passing in `messages`
+<1> Initialised `messages`
 
 But now we're ready to test it! Let's print a friendly message before
 the main loop to welcome the player to our dungeon of doom:
@@ -334,22 +363,22 @@ The end result should look something like this:
 [source]
 ----
 tag::player_death_header[]
-fn player_death(player: &mut Object, messages: &mut Messages) {  // <1>
+fn player_death(player: &mut Object, game: &mut Game) {  // <1>
 end::player_death_header[]
 tag::player_death_message[]
     // the game ended!
-    message(messages, "You died!", RED);  // <2>
+    game.messages.add("You died!", RED);  // <2>
 end::player_death_message[]
     ...
 }
 
 tag::monster_death_header[]
-fn monster_death(monster: &mut Object, messages: &mut Messages) {  // <3>
+fn monster_death(monster: &mut Object, game: &mut Game) {  // <3>
 end::monster_death_header[]
 tag::monster_death_message[]
     // transform it into a nasty corpse! it doesn't block, can't be
     // attacked and doesn't move
-    message(messages, format!("{} is dead!", monster.name), ORANGE);  // <4>
+    game.messages.add(messages, format!("{} is dead!", monster.name), ORANGE);  // <4>
 end::monster_death_message[]
     ...
 }
@@ -358,35 +387,23 @@ tag::player_move_or_attack_header[]
 fn player_move_or_attack(
     dx: i32,
     dy: i32,
-    map: &Map,
+    game: &mut Game,  // <5>
     objects: &mut [Object],
-    messages: &mut Messages,  // <5>
 ) {
 end::player_move_or_attack_header[]
     ...
 tag::player_attack[]
     let (player, target) = mut_two(PLAYER, target_id, objects);
-    player.attack(target, messages);  // <6>
+    player.attack(target, game);  // <6>
 end::player_attack[]
 }
-
-tag::monsters_take_turn[]
-// let monsters take their turn
-if objects[PLAYER].alive && player_action != PlayerAction::DidntTakeTurn {
-    for id in 0..objects.len() {
-        if objects[id].ai.is_some() {
-            ai_take_turn(id, &map, &mut objects, &fov_map, &mut messages);  // <7>
-        }
-    }
-}
-end::monsters_take_turn[]
 
 tag::previous_player_position[]
 // handle keys and exit game if needed
 previous_player_position = objects[PLAYER].pos();
 end::previous_player_position[]
 tag::call_handle_keys[]
-let player_action = handle_keys(key, &mut root, &map, &mut objects, &mut messages);  // <8>
+let player_action = handle_keys(key, &mut tcod, &game, &mut objects);  // <8>
 end::call_handle_keys[]
 tag::handle_player_action[]
 if player_action == PlayerAction::Exit {
@@ -394,28 +411,8 @@ if player_action == PlayerAction::Exit {
 }
 end::handle_player_action[]
 
-tag::movement_keys[]
-// movement keys
-(Key { code: Up, .. }, true) => {
-    player_move_or_attack(0, -1, map, objects, messages);  // <9>
-    TookTurn
-}
-(Key { code: Down, .. }, true) => {
-    player_move_or_attack(0, 1, map, objects, messages);  // <10>
-    TookTurn
-}
-(Key { code: Left, .. }, true) => {
-    player_move_or_attack(-1, 0, map, objects, messages);  // <11>
-    TookTurn
-}
-(Key { code: Right, .. }, true) => {
-    player_move_or_attack(1, 0, map, objects, messages);  // <12>
-    TookTurn
-}
-end::movement_keys[]
-
 tag::take_damage_header[]
-pub fn take_damage(&mut self, damage: i32, messages: &mut Messages) {
+pub fn take_damage(&mut self, damage: i32, game: &mut Game) {
 end::take_damage_header[]
     ...
 
@@ -424,7 +421,7 @@ tag::execute_death_callback[]
     if let Some(fighter) = self.fighter {
         if fighter.hp <= 0 {
             self.alive = false;
-            fighter.on_death.callback(self, messages);
+            fighter.on_death.callback(self, game);
         }
     }
 end::execute_death_callback[]
@@ -461,13 +458,12 @@ impl DeathCallback {
 end::death_callback_impl[]
 
 tag::attack[]
-pub fn attack(&mut self, target: &mut Object, messages: &mut Messages) {
+pub fn attack(&mut self, target: &mut Object, game: &mut Game) {
     // a simple formula for attack damage
     let damage = self.fighter.map_or(0, |f| f.power) - target.fighter.map_or(0, |f| f.defense);
     if damage > 0 {
         // make the target take some damage
-        message(
-            messages,
+        game.messages.add(
             format!(
                 "{} attacks {} for {} hit points.",
                 self.name, target.name, damage
@@ -476,8 +472,7 @@ pub fn attack(&mut self, target: &mut Object, messages: &mut Messages) {
         );
         target.take_damage(damage, messages);
     } else {
-        message(
-            messages,
+        game.messages(
             format!(
                 "{} attacks {} but it has no effect!",
                 self.name, target.name
@@ -488,14 +483,14 @@ pub fn attack(&mut self, target: &mut Object, messages: &mut Messages) {
 }
 end::attack[]
 ----
-<1> Added `messages` to the function's arguments
-<2> Calling `message` instead of `println!`
-<3> Added `messages` to the function's arguments
-<4> Calling `message` instead of `println!`
-<5> Added `messages` to the function's arguments
-<6> Passing `messages` to the function
-<7> Passing `messages` to the function call
-<8> Passing `messages` to the function call
+<1> Added `game` to the function's arguments
+<2> Using `Messages` instead of `println!`
+<3> Added `game` to the function's arguments
+<4> Using `Messages` instead of `println!`
+<5> Added `game` to the function's arguments
+<6> Passing `game` to the function
+<7> Passing `game` to the function call
+<8> Passing `key` to the function call
 <9> Passing `messages` to the function call
 <10> Passing `messages` to the function call
 <11> Passing `messages` to the function call
