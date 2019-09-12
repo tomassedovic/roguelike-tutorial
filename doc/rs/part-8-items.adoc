@@ -31,7 +31,15 @@ include::../part-4-fov-exploration.adoc[tag=colors]
 
 include::../part-5-combat.adoc[tag=player_id]
 
+include::../part-7-gui.adoc[tag=tcod_struct]
+
 include::../part-2-object-map.adoc[tag=type_map]
+
+include::../part-7-gui.adoc[tag=struct_messages]
+
+include::../part-7-gui.adoc[tag=impl_messages]
+
+include::../part-7-gui.adoc[tag=game_struct]
 
 include::../part-4-fov-exploration.adoc[tag=tile_struct]
 
