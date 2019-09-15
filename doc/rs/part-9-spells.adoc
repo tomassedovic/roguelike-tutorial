@@ -34,8 +34,15 @@ include::../part-4-fov-exploration.adoc[tag=colors]
 
 include::../part-5-combat.adoc[tag=player_id]
 
+include::../part-7-gui.adoc[tag=tcod_struct]
+
 include::../part-2-object-map.adoc[tag=type_map]
-include::../part-7-gui.adoc[tag=type_messages]
+
+include::../part-7-gui.adoc[tag=struct_messages]
+
+include::../part-7-gui.adoc[tag=impl_messages]
+
+include::../part-8-items.adoc[tag=game_struct]
 
 include::../part-4-fov-exploration.adoc[tag=tile_struct]
 
@@ -216,7 +223,7 @@ include::../part-7-gui.adoc[tag=render_bar_text,indent=4]
 
 include::../part-7-gui.adoc[tag=get_names_under_mouse]
 
-include::../part-9-spells.adoc[tag=render_all_header]
+include::../part-4-fov-exploration.adoc[tag=render_all_header_mut_map]
 include::../part-5-combat.adoc[tag=fov_recompute,indent=4]
 
 include::../part-4-fov-exploration.adoc[tag=calculate_background,indent=4]
@@ -239,8 +246,6 @@ include::../part-7-gui.adoc[tag=hovered_objects,indent=4]
 
 include::../part-7-gui.adoc[tag=blit_panel,indent=4]
 include::../part-2-object-map.adoc[tag=render_all_footer]
-
-include::../part-7-gui.adoc[tag=message]
 
 include::../part-7-gui.adoc[tag=player_move_or_attack_header]
 include::../part-5-combat.adoc[tag=player_move_or_attack_coords]
@@ -271,14 +276,14 @@ include::../part-8-items.adoc[tag=menu_convert_key_to_index,indent=4]
 
 include::../part-8-items.adoc[tag=inventory_menu_fn]
 
-include::../part-8-items.adoc[tag=handle_keys_header]
+include::../part-7-gui.adoc[tag=handle_keys_header]
 include::../part-1-graphics.adoc[tag=use_input_keycode,indent=4]
 include::../part-5-combat.adoc[tag=use_player_action_wildcard,indent=4]
 
 include::../part-7-gui.adoc[tag=match_key_header,indent=4]
 include::../part-5-combat.adoc[tag=match_special_keys,indent=8]
 
-include::../part-7-gui.adoc[tag=movement_keys,indent=8]
+include::../part-5-combat.adoc[tag=movement_keys,indent=8]
 
 include::../part-8-items.adoc[tag=handle_pick_up_key,indent=8]
 
@@ -303,14 +308,12 @@ include::../part-7-gui.adoc[tag=monster_death_message]
 include::../part-6-going-berserk.adoc[tag=monster_death_modifications]
 }
 
-include::../part-9-spells.adoc[tag=tcod_struct]
-
 fn main() {
-include::../part-9-spells.adoc[tag=init,indent=4]
-
 include::../part-1-graphics.adoc[tag=set_fps,indent=4]
 
-include::../part-9-spells.adoc[tag=create_tcod_struct,indent=4]
+include::../part-1-graphics.adoc[tag=init,indent=4]
+
+include::../part-7-gui.adoc[tag=tcod_init,indent=4]
 
 include::../part-5-combat.adoc[tag=create_player,indent=4]
 include::../part-6-going-berserk.adoc[tag=player_fighter_cb,indent=4]
@@ -319,33 +322,29 @@ include::../part-5-combat.adoc[tag=create_objects_list,indent=4]
 
 include::../part-5-combat.adoc[tag=call_make_map,indent=4]
 
-include::../part-9-spells.adoc[tag=create_fov_map,indent=4]
+include::../part-8-items.adoc[tag=game_init,indent=4]
 
-include::../part-8-items.adoc[tag=create_empty_inventory,indent=4]
-
-include::../part-7-gui.adoc[tag=create_message_list,indent=4]
+include::../part-4-fov-exploration.adoc[tag=create_fov_map,indent=4]
 
 include::../part-7-gui.adoc[tag=welcome_message,indent=4]
 
 include::../part-4-fov-exploration.adoc[tag=init_previous_player_pos,indent=4]
 
-include::../part-7-gui.adoc[tag=initialise_key,indent=4]
+include::../part-1-graphics.adoc[tag=game_loop_while_header,indent=4]
+include::../part-2-object-map.adoc[tag=clear_offscreen_console,indent=8]
 
-include::../part-9-spells.adoc[tag=game_loop_while_header,indent=4]
-include::../part-9-spells.adoc[tag=clear_offscreen_console,indent=8]
-
-include::../part-9-spells.adoc[tag=check_for_event,indent=8]
+include::../part-7-gui.adoc[tag=check_for_event,indent=8]
 
 include::../part-5-combat.adoc[tag=check_fov_recompute,indent=8]
-include::../part-9-spells.adoc[tag=call_render_all,indent=8]
+include::../part-4-fov-exploration.adoc[tag=call_render_all_mut,indent=8]
 
-include::../part-9-spells.adoc[tag=root_flush,indent=8]
+include::../part-1-graphics.adoc[tag=root_flush,indent=8]
 
 include::../part-7-gui.adoc[tag=previous_player_position,indent=8]
-include::../part-9-spells.adoc[tag=call_handle_keys,indent=8]
+include::../part-7-gui.adoc[tag=call_handle_keys,indent=8]
 include::../part-7-gui.adoc[tag=handle_player_action,indent=8]
 
-include::../part-9-spells.adoc[tag=monsters_take_turn,indent=8]
+include::../part-7-gui.adoc[tag=monsters_take_turn,indent=8]
     }
 }
 ++++
