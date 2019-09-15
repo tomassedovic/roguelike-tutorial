@@ -1,6 +1,3 @@
-#[macro_use]
-extern crate serde_derive;
-
 use std::cmp;
 
 use rand::Rng;
@@ -11,6 +8,8 @@ use tcod::colors::*;
 use tcod::console::*;
 use tcod::input::{self, Event, Key, Mouse};
 use tcod::map::{FovAlgorithm, Map as FovMap};
+
+use serde::{Deserialize, Serialize};
 
 // actual size of the window
 const SCREEN_WIDTH: i32 = 80;
