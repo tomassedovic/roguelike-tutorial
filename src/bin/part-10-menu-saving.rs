@@ -166,7 +166,7 @@ impl Object {
     }
 
     /// set the color and then draw the character that represents this object at its position
-    pub fn draw(&self, con: &mut Console) {
+    pub fn draw(&self, con: &mut dyn Console) {
         con.set_default_foreground(self.color);
         con.put_char(self.x, self.y, self.char, BackgroundFlag::None);
     }
@@ -1321,14 +1321,14 @@ fn play_game(objects: &mut Vec<Object>, game: &mut Game, tcod: &mut Tcod) {
     }
 }
 
-fn save_game(objects: &[Object], game: &Game) -> Result<(), Box<Error>> {
+fn save_game(objects: &[Object], game: &Game) -> Result<(), Box<dyn Error>> {
     let save_data = serde_json::to_string(&(objects, game))?;
     let mut file = File::create("savegame")?;
     file.write_all(save_data.as_bytes())?;
     Ok(())
 }
 
-fn load_game() -> Result<(Vec<Object>, Game), Box<Error>> {
+fn load_game() -> Result<(Vec<Object>, Game), Box<dyn Error>> {
     let mut json_save_state = String::new();
     let mut file = File::open("savegame")?;
     file.read_to_string(&mut json_save_state)?;

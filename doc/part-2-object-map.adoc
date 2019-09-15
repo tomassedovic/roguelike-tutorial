@@ -142,7 +142,7 @@ end::object_move_by[]
 
 tag::object_draw[]
     /// set the color and then draw the character that represents this object at its position
-    pub fn draw(&self, con: &mut Console) {
+    pub fn draw(&self, con: &mut dyn Console) {
         con.set_default_foreground(self.color);
         con.put_char(self.x, self.y, self.char, BackgroundFlag::None);
     }
@@ -150,6 +150,12 @@ end::object_draw[]
 }
 end::object_impl[]
 ----
+
+The `dyn` keyword in `&mut dyn Console` highlights that `Console` is a `trait` and not a concrete type (such as a `struct` or `enum`).
+Earlier versions of Rust allowed to say `&Type` regardless of whether `Type` was `trait` or not.
+And indeed at least in Rust 1.37 2018 this is still allowed, but it will emit a warning.
+This has real-life implications as Rust's pointers to traits are twice the size of pointers to structs.
+This way anyone reading the code (us, our collaborators, people taking over) can always tell whether a pointer signature (reference, box, etc.) is a trait object or a normal pointer.
 
 Now, before the main loop, we will create an actual player `Object`.
 We will also add it to an array that will hold all objects in the
