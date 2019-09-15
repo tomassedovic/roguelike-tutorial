@@ -619,7 +619,7 @@ Now pass the key to `handle_keys` and remove the call to
 [source]
 ----
 tag::handle_keys_header[]
-fn handle_keys(tcod: &mut Tcod, game: &mut Game, objects: &mut [Object]) -> PlayerAction {  // <1>
+fn handle_keys(tcod: &mut Tcod, game: &mut Game, objects: &mut Vec<Object>) -> PlayerAction {  // <1>
 end::handle_keys_header[]
     ...
 tag::match_key_header[]

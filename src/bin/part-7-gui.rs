@@ -646,7 +646,7 @@ fn player_move_or_attack(dx: i32, dy: i32, game: &mut Game, objects: &mut [Objec
     }
 }
 
-fn handle_keys(tcod: &mut Tcod, game: &mut Game, objects: &mut [Object]) -> PlayerAction {
+fn handle_keys(tcod: &mut Tcod, game: &mut Game, objects: &mut Vec<Object>) -> PlayerAction {
     use tcod::input::KeyCode::*;
     use PlayerAction::*;
 

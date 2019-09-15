@@ -506,7 +506,7 @@ Change `handle_keys` to return `PlayerAction` instead of `bool`.
 [source]
 ----
 tag::handle_keys_header[]
-fn handle_keys(tcod: &mut Tcod, game: &Game, objects: &mut [Object]) -> PlayerAction {
+fn handle_keys(tcod: &mut Tcod, game: &Game, objects: &mut Vec<Object>) -> PlayerAction {
 end::handle_keys_header[]
    ...
 }
