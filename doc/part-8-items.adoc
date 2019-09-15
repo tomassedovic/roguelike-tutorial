@@ -108,15 +108,9 @@ To have the item find its way to player's inventory, we'll add a
 ----
 tag::pick_item_up_fn[]
 /// add to the player's inventory and remove from the map
-fn pick_item_up(
-    object_id: usize,
-    objects: &mut Vec<Object>,
-    inventory: &mut Vec<Object>,
-    messages: &mut Messages,
-) {
-    if inventory.len() >= 26 {
-        message(
-            messages,
+fn pick_item_up(object_id: usize, objects: &mut Vec<Object>, game: &mut Game) {
+    if game.inventory.len() >= 26 {
+        game.messages.add(
             format!(
                 "Your inventory is full, cannot pick up {}.",
                 objects[object_id].name
@@ -125,8 +119,9 @@ fn pick_item_up(
         );
     } else {
         let item = objects.swap_remove(object_id);
-        message(messages, format!("You picked up a {}!", item.name), GREEN);
-        inventory.push(item);
+        game.messages
+            .add(format!("You picked up a {}!", item.name), GREEN);
+        game.inventory.push(item);
     }
 }
 end::pick_item_up_fn[]
@@ -223,7 +218,7 @@ tag::handle_pick_up_key[]
         .iter()
         .position(|object| object.pos() == objects[PLAYER].pos() && object.item.is_some());
     if let Some(item_id) = item_id {
-        pick_item_up(item_id, objects, inventory, messages);
+        pick_item_up(item_id, objects, game);
     }
     DidntTakeTurn
 }
@@ -370,7 +365,7 @@ tag::menu_blit_window[]
 // blit the contents of "window" to the root console
 let x = SCREEN_WIDTH / 2 - width / 2;
 let y = SCREEN_HEIGHT / 2 - height / 2;
-tcod::console::blit(&mut window, (0, 0), (width, height), root, (x, y), 1.0, 0.7);
+blit(&window, (0, 0), (width, height), root, (x, y), 1.0, 0.7);
 end::menu_blit_window[]
 ----
 
@@ -492,39 +487,33 @@ the player changes their mind.
 ----
 tag::use_item_fn[]
 tag::use_item_header[]
-fn use_item(
-    inventory_id: usize,
-    inventory: &mut Vec<Object>,
-    objects: &mut [Object],
-    messages: &mut Messages,
-) {
+fn use_item(inventory_id: usize, tcod: &mut Tcod, game: &mut Game, objects: &mut [Object]) {
     use Item::*;
 end::use_item_header[]
 tag::use_item_get_function[]
     // just call the "use_function" if it is defined
-    if let Some(item) = inventory[inventory_id].item {
+    if let Some(item) = game.inventory[inventory_id].item {
 end::use_item_get_function[]
         let on_use = match item {
             Heal => cast_heal,
         };
 tag::use_item_match_use[]
-        match on_use(inventory_id, objects, messages) {
+        match on_use(inventory_id, tcod, game, objects) {
 end::use_item_match_use[]
 tag::use_item_process_result[]
             UseResult::UsedUp => {
                 // destroy after use, unless it was cancelled for some reason
-                inventory.remove(inventory_id);
+                game.inventory.remove(inventory_id);
             }
             UseResult::Cancelled => {
-                message(messages, "Cancelled", WHITE);
+                game.messages.add("Cancelled", WHITE);
             }
         }
 end::use_item_process_result[]
 tag::use_item_else[]
     } else {
-        message(
-            messages,
-            format!("The {} cannot be used.", inventory[inventory_id].name),
+        game.messages.add(
+            format!("The {} cannot be used.", game.inventory[inventory_id].name),
             WHITE,
         );
     }
@@ -560,14 +549,20 @@ Now let's add `cast_heal` for our potions to have effect!
 [source]
 ----
 tag::cast_heal_fn[]
-fn cast_heal(_inventory_id: usize, objects: &mut [Object], messages: &mut Messages) -> UseResult {
+fn cast_heal(
+    _inventory_id: usize,
+    _tcod: &mut Tcod,
+    game: &mut Game,
+    objects: &mut [Object],
+) -> UseResult {
     // heal the player
     if let Some(fighter) = objects[PLAYER].fighter {
         if fighter.hp == fighter.max_hp {
-            message(messages, "You are already at full health.", RED);
+            game.messages.add("You are already at full health.", RED);
             return UseResult::Cancelled;
         }
-        message(messages, "Your wounds start to feel better!", LIGHT_VIOLET);
+        game.messages
+            .add("Your wounds start to feel better!", LIGHT_VIOLET);
         objects[PLAYER].heal(HEAL_AMOUNT);
         return UseResult::UsedUp;
     }
@@ -617,12 +612,12 @@ tag::handle_inventory_key[]
 (Key { printable: 'i', .. }, true) => {
     // show the inventory: if an item is selected, use it
     let inventory_index = inventory_menu(
-        inventory,
+        &game.inventory,
         "Press the key next to an item to use it, or any other to cancel.\n",
-        root,
+        &mut tcod.root,
     );
     if let Some(inventory_index) = inventory_index {
-        use_item(inventory_index, inventory, objects, messages);
+        use_item(inventory_index, tcod, game, objects);
     }
     DidntTakeTurn
 }
