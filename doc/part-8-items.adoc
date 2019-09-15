@@ -79,7 +79,8 @@ And we need to add it to our `main` function where we initialise the `game` vari
 ----
 tag::game_init[]
 let mut game = Game {
-    map,
+    // generate map (at this point it's not drawn to the screen)
+    map: make_map(&mut objects),
     messages: Messages::new(),
     inventory: vec![],  // <1>
 };

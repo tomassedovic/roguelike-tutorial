@@ -173,6 +173,7 @@ empty `Ai` struct into an enum with two variants:
 ----
 tag::enum_ai[]
 #[derive(Clone, Debug, PartialEq)]
+tag::enum_ai_definition[]
 enum Ai {
     Basic,
     Confused {
@@ -180,6 +181,7 @@ enum Ai {
         num_turns: i32,
     },
 }
+end::enum_ai_definition[]
 end::enum_ai[]
 ----
 
@@ -657,12 +659,14 @@ If we try to compile it now, Rust will complain that there is no
 ----
 tag::enum_item[]
 #[derive(Clone, Copy, Debug, PartialEq)]
+tag::enum_item_definition[]
 enum Item {
     Heal,
     Lightning,
     Confuse,
     Fireball,
 }
+end::enum_item_definition[]
 end::enum_item[]
 ----
 

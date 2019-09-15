@@ -519,10 +519,10 @@ fn main() {
     // the list of objects with just the player
     let mut objects = vec![player];
 
-    // generate map (at this point it's not drawn to the screen)
-    let map = make_map(&mut objects);
-
-    let mut game = Game { map };
+    let mut game = Game {
+        // generate map (at this point it's not drawn to the screen)
+        map: make_map(&mut objects),
+    };
 
     // populate the FOV map, according to the generated map
     for y in 0..MAP_HEIGHT {

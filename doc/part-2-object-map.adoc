@@ -487,13 +487,11 @@ create it. In `main` before the game loop:
 
 [source,rust]
 ----
-tag::make_map[]
-// generate map (at this point it's not drawn to the screen)
-let map = make_map();
-end::make_map[]
-
 tag::game_init[]
-let game = Game { map };
+let game = Game {
+    // generate map (at this point it's not drawn to the screen)
+    map: make_map(),
+};
 end::game_init[]
 ----
 

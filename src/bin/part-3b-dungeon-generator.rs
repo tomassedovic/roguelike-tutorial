@@ -292,10 +292,10 @@ fn main() {
     // the list of objects with those two
     let mut objects = [player, npc];
 
-    // generate map (at this point it's not drawn to the screen)
-    let map = make_map(&mut objects[0]);
-
-    let game = Game { map };
+    let game = Game {
+        // generate map (at this point it's not drawn to the screen)
+        map: make_map(&mut objects[0]),
+    };
 
     while !tcod.root.window_closed() {
         // clear the screen of the previous frame

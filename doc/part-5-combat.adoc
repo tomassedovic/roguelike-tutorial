@@ -116,10 +116,12 @@ When we call `make_map` pass it a mutable reference to the entire `objects` list
 
 [source]
 ----
-tag::call_make_map[]
-// generate map (at this point it's not drawn to the screen)
-let map = make_map(&mut objects);
-end::call_make_map[]
+tag::game_init[]
+let mut game = Game {
+    // generate map (at this point it's not drawn to the screen)
+    map: make_map(&mut objects),
+};
+end::game_init[]
 ----
 
 Let's also remove the dummy NPC from the initial objects list. We

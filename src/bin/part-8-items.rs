@@ -959,11 +959,9 @@ fn main() {
     // the list of objects with just the player
     let mut objects = vec![player];
 
-    // generate map (at this point it's not drawn to the screen)
-    let map = make_map(&mut objects);
-
     let mut game = Game {
-        map,
+        // generate map (at this point it's not drawn to the screen)
+        map: make_map(&mut objects),
         messages: Messages::new(),
         inventory: vec![],
     };

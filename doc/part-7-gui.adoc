@@ -329,10 +329,11 @@ And we'll initialise it is `main`:
 fn main() {
     ...
 tag::game_init[]
-    let mut game = Game {
-        map,
-        messages: Messages::new(),  // <1>
-    };
+let mut game = Game {
+    // generate map (at this point it's not drawn to the screen)
+    map: make_map(&mut objects),
+    messages: Messages::new(),  // <1>
+};
 end::game_init[]
     ...
 }

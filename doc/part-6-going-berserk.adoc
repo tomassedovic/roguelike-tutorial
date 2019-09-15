@@ -415,8 +415,11 @@ parameter when creating a `Fighter` instance.
 [source]
 ----
 tag::fighter_struct_with_cb[]
+tag::fighter_struct_doc[]
 // combat-related properties and methods (monster, player, NPC).
+end::fighter_struct_doc[]
 #[derive(Clone, Copy, Debug, PartialEq)]
+tag::fighter_struct_definition[]
 struct Fighter {
     max_hp: i32,
     hp: i32,
@@ -424,6 +427,7 @@ struct Fighter {
     power: i32,
     on_death: DeathCallback,  // <1>
 }
+end::fighter_struct_definition[]
 end::fighter_struct_with_cb[]
 ----
 <1> New `on_death` callback field
@@ -434,10 +438,12 @@ Let us define the callback as well:
 ----
 tag::death_callback_enum[]
 #[derive(Clone, Copy, Debug, PartialEq)]
+tag::death_callback_enum_definition[]
 enum DeathCallback {
     Player,
     Monster,
 }
+end::death_callback_enum_definition[]
 end::death_callback_enum[]
 ----
 

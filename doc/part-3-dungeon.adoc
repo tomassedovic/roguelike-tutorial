@@ -361,10 +361,12 @@ tag::place_player_generic[]
 let player = Object::new(0, 0, '@', WHITE);
 end::place_player_generic[]
 
-tag::make_map[]
-// generate map (at this point it's not drawn to the screen)
-let map = make_map(&mut objects[0]);
-end::make_map[]
+tag::game_init[]
+let game = Game {
+    // generate map (at this point it's not drawn to the screen)
+    map: make_map(&mut objects[0]),
+};
+end::game_init[]
 ----
 
 Now let's get back to our dungeon generator and make sure we add

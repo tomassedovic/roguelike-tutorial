@@ -264,13 +264,17 @@ start unexplored. Put this in the definition of the `Tile` struct:
 [source,rust]
 ----
 tag::tile_struct[]
+tag::tile_struct_doc[]
 /// A tile of the map and its properties
+end::tile_struct_doc[]
 #[derive(Clone, Copy, Debug)]
+tag::tile_struct_definition[]
 struct Tile {
     blocked: bool,
     explored: bool,  // <1>
     block_sight: bool,
 }
+end::tile_struct_definition[]
 end::tile_struct[]
 ----
 <1> Adde the `explored` field
@@ -332,7 +336,10 @@ we need to make the `game` variable mutable:
 [source,rust]
 ----
 tag::game_init[]
-let mut game = Game { map };
+let mut game = Game {
+    // generate map (at this point it's not drawn to the screen)
+    map: make_map(&mut objects[0]),
+};
 end::game_init[]
 ----
 
