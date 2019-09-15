@@ -101,7 +101,7 @@ fn main() {
 
         // blit the contents of "con" to the root console and present it
         blit(
-            &mut tcod.con,
+            &tcod.con,
             (0, 0),
             (SCREEN_WIDTH, SCREEN_HEIGHT),
             &mut tcod.root,

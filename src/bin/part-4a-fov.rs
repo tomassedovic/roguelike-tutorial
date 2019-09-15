@@ -259,7 +259,7 @@ fn render_all(tcod: &mut Tcod, game: &Game, objects: &[Object], fov_recompute: b
 
     // blit the contents of "con" to the root console
     blit(
-        &mut tcod.con,
+        &tcod.con,
         (0, 0),
         (MAP_WIDTH, MAP_HEIGHT),
         &mut tcod.root,

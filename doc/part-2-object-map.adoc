@@ -76,7 +76,7 @@ top-left corner) and finally a foreground and background transparency
 tag::blit[]
 // blit the contents of "con" to the root console and present it
 blit(
-    &mut tcod.con,
+    &tcod.con,
     (0, 0),
     (SCREEN_WIDTH, SCREEN_HEIGHT),
     &mut tcod.root,
@@ -451,7 +451,7 @@ And let's move the `blit` call to the end of `render_all`:
 tag::render_blit[]
 // blit the contents of "con" to the root console
 blit(
-    &mut tcod.con,
+    &tcod.con,
     (0, 0),
     (MAP_WIDTH, MAP_HEIGHT),
     &mut tcod.root,
