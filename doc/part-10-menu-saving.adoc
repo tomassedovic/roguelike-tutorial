@@ -14,238 +14,6 @@ their long playing sessions. One of the most important is, of course,
 a save/load mechanism! This way they can go to sleep and dream about
 your scary monsters between play sessions.
 
-== The Game struct
-
-Before we get to the meat of this, we'll do something that will make
-our lives a bit easier -- we'll put some more items into a common
-`struct` that we'll pass around! We've already done that for the
-libtcod-related stuff and now let's add the rest!
-
-Create this struct:
-
-[source]
-----
-struct Game {
-    map: Map,
-    log: Messages,
-    inventory: Vec<Object>,
-}
-----
-
-So right now it'll just hold the map, the message log and the inventory.
-We'll add more things later on, but let's start small.
-
-Now let's move our initialisation code under this struct. In `main`:
-
-[source]
-----
-let mut game = Game {
-    // generate map (at this point it's not drawn to the screen)
-    map: make_map(&mut objects),
-    // create the list of game messages and their colors, starts empty
-    log: vec![],
-    inventory: vec![],
-};
-----
-
-You can now remove the individual variables for `map`, `messages` and
-`inventory` and try to compile. This will of course show errors where
-we refer to the removed variables so let's use those to fix the `main`
-function.
-
-Basically, we'll replace all mentions of `map` with `game.map`, `messages`
-with `&mut game.log` and so on.
-
-For example the FoV map code now looks like this:
-
-[source]
-----
-for y in 0..MAP_HEIGHT {
-    for x in 0..MAP_WIDTH {
-        tcod.fov.set(
-            x,
-            y,
-            !map[x as usize][y as usize].block_sight,
-            !map[x as usize][y as usize].blocked,
-        );
-    }
-}
-----
-
-And the "welcoming" message:
-
-[source]
-----
-message(&mut game.log, "Welcome stranger! Prepare to perish in the Tombs of the Ancient Kings.",
-        colors::RED);
-----
-
-There's about 8 more things to fix. After that we should be compiling
-again, but it doesn't seem like really helped anything.
-
-So let's update the rest of the code to take advantage of our
-newfangled `Game` struct!
-
-For example, let's update our `render_all` call to just pass `Game` once:
-
-[source]
-----
-render_all(&mut tcod, &objects, &mut game, fov_recompute);
-----
-
-And then change the function signature:
-
-[source]
-----
-fn render_all(tcod: &mut Tcod, objects: &[Object], game: &mut Game, fov_recompute: bool) {
-    // ...
-}
-----
-
-And (you guessed it!) *let the compiler guide you*.
-
-As you'll notice, this will actually requires to change a lot more
-than just the `render_all` function. That is because some of the
-spells call `target_tile` which has it's own separate game loop. While
-that's OK in this tutorial, you can see how coupled it makes the rest
-of the code.
-
-Think about ways of solving this with a single game loop running in
-`main`, but we won't bother here because it would make the tutorial
-even longer.
-
-Since this touches a lot of it'll take a while to fix although the
-changes are mostly mechanical -- just pass `&mut Game` to functions
-that take e.g. inventory and the message log and fix the same whenever
-they're being called.
-
-For example this is what `use_item` looks like now:
-
-[source]
-----
-fn use_item(inventory_id: usize, objects: &mut [Object], game: &mut Game, tcod: &mut Tcod) {  // <1>
-    use Item::*;
-    // just call the "use_function" if it is defined
-    if let Some(item) = game.inventory[inventory_id].item {  // <2>
-        let on_use = match item {  // <3>
-            Heal => cast_heal,
-            Lightning => cast_lightning,
-            Confuse => cast_confuse,
-            Fireball => cast_fireball,
-        };
-        match on_use(inventory_id, objects, game, tcod) {  // <4>
-            UseResult::UsedUp => {
-                // destroy after use, unless it was cancelled for some reason
-                game.inventory.remove(inventory_id);
-            }
-            UseResult::Cancelled => {
-                message(&mut game.log, "Cancelled", colors::WHITE);  // <5>
-            }
-        }
-    } else {
-        message(&mut game.log,
-                format!("The {} cannot be used.", game.inventory[inventory_id].name),
-                colors::WHITE);
-    }
-}
-----
-<1> Replace `inventory` and `messages` with `game`
-<2> `inventory` is now `game.inventory`
-<3> Replace the inventory and messages types with `&mut Game`
-<4> Pass just `game` to on_use
-<5> `messages` is now `&mut game.log`
-
-And `handle_keys` calls it like so:
-
-[source]
-----
-use_item(inventory_index, objects, game, tcod);
-----
-
-Once you get things compiling, everything should work again. If you're
-struggling, take a look at link:part-10-menu-saving.rs.txt[the
-complete code for this section].
-
-After this, you can either stop or keep going as there are a few more
-functions that could take `Game` instead: the `ai_take_turn`,
-`ak_basic` and `ai_confused` are good examples, but we might as well
-go all the way: `take_damage`, `attack`, etc.
-
-
-And once you've done all that, let's simplify the way we log our
-messages. Right now, you have to write:
-
-[source]
-----
-message(&mut game.log, "You died!", colors::RED);
-----
-
-We can simplify that to:
-
-[source]
-----
-game.log.add("You died!", colors::RED);
-----
-
-NOTE: We could just have `game.log("message", colour)` by adding a
-`log` method on the `Game` struct, but that would
-conflict with Rust's mutability rules. Consider what would happen if
-you wanted to e.g. iterate over all items in the inventory and call
-`game.log()` while in the loop. We didn't include the `objects` vec
-in `Game` for the same reason.
-
-So, to do that, we have two options: either create a new type that
-wraps the underlying `Vec<(String, Color)>` and has the `add()` method
-(_BORING_) or *we put the method the vec type directly*. I know,
-right?
-
-Rust lets you implement traits to types you don't control (e.g.
-because they come from the standard library like our `Vec`) assuming
-you control the trait.
-
-So we create a `MessageLog` trait with the `add` method:
-
-[source]
-----
-trait MessageLog {
-    fn add<T: Into<String>>(&mut self, message: T, color: Color);
-}
-----
-
-Traits are like interfaces in Java and other languages: they describe
-a group of method signatures that a type implementing the trait needs
-to have.
-
-If we implement the trait for a concrete type, it will be able to call
-those methods and we can pass it to functions that expect that trait.
-
-So:
-
-[source]
-----
-impl MessageLog for Vec<(String, Color)> {
-    fn add<T: Into<String>>(&mut self, message: T, color: Color) {
-        self.push((message.into(), color));
-    }
-}
-----
-
-This is basically the same thing as our `message` function does,
-except it's a method (so it takes an explicit `&mut self`) and we
-don't bother with the message count check.
-
-And now, we can just add messages to the log by calling:
-
-[source]
-----
-game.log.add("some message", color::WHITE);
-----
-
-This will mean changing all the message-printing code. You know what's
-a great way to do this? Remove the `message` function and _let the
-compiler guide you_.
-
-
 == Tidy initialization
 
 To choose between continuing a previous game or starting a new one we
@@ -279,40 +47,27 @@ tasks like loading the game or moving to a new level:
 Let's put everything from `main` except for the system initialisation
 and the main loop into a `new_game` function:
 
-[source]
+[source,subs="normal"]
 ----
-fn new_game(tcod: &mut Tcod) -> (Vec<Object>, Game) {
-    // create object representing the player
-    let mut player = Object::new(0, 0, '@', "player", colors::WHITE, true);
-    player.alive = true;
-    player.fighter = Some(Fighter {
-        max_hp: 30,
-        hp: 30,
-        defense: 2,
-        power: 5,
-        on_death: DeathCallback::Player,
-    });
+tag::new_game_header[]
+fn new_game(tcod: &mut Tcod) -> (Game, Vec<Object>) {
+end::new_game_header[]
+include::part-5-combat.adoc[tag=create_player,indent=4]
+include::part-6-going-berserk.adoc[tag=player_fighter_cb,indent=4]
 
-    // the list of objects with just the player
-    let mut objects = vec![player];
+include::part-5-combat.adoc[tag=create_objects_list,indent=4]
 
-    let mut game = Game {
-        // generate map (at this point it's not drawn to the screen)
-        map: make_map(&mut objects),
-        // create the list of game messages and their colors, starts empty
-        log: vec![],
-        inventory: vec![],
-    };
+include::part-8-items.adoc[tag=game_init,indent=4]
 
-    initialise_fov(&game.map, tcod);
+tag::call_initialise_fov[]
+    initialise_fov(tcod, &game.map);
+end::call_initialise_fov[]
 
-    // a warm welcoming message!
-    game.log.add(
-        "Welcome stranger! Prepare to perish in the Tombs of the Ancient Kings.",
-        colors::RED,
-    );
+include::part-7-gui.adoc[tag=welcome_message,indent=4]
 
-    (objects, game)
+tag::new_game_return[]
+    (game, objects)
+end::new_game_return[]
 }
 ----
 
@@ -324,7 +79,8 @@ the FOV-related code to it:
 
 [source]
 ----
-fn initialise_fov(map: &Map, tcod: &mut Tcod) {
+tag::initialise_fov_fn[]
+fn initialise_fov(tcod: &mut Tcod, map: &Map) {
     // create the FOV map, according to the generated map
     for y in 0..MAP_HEIGHT {
         for x in 0..MAP_WIDTH {
@@ -336,6 +92,7 @@ fn initialise_fov(map: &Map, tcod: &mut Tcod) {
             );
         }
     }
+    end::initialise_fov_fn[]
 }
 ----
 
@@ -344,7 +101,7 @@ function as well:
 
 [source]
 ----
-fn play_game(objects: &mut Vec<Object>, game: &mut Game, tcod: &mut Tcod) {
+fn play_game(tcod: &mut Tcod, game: &mut Game, objects: &mut Vec<Object>) {
     // force FOV "recompute" first time through the game loop
     let mut previous_player_position = (-1, -1);
 
@@ -391,24 +148,14 @@ And now we just call `new_game` and `play_game` from our slimmed-down
 [source]
 ----
 fn main() {
-    let root = Root::initializer()
-        .font("arial10x10.png", FontLayout::Tcod)
-        .font_type(FontType::Greyscale)
-        .size(SCREEN_WIDTH, SCREEN_HEIGHT)
-        .title("Rust/libtcod tutorial")
-        .init();
-    tcod::system::set_fps(LIMIT_FPS);
+include::part-1-graphics.adoc[tag=set_fps,indent=4]
 
-    let mut tcod = Tcod {
-        root: root,
-        con: Offscreen::new(MAP_WIDTH, MAP_HEIGHT),
-        panel: Offscreen::new(SCREEN_WIDTH, PANEL_HEIGHT),
-        fov: FovMap::new(MAP_WIDTH, MAP_HEIGHT),
-        mouse: Default::default(),
-    };
+include::part-1-graphics.adoc[tag=init,indent=4]
 
-    let (mut objects, mut game) = new_game(&mut tcod);
-    play_game(&mut objects, &mut game, &mut tcod);
+include::part-7-gui.adoc[tag=tcod_init,indent=4]
+
+    let (mut game, mut objects) = new_game(&mut tcod);
+    play_game(&mut tcod, &mut game, &mut objects);
 }
 ----
 
@@ -491,7 +238,9 @@ Now replace the calls to `new_game` and `play_game` in `main` with:
 
 [source]
 ----
+tag::call_main_menu[]
 main_menu(&mut tcod);
+end::call_main_menu[]
 ----
 
 If you try it out now, you'll see a nice menu with a dungeon-y
@@ -529,12 +278,15 @@ To make the line go away, we need to check that condition in the
 
 [source]
 ----
+tag::menu_calculate_header[]
 // calculate total height for the header (after auto-wrap) and one line per option
 let header_height = if header.is_empty() {
     0
 } else {
     root.get_height_rect(0, 0, width, SCREEN_HEIGHT, header)
 };
+let height = options.len() as i32 + header_height;
+end::menu_calculate_header[]
 ----
 
 Finally, when you start a game, go back to the main menu with Escape
@@ -546,11 +298,13 @@ At the end of `initialise_fov`:
 
 [source]
 ----
-tcod.con.clear();  // unexplored areas start black (which is the default background color)
+tag::initialise_fov_con_clear[]
+// unexplored areas start black (which is the default background color)
+tcod.con.clear();
+end::initialise_fov_con_clear[]
 ----
 
 There it is, a neat main menu, and with only a handful of lines of code!
-
 
 
 == Saving and loading
@@ -569,20 +323,21 @@ and loading quite painless. Here's the teaser:
 
 [source]
 ----
-fn save_game(objects: &[Object], game: &Game) -> Result<(), Box<Error>> {  // <1><2>
-    let save_data = serde_json::to_string(&(objects, game))?;  // <3>
-    let mut file = File::create("savegame")?;  // <4>
-    file.write_all(save_data.as_bytes())?;  // <5>
-    Ok(())  // <6>
+tag::save_game_fn[]
+fn save_game(game: &Game, objects: &[Object]) -> Result<(), Box<dyn Error>> {  // <1>
+    let save_data = serde_json::to_string(&(game, objects))?;  // <2>
+    let mut file = File::create("savegame")?;  // <3>
+    file.write_all(save_data.as_bytes())?;  // <4>
+    Ok(())  // <5>
 }
+end::save_game_fn[]
 ----
-<1> save `objects` and `game` -- they contain all our game state
-<2> the saving could fail so return a `Result` which could be `Ok` or `Err`
-<3> convert both `objects` and `game` into json
-<4> create a file called "savegame" -- that's where we'll write the
+<1> save `game` and `objects` -- they contain all our game state. The saving can fail so return a `Result` which could be `Ok` or `Err`
+<2> convert both `objects` and `game` into json
+<3> create a file called "savegame" -- that's where we'll write the
 game state
-<5> write the json-ified game state to the file
-<6> if nothing went wrong return `Ok`, indicating success
+<4> write the json-ified game state to the file
+<5> if nothing went wrong return `Ok`, indicating success
 
 :json: https://en.wikipedia.org/wiki/JSON
 
@@ -600,49 +355,47 @@ and we'll also enable the "serialization" feature in the _tcod_ crate:
 [source,toml]
 ----
 [dependencies]
-tcod = { version = "0.12", features = ["serialization"] }
+tcod = { version = "0.15", features = ["serialization"] }
 rand = "0.3"
-serde = "1.0"
-serde_derive = "1.0"
+serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 ----
 
 The `serde` crate provides the main functionality for serializing and
 deserializing of Rust data. This includes the `Serialize` and
 `Deserialize` traits which describe what to do for a given
-struct/enum/whatever. `serde_derive` provides a way to *derive* those
+struct/enum/whatever. The optional `derive` feature provides a way to *derive* those
 traits so we don't need to implement them ourselves and finally
 `serde_json` converts any serializable struct to and from JSON. If we
 wanted to use a different format (YAML, TOML or anything else, we'd
 replace this crate with another one that supports what you want).
 
-Now let's add the crate to our source code, including the `save_game`
+Now let's add those traits our source code, including the `save_game`
 function and try to compile:
 
 [source]
 ----
-#[macro_use]
-extern crate serde_derive;
-
-// the existing imports
-use std::io::{Read, Write};
-use std::fs::File;
+tag::use_error[]
 use std::error::Error;
+end::use_error[]
+tag::use_io[]
+use std::fs::File;
+use std::io::{Read, Write};
+end::use_io[]
+
+tag::use_serde[]
+use serde::{Deserialize, Serialize};
+end::use_serde[]
 ----
 
-Note the `macro_use` attribute in front of the `serde_derive`. The
-functionality provided by the crate is in form of macros. And if we
-want to use macros provided by another crate, we need to say so in the
-`extern` statement.
-
-Unfortunately, it will fail:
+Unfortunately, the compilation will fail:
 
 ----
    Compiling roguelike-tutorial v0.1.0 (file:///home/thomas/personal/code/roguelike-tutorial)
 error[E0277]: the trait bound `Game: serde::Serialize` is not satisfied
     --> src/bin/part-10-menu-saving.rs:1140:28
      |
-1140 |     let save_data = serde_json::to_string(&(objects, game))?;
+1140 |     let save_data = serde_json::to_string(&(game, objects))?;
      |                     ^^^^^^^^^^^^^^^^^^^^^ the trait `serde::Serialize` is not implemented for `Game`
      |
      = note: required because of the requirements on the impl of `serde::Serialize` for `&Game`
@@ -671,15 +424,68 @@ struct Game {
 
 If you try to compile it now, you'll see that the complaint has
 shifted from `Game` to `Object`. We'll need to derive `Serialize`
-for every struct and enum we'll be saving:
+for every struct and enum we'll be saving.
 
-* Game
-* Object
-* Tile
-* Fighter
-* DeathCallback
-* Ai
-* Item
+There is a complementary trait called `Deserialize` which goes the other way:
+from a serialised representation to a struct.
+
+So let's add them all at once:
+
+[source]
+----
+tag::derive_serde_traits[]
+#[derive(Serialize, Deserialize)]
+end::derive_serde_traits[]
+struct Messages {
+    ...
+}
+
+include::part-10-menu-saving.adoc[tag=derive_serde_traits]
+struct Game {
+    ...
+}
+
+include::part-4-fov-exploration.adoc[tag=tile_struct_doc]
+tag::derive_copy_debug_serde_traits[]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+end::derive_copy_debug_serde_traits[]
+struct Tile {
+    ...
+}
+
+include::part-2-object-map.adoc[tag=object_doc_comment]
+tag::derive_debug_serde_traits[]
+#[derive(Debug, Serialize, Deserialize)]
+end::derive_debug_serde_traits[]
+struct Object {
+    ...
+}
+
+include::part-6-going-berserk.adoc[tag=fighter_struct_doc]
+tag::derive_copy_eq_serde_traits[]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+end::derive_copy_eq_serde_traits[]
+struct Fighter {
+    ...
+}
+
+include::part-10-menu-saving.adoc[tag=derive_copy_eq_serde_traits]
+enum DeathCallback {
+    ...
+}
+
+tag::derive_clone_eq_serde_traits[]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+end::derive_clone_eq_serde_traits[]
+enum Ai {
+    ...
+}
+
+include::part-10-menu-saving.adoc[tag=derive_copy_eq_serde_traits]
+enum Item {
+    ...
+}
+----
 
 It's a bit of a bother but not the end of the world. After that, our
 code should be compiling, though it will warn that `save_game` is not
@@ -692,7 +498,7 @@ game, so we'll call `save_game` in `play_game` right before the
 [source]
 ----
 if player_action == PlayerAction::Exit {
-    save_game(objects, game);
+    save_game(game, objects);
     break
 }
 ----
@@ -707,13 +513,15 @@ it have? We need to add a `load_game` function, too:
 
 [source]
 ----
-fn load_game() -> Result<(Vec<Object>, Game), Box<Error>> {
+tag::load_game_fn[]
+fn load_game() -> Result<(Game, Vec<Object>), Box<dyn Error>> {
     let mut json_save_state = String::new();
     let mut file = File::open("savegame")?;
     file.read_to_string(&mut json_save_state)?;
-    let result = serde_json::from_str::<(Vec<Object>, Game)>(&json_save_state)?;
+    let result = serde_json::from_str::<(Game, Vec<Object>)>(&json_save_state)?;
     Ok(result)
 }
+end::load_game_fn[]
 ----
 
 It's basically just the reverse of `save_game`: we read the save file
@@ -789,7 +597,7 @@ to
 
 [source]
 ----
-fn save_game(objects: &[Object], game: &Game) -> Result<(), Box<Error>> {
+fn save_game(game: &Game, objects: &[Object]) -> Result<(), Box<dyn Error>> {
   ...
   let mut file = match File::create("savegame") {
       Ok(f) => f,
@@ -846,9 +654,9 @@ We could just print a message and let the player start a new game instead:
 ----
 Some(1) => {  // load game
     match load_game() {
-        Ok((mut objects, mut game)) => {
-            initialise_fov(&game.map, &mut tcod.fov);
-            play_game(&mut objects, &mut game, tcod);
+        Ok((mut game, mut objects)) => {
+            initialise_fov(tcod, &game.map);
+            play_game(tcod, &mut game, &mut objects);
         }
         Err(_e) => {
             msgbox("\nNo saved game to load.\n", 24, &mut tcod.root);
@@ -863,10 +671,12 @@ do all the heavy lifting:
 
 [source]
 ----
+tag::msgbox_fn[]
 fn msgbox(text: &str, width: i32, root: &mut Root) {
     let options: &[&str] = &[];
     menu(text, options, width, root);
 }
+end::msgbox_fn[]
 ----
 
 And that's it! The actual saving and loading code was quite small, but
