@@ -1374,15 +1374,15 @@ fn main_menu(tcod: &mut Tcod) {
         match choice {
             Some(0) => {
                 // new game
-                let (mut objects, mut game) = new_game(tcod);
+                let (mut game, mut objects) = new_game(tcod);
                 play_game(tcod, &mut game, &mut objects);
             }
             Some(1) => {
                 // load game
                 match load_game() {
-                    Ok((mut objects, mut game)) => {
-                        initialise_fov(&game.map, tcod);
-                        play_game(&mut objects, &mut game, tcod);
+                    Ok((mut game, mut objects)) => {
+                        initialise_fov(tcod, &game.map);
+                        play_game(tcod, &mut game, &mut objects);
                     }
                     Err(_e) => {
                         msgbox("\nNo saved game to load.\n", 24, &mut tcod.root);

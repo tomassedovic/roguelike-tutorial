@@ -99,45 +99,43 @@ fn initialise_fov(tcod: &mut Tcod, map: &Map) {
 Finally, the game loop and the few bits before it belong to their own
 function as well:
 
-[source]
+[source,subs="normal"]
 ----
+tag::play_game_header[]
 fn play_game(tcod: &mut Tcod, game: &mut Game, objects: &mut Vec<Object>) {
-    // force FOV "recompute" first time through the game loop
-    let mut previous_player_position = (-1, -1);
+end::play_game_header[]
+include::part-4-fov-exploration.adoc[tag=init_previous_player_pos,indent=4]
 
-    let mut key = Default::default();
+include::part-1-graphics.adoc[tag=game_loop_while_header,indent=4]
+include::part-2-object-map.adoc[tag=clear_offscreen_console,indent=8]
 
-    while !tcod.root.window_closed() {
-        // clear the screen of the previous frame
-        tcod.con.clear();
+include::part-7-gui.adoc[tag=check_for_event,indent=8]
 
-        match input::check_for_event(input::MOUSE | input::KEY_PRESS) {
-            Some((_, Event::Mouse(m))) => tcod.mouse = m,
-            Some((_, Event::Key(k))) => key = k,
-            _ => key = Default::default(),
-        }
+include::part-5-combat.adoc[tag=check_fov_recompute,indent=8]
+tag::call_render_all[]
+        render_all(tcod, game, &objects, fov_recompute);
+end::call_render_all[]
 
-        // render the screen
-        let fov_recompute = previous_player_position != (objects[PLAYER].pos());
-        render_all(tcod, &objects, game, fov_recompute);
+include::part-1-graphics.adoc[tag=root_flush,indent=8]
 
-        tcod.root.flush();
-
-        // handle keys and exit game if needed
-        previous_player_position = objects[PLAYER].pos();
-        let player_action = handle_keys(key, tcod, objects, game);
+include::part-7-gui.adoc[tag=previous_player_position,indent=8]
+tag::call_handle_keys[]
+        let player_action = handle_keys(tcod, game, objects);
+end::call_handle_keys[]
         if player_action == PlayerAction::Exit {
-            break
+            break;
         }
 
+tag::monsters_take_turn[]
         // let monsters take their turn
         if objects[PLAYER].alive && player_action != PlayerAction::DidntTakeTurn {
             for id in 0..objects.len() {
                 if objects[id].ai.is_some() {
-                    ai_take_turn(id, objects, game, &tcod.fov);
+                    ai_take_turn(id, tcod, game, objects);
                 }
             }
         }
+end::monsters_take_turn[]
     }
 }
 ----
@@ -200,29 +198,39 @@ tutorial].
 
 [source]
 ----
+tag::main_menu_setup[]
 fn main_menu(tcod: &mut Tcod) {
-    let img = tcod::image::Image::from_file("menu_background.png") <1>
+    let img = tcod::image::Image::from_file("menu_background.png") // <1>
         .ok()
-        .expect("Background image not found"); <2>
+        .expect("Background image not found");  // <2>
 
     while !tcod.root.window_closed() {  // <3>
         // show the background image, at twice the regular console resolution
         tcod::image::blit_2x(&img, (0, 0), (-1, -1), &mut tcod.root, (0, 0));
+end::main_menu_setup[]
 
+tag::main_menu_show_options[]
         // show options and wait for the player's choice
         let choices = &["Play a new game", "Continue last game", "Quit"];
         let choice = menu("", choices, 24, &mut tcod.root);
+end::main_menu_show_options[]
 
+tag::main_menu_new_game_choice[]
         match choice {  // <4>
-            Some(0) => {  // new game
-                let (mut objects, mut game) = new_game(tcod);
-                play_game(&mut objects, &mut game, tcod);
+            Some(0) => {
+                // new game
+                let (mut game, mut objects) = new_game(tcod);
+                play_game(tcod, &mut game, &mut objects);
             }
-            Some(2) => {  // quit
+end::main_menu_new_game_choice[]
+tag::main_menu_quit_game_choice[]
+            Some(2) => {
+                // quit
                 break;
             }
             _ => {}  // <5>
         }
+end::main_menu_quit_game_choice[]
     }
 }
 ----
@@ -252,7 +260,8 @@ to modify the values. Put this in the `main_menu` before calling the
 
 [source]
 ----
-tcod.root.set_default_foreground(colors::LIGHT_YELLOW);
+tag::main_menu_text[]
+tcod.root.set_default_foreground(LIGHT_YELLOW);
 tcod.root.print_ex(
     SCREEN_WIDTH / 2,
     SCREEN_HEIGHT / 2 - 4,
@@ -267,6 +276,7 @@ tcod.root.print_ex(
     TextAlignment::Center,
     "By Yours Truly",
 );
+end::main_menu_text[]
 ----
 
 You'll notice that the menu rectangle starts with a blank line. That
@@ -497,10 +507,12 @@ game, so we'll call `save_game` in `play_game` right before the
 
 [source]
 ----
+tag::handle_player_action[]
 if player_action == PlayerAction::Exit {
-    save_game(game, objects);
-    break
+    save_game(game, objects).unwrap();
+    break;
 }
+end::handle_player_action[]
 ----
 
 If you run the game now and then quit it, you should see a new file
@@ -534,7 +546,8 @@ In `main_menu` we'll handle the load game choice now:
 ----
 match choice {
     Some(0) => {  // new game ... }
-    Some(1) => {  // load game
+    Some(1) => {
+        // load game
         let (mut objects, mut game) = load_game().unwrap();
         initialise_fov(&game.map, &mut tcod.fov);
         play_game(&mut objects, &mut game, tcod);
@@ -652,7 +665,9 @@ We could just print a message and let the player start a new game instead:
 
 [source]
 ----
-Some(1) => {  // load game
+tag::main_menu_load_game_choice[]
+Some(1) => {
+    // load game
     match load_game() {
         Ok((mut game, mut objects)) => {
             initialise_fov(tcod, &game.map);
@@ -664,6 +679,7 @@ Some(1) => {  // load game
         }
     }
 }
+end::main_menu_load_game_choice[]
 ----
 
 And we'll add a function to display messages that relies on `menu` to

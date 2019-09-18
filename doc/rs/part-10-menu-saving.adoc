@@ -343,10 +343,42 @@ include::../part-10-menu-saving.adoc[tag=initialise_fov_fn]
 include::../part-10-menu-saving.adoc[tag=initialise_fov_con_clear,indent=4]
 }
 
+include::../part-10-menu-saving.adoc[tag=play_game_header]
+include::../part-4-fov-exploration.adoc[tag=init_previous_player_pos,indent=4]
+
+include::../part-1-graphics.adoc[tag=game_loop_while_header,indent=4]
+include::../part-2-object-map.adoc[tag=clear_offscreen_console,indent=8]
+
+include::../part-7-gui.adoc[tag=check_for_event,indent=8]
+
+include::../part-5-combat.adoc[tag=check_fov_recompute,indent=8]
+include::../part-10-menu-saving.adoc[tag=call_render_all,indent=8]
+
+include::../part-1-graphics.adoc[tag=root_flush,indent=8]
+
+include::../part-7-gui.adoc[tag=previous_player_position,indent=8]
+include::../part-10-menu-saving.adoc[tag=call_handle_keys,indent=8]
+include::../part-10-menu-saving.adoc[tag=handle_player_action,indent=8]
+
+include::../part-10-menu-saving.adoc[tag=monsters_take_turn,indent=8]
+    }
+}
 
 include::../part-10-menu-saving.adoc[tag=save_game_fn]
 
 include::../part-10-menu-saving.adoc[tag=load_game_fn]
+
+include::../part-10-menu-saving.adoc[tag=main_menu_setup]
+
+include::../part-10-menu-saving.adoc[tag=main_menu_text,indent=8]
+
+include::../part-10-menu-saving.adoc[tag=main_menu_show_options]
+
+include::../part-10-menu-saving.adoc[tag=main_menu_new_game_choice]
+include::../part-10-menu-saving.adoc[tag=main_menu_load_game_choice,indent=12]
+include::../part-10-menu-saving.adoc[tag=main_menu_quit_game_choice]
+    }
+}
 
 fn main() {
 include::../part-1-graphics.adoc[tag=set_fps,indent=4]
