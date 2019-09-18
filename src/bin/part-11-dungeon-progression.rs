@@ -329,7 +329,7 @@ fn mut_two<T>(first_index: usize, second_index: usize, items: &mut [T]) -> (&mut
 }
 
 /// add to the player's inventory and remove from the map
-fn pick_item_up(object_id: usize, objects: &mut Vec<Object>, game: &mut Game) {
+fn pick_item_up(object_id: usize, game: &mut Game, objects: &mut Vec<Object>) {
     if game.inventory.len() >= 26 {
         game.messages.add(
             format!(
@@ -354,7 +354,7 @@ fn is_blocked(x: i32, y: i32, map: &Map, objects: &[Object]) -> bool {
     // now check for any blocking objects
     objects
         .iter()
-        .any(|object| object.blocks && object.x == x && object.y == y)
+        .any(|object| object.blocks && object.pos() == (x, y))
 }
 
 // combat-related properties and methods (monster, player, NPC).
@@ -377,7 +377,7 @@ enum DeathCallback {
 impl DeathCallback {
     fn callback(self, object: &mut Object, game: &mut Game) {
         use DeathCallback::*;
-        let callback: fn(&mut Object, &mut Game) = match self {
+        let callback = match self {
             Player => player_death,
             Monster => monster_death,
         };
@@ -435,7 +435,7 @@ fn ai_confused(
 ) -> Ai {
     if num_turns >= 0 {
         // still confused ...
-        // move in a random idrection, and decrease the number of turns confused
+        // move in a random direction, and decrease the number of turns confused
         move_by(
             monster_id,
             rand::thread_rng().gen_range(-1, 2),
@@ -470,7 +470,7 @@ enum UseResult {
     Cancelled,
 }
 
-fn use_item(inventory_id: usize, objects: &mut [Object], game: &mut Game, tcod: &mut Tcod) {
+fn use_item(inventory_id: usize, tcod: &mut Tcod, game: &mut Game, objects: &mut [Object]) {
     use Item::*;
     // just call the "use_function" if it is defined
     if let Some(item) = game.inventory[inventory_id].item {
@@ -480,7 +480,7 @@ fn use_item(inventory_id: usize, objects: &mut [Object], game: &mut Game, tcod: 
             Confuse => cast_confuse,
             Fireball => cast_fireball,
         };
-        match on_use(inventory_id, objects, game, tcod) {
+        match on_use(inventory_id, tcod, game, objects) {
             UseResult::UsedUp => {
                 // destroy after use, unless it was cancelled for some reason
                 game.inventory.remove(inventory_id);
@@ -497,7 +497,7 @@ fn use_item(inventory_id: usize, objects: &mut [Object], game: &mut Game, tcod: 
     }
 }
 
-fn drop_item(inventory_id: usize, objects: &mut Vec<Object>, game: &mut Game) {
+fn drop_item(inventory_id: usize, game: &mut Game, objects: &mut Vec<Object>) {
     let mut item = game.inventory.remove(inventory_id);
     item.set_pos(objects[PLAYER].x, objects[PLAYER].y);
     game.messages
@@ -509,8 +509,8 @@ fn drop_item(inventory_id: usize, objects: &mut Vec<Object>, game: &mut Game) {
 /// range), or (None,None) if right-clicked.
 fn target_tile(
     tcod: &mut Tcod,
-    objects: &[Object],
     game: &mut Game,
+    objects: &[Object],
     max_range: Option<f32>,
 ) -> Option<(i32, i32)> {
     use tcod::input::KeyCode::Escape;
@@ -519,13 +519,12 @@ fn target_tile(
         // objects under the mouse.
         tcod.root.flush();
         let event = input::check_for_event(input::KEY_PRESS | input::MOUSE).map(|e| e.1);
-        let mut key = None;
         match event {
             Some(Event::Mouse(m)) => tcod.mouse = m,
-            Some(Event::Key(k)) => key = Some(k),
-            None => {}
+            Some(Event::Key(k)) => tcod.key = k,
+            None => tcod.key = Default::default(),
         }
-        render_all(tcod, objects, game, false);
+        render_all(tcod, game, objects, false);
 
         let (x, y) = (tcod.mouse.cx as i32, tcod.mouse.cy as i32);
 
@@ -537,8 +536,7 @@ fn target_tile(
             return Some((x, y));
         }
 
-        let escape = key.map_or(false, |k| k.code == Escape);
-        if tcod.mouse.rbutton_pressed || escape {
+        if tcod.mouse.rbutton_pressed || tcod.key.code == Escape {
             return None; // cancel if the player right-clicked or pressed Escape
         }
     }
@@ -547,12 +545,12 @@ fn target_tile(
 /// returns a clicked monster inside FOV up to a range, or None if right-clicked
 fn target_monster(
     tcod: &mut Tcod,
-    objects: &[Object],
     game: &mut Game,
+    objects: &[Object],
     max_range: Option<f32>,
 ) -> Option<usize> {
     loop {
-        match target_tile(tcod, objects, game, max_range) {
+        match target_tile(tcod, game, objects, max_range) {
             Some((x, y)) => {
                 // return the first clicked monster, otherwise continue looping
                 for (id, obj) in objects.iter().enumerate() {
@@ -567,7 +565,7 @@ fn target_monster(
 }
 
 /// find closest enemy, up to a maximum range, and in the player's FOV
-fn closest_monster(max_range: i32, objects: &mut [Object], tcod: &Tcod) -> Option<usize> {
+fn closest_monster(max_range: i32, tcod: &Tcod, objects: &mut [Object]) -> Option<usize> {
     let mut closest_enemy = None;
     let mut closest_dist = (max_range + 1) as f32; // start with (slightly more than) maximum range
 
@@ -591,9 +589,9 @@ fn closest_monster(max_range: i32, objects: &mut [Object], tcod: &Tcod) -> Optio
 
 fn cast_heal(
     _inventory_id: usize,
-    objects: &mut [Object],
-    game: &mut Game,
     _tcod: &mut Tcod,
+    game: &mut Game,
+    objects: &mut [Object],
 ) -> UseResult {
     // heal the player
     if let Some(fighter) = objects[PLAYER].fighter {
@@ -611,12 +609,12 @@ fn cast_heal(
 
 fn cast_lightning(
     _inventory_id: usize,
-    objects: &mut [Object],
-    game: &mut Game,
     tcod: &mut Tcod,
+    game: &mut Game,
+    objects: &mut [Object],
 ) -> UseResult {
     // find closest enemy (inside a maximum range and damage it)
-    let monster_id = closest_monster(LIGHTNING_RANGE, objects, tcod);
+    let monster_id = closest_monster(LIGHTNING_RANGE, tcod, objects);
     if let Some(monster_id) = monster_id {
         // zap it!
         game.messages.add(
@@ -641,16 +639,16 @@ fn cast_lightning(
 
 fn cast_confuse(
     _inventory_id: usize,
-    objects: &mut [Object],
-    game: &mut Game,
     tcod: &mut Tcod,
+    game: &mut Game,
+    objects: &mut [Object],
 ) -> UseResult {
     // ask the player for a target to confuse
     game.messages.add(
         "Left-click an enemy to confuse it, or right-click to cancel.",
         LIGHT_CYAN,
     );
-    let monster_id = target_monster(tcod, objects, game, Some(CONFUSE_RANGE as f32));
+    let monster_id = target_monster(tcod, game, objects, Some(CONFUSE_RANGE as f32));
     if let Some(monster_id) = monster_id {
         let old_ai = objects[monster_id].ai.take().unwrap_or(Ai::Basic);
         // replace the monster's AI with a "confused" one; after
@@ -677,16 +675,16 @@ fn cast_confuse(
 
 fn cast_fireball(
     _inventory_id: usize,
-    objects: &mut [Object],
-    game: &mut Game,
     tcod: &mut Tcod,
+    game: &mut Game,
+    objects: &mut [Object],
 ) -> UseResult {
     // ask the player for a target tile to throw a fireball at
     game.messages.add(
         "Left-click a target tile for the fireball, or right-click to cancel.",
         LIGHT_CYAN,
     );
-    let (x, y) = match target_tile(tcod, objects, game, None) {
+    let (x, y) = match target_tile(tcod, game, objects, None) {
         Some(tile_pos) => tile_pos,
         None => return UseResult::Cancelled,
     };
@@ -902,7 +900,7 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>) {
 }
 
 /// Advance to the next level
-fn next_level(tcod: &mut Tcod, objects: &mut Vec<Object>, game: &mut Game) {
+fn next_level(tcod: &mut Tcod, game: &mut Game, objects: &mut Vec<Object>) {
     game.messages.add(
         "You take a moment to rest, and recover your strength.",
         VIOLET,
@@ -969,7 +967,7 @@ fn get_names_under_mouse(mouse: Mouse, objects: &[Object], fov_map: &FovMap) -> 
     names.join(", ") // join the names, separated by commas
 }
 
-fn render_all(tcod: &mut Tcod, objects: &[Object], game: &mut Game, fov_recompute: bool) {
+fn render_all(tcod: &mut Tcod, game: &mut Game, objects: &[Object], fov_recompute: bool) {
     if fov_recompute {
         // recompute FOV if needed (the player moved or something)
         let player = &objects[PLAYER];
@@ -1020,7 +1018,7 @@ fn render_all(tcod: &mut Tcod, objects: &[Object], game: &mut Game, fov_recomput
 
     // blit the contents of "con" to the root console
     blit(
-        &mut tcod.con,
+        &tcod.con,
         (0, 0),
         (MAP_WIDTH, MAP_HEIGHT),
         &mut tcod.root,
@@ -1090,7 +1088,7 @@ fn render_all(tcod: &mut Tcod, objects: &[Object], game: &mut Game, fov_recomput
     );
 }
 
-fn player_move_or_attack(dx: i32, dy: i32, objects: &mut [Object], game: &mut Game) {
+fn player_move_or_attack(dx: i32, dy: i32, game: &mut Game, objects: &mut [Object]) {
     // the coordinates the player is moving to/attacking
     let x = objects[PLAYER].x + dx;
     let y = objects[PLAYER].y + dy;
@@ -1157,7 +1155,7 @@ fn menu<T: AsRef<str>>(header: &str, options: &[T], width: i32, root: &mut Root)
     // blit the contents of "window" to the root console
     let x = SCREEN_WIDTH / 2 - width / 2;
     let y = SCREEN_HEIGHT / 2 - height / 2;
-    tcod::console::blit(&mut window, (0, 0), (width, height), root, (x, y), 1.0, 0.7);
+    blit(&window, (0, 0), (width, height), root, (x, y), 1.0, 0.7);
 
     // present the root console to the player and wait for a key-press
     root.flush();
@@ -1222,35 +1220,35 @@ fn handle_keys(tcod: &mut Tcod, game: &mut Game, objects: &mut Vec<Object>) -> P
 
         // movement keys
         (Key { code: Up, .. }, true) | (Key { code: NumPad8, .. }, true) => {
-            player_move_or_attack(0, -1, objects, game);
+            player_move_or_attack(0, -1, game, objects);
             TookTurn
         }
         (Key { code: Down, .. }, true) | (Key { code: NumPad2, .. }, true) => {
-            player_move_or_attack(0, 1, objects, game);
+            player_move_or_attack(0, 1, game, objects);
             TookTurn
         }
         (Key { code: Left, .. }, true) | (Key { code: NumPad4, .. }, true) => {
-            player_move_or_attack(-1, 0, objects, game);
+            player_move_or_attack(-1, 0, game, objects);
             TookTurn
         }
         (Key { code: Right, .. }, true) | (Key { code: NumPad6, .. }, true) => {
-            player_move_or_attack(1, 0, objects, game);
+            player_move_or_attack(1, 0, game, objects);
             TookTurn
         }
         (Key { code: Home, .. }, true) | (Key { code: NumPad7, .. }, true) => {
-            player_move_or_attack(-1, -1, objects, game);
+            player_move_or_attack(-1, -1, game, objects);
             TookTurn
         }
         (Key { code: PageUp, .. }, true) | (Key { code: NumPad9, .. }, true) => {
-            player_move_or_attack(1, -1, objects, game);
+            player_move_or_attack(1, -1, game, objects);
             TookTurn
         }
         (Key { code: End, .. }, true) | (Key { code: NumPad1, .. }, true) => {
-            player_move_or_attack(-1, 1, objects, game);
+            player_move_or_attack(-1, 1, game, objects);
             TookTurn
         }
         (Key { code: PageDown, .. }, true) | (Key { code: NumPad3, .. }, true) => {
-            player_move_or_attack(1, 1, objects, game);
+            player_move_or_attack(1, 1, game, objects);
             TookTurn
         }
         (Key { code: NumPad5, .. }, true) => {
@@ -1263,7 +1261,7 @@ fn handle_keys(tcod: &mut Tcod, game: &mut Game, objects: &mut Vec<Object>) -> P
                 .iter()
                 .position(|object| object.pos() == objects[PLAYER].pos() && object.item.is_some());
             if let Some(item_id) = item_id {
-                pick_item_up(item_id, objects, game);
+                pick_item_up(item_id, game, objects);
             }
             DidntTakeTurn
         }
@@ -1276,7 +1274,7 @@ fn handle_keys(tcod: &mut Tcod, game: &mut Game, objects: &mut Vec<Object>) -> P
                 &mut tcod.root,
             );
             if let Some(inventory_index) = inventory_index {
-                use_item(inventory_index, objects, game, tcod);
+                use_item(inventory_index, tcod, game, objects);
             }
             DidntTakeTurn
         }
@@ -1289,7 +1287,7 @@ fn handle_keys(tcod: &mut Tcod, game: &mut Game, objects: &mut Vec<Object>) -> P
                 &mut tcod.root,
             );
             if let Some(inventory_index) = inventory_index {
-                drop_item(inventory_index, objects, game);
+                drop_item(inventory_index, game, objects);
             }
             DidntTakeTurn
         }
@@ -1300,7 +1298,7 @@ fn handle_keys(tcod: &mut Tcod, game: &mut Game, objects: &mut Vec<Object>) -> P
                 .iter()
                 .any(|object| object.pos() == objects[PLAYER].pos() && object.name == "stairs");
             if player_on_stairs {
-                next_level(tcod, objects, game);
+                next_level(tcod, game, objects);
             }
             DidntTakeTurn
         }
@@ -1333,7 +1331,7 @@ Defense: {}",
     }
 }
 
-fn level_up(objects: &mut [Object], game: &mut Game, tcod: &mut Tcod) {
+fn level_up(tcod: &mut Tcod, game: &mut Game, objects: &mut [Object]) {
     let player = &mut objects[PLAYER];
     let level_up_xp = LEVEL_UP_BASE + player.level * LEVEL_UP_FACTOR;
     // see if the player's experience is enough to level-up
@@ -1483,12 +1481,12 @@ fn play_game(tcod: &mut Tcod, game: &mut Game, objects: &mut Vec<Object>) {
 
         // render the screen
         let fov_recompute = previous_player_position != (objects[PLAYER].pos());
-        render_all(tcod, &objects, game, fov_recompute);
+        render_all(tcod, game, &objects, fov_recompute);
 
         tcod.root.flush();
 
         // level up if needed
-        level_up(objects, game, tcod);
+        level_up(tcod, game, objects);
 
         // handle keys and exit game if needed
         previous_player_position = objects[PLAYER].pos();
@@ -1592,7 +1590,7 @@ fn main() {
         .init();
 
     let mut tcod = Tcod {
-        root: root,
+        root,
         con: Offscreen::new(MAP_WIDTH, MAP_HEIGHT),
         panel: Offscreen::new(SCREEN_WIDTH, PANEL_HEIGHT),
         fov: FovMap::new(MAP_WIDTH, MAP_HEIGHT),

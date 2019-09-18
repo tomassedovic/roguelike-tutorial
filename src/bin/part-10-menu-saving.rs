@@ -502,11 +502,10 @@ fn target_tile(
         // objects under the mouse.
         tcod.root.flush();
         let event = input::check_for_event(input::KEY_PRESS | input::MOUSE).map(|e| e.1);
-        let mut key = None;
         match event {
             Some(Event::Mouse(m)) => tcod.mouse = m,
-            Some(Event::Key(k)) => key = Some(k),
-            None => {}
+            Some(Event::Key(k)) => tcod.key = k,
+            None => tcod.key = Default::default(),
         }
         render_all(tcod, game, objects, false);
 
@@ -520,8 +519,7 @@ fn target_tile(
             return Some((x, y));
         }
 
-        let escape = key.map_or(false, |k| k.code == Escape);
-        if tcod.mouse.rbutton_pressed || escape {
+        if tcod.mouse.rbutton_pressed || tcod.key.code == Escape {
             return None; // cancel if the player right-clicked or pressed Escape
         }
     }
