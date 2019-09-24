@@ -20,18 +20,13 @@ generating a level. Right at the end of `make_map`:
 
 [source]
 ----
+tag::create_stairs[]
 // create stairs at the center of the last room
 let (last_room_x, last_room_y) = rooms[rooms.len() - 1].center();
-let mut stairs = Object::new(
-    last_room_x,
-    last_room_y,
-    '<',
-    "stairs",
-    colors::WHITE,
-    false,
-);
+let mut stairs = Object::new(last_room_x, last_room_y, '<', "stairs", WHITE, false);
 stairs.always_visible = true;
 objects.push(stairs);
+end::create_stairs[]
 ----
 
 As you can see, it's just a regular object! We must now let the player
@@ -40,16 +35,18 @@ easy to add this check at the end of `handle_keys`:
 
 [source]
 ----
+tag::handle_stairs_key[]
 (Key { printable: '<', .. }, true) => {
     // go down stairs, if the player is on them
     let player_on_stairs = objects
         .iter()
         .any(|object| object.pos() == objects[PLAYER].pos() && object.name == "stairs");
     if player_on_stairs {
-        next_level(tcod, objects, game);
+        next_level(tcod, game, objects);
     }
     DidntTakeTurn
 }
+end::handle_stairs_key[]
 ----
 
 The most important bit is the `next_level` function. We need to
@@ -58,24 +55,26 @@ onto it. We'll also heal the player because we're feeling generous!
 
 [source]
 ----
+tag::next_level_fn[]
 /// Advance to the next level
-fn next_level(tcod: &mut Tcod, objects: &mut Vec<Object>, game: &mut Game) {
-    game.log.add(
+fn next_level(tcod: &mut Tcod, game: &mut Game, objects: &mut Vec<Object>) {
+    game.messages.add(
         "You take a moment to rest, and recover your strength.",
-        colors::VIOLET,
+        VIOLET,
     );
     let heal_hp = objects[PLAYER].fighter.map_or(0, |f| f.max_hp / 2);
     objects[PLAYER].heal(heal_hp);
 
-    game.log.add(
+    game.messages.add(
         "After a rare moment of peace, you descend deeper into \
          the heart of the dungeon...",
-        colors::RED,
+        RED,
     );
     game.dungeon_level += 1;
     game.map = make_map(objects);
-    initialise_fov(&game.map, tcod);
+    initialise_fov(tcod, &game.map);
 }
+end::next_level_fn[]
 ----
 
 You can try it out now. We do generate stairs and let the player go
@@ -90,10 +89,12 @@ So we need to remove everything except for the Player. Put this in
 
 [source]
 ----
+tag::remove_everything_but_player[]
 // Player is the first element, remove everything else.
 // NOTE: works only when the player is the first object!
 assert_eq!(&objects[PLAYER] as *const _, &objects[0] as *const _);
 objects.truncate(1);
+end::remove_everything_but_player[]
 ----
 
 :truncate: https://doc.rust-lang.org/std/vec/struct.Vec.html#method.truncate
@@ -121,13 +122,16 @@ increase it when we go deeper:
 
 [source]
 ----
+tag::game_struct[]
 struct Game {
     map: Map,
-    log: Messages,
+    messages: Messages,
     inventory: Vec<Object>,
-    dungeon_level: u32,
+    dungeon_level: u32,  // <1>
 }
+end::game_struct[]
 ----
+<1>: New field: `dungeon_level`
 
 in `new_game`:
 
@@ -151,6 +155,7 @@ calling `render_bar`:
 
 [source]
 ----
+tag::show_dungeon_level[]
 tcod.panel.print_ex(
     1,
     3,
@@ -158,6 +163,7 @@ tcod.panel.print_ex(
     TextAlignment::Left,
     format!("Dungeon level: {}", game.dungeon_level),
 );
+end::show_dungeon_level[]
 ----
 
 Finally, it would be great to always show the stairs once discovered,
@@ -173,7 +179,9 @@ struct Object {
     x: i32,
     y: i32,
     // ...
+tag::object_field_always_visible[]
     always_visible: bool,
+end::object_field_always_visible[]
 }
 ----
 
@@ -186,7 +194,9 @@ pub fn new(x: i32, y: i32, char: char, name: &str, color: Color, blocks: bool) -
         x: x,
         y: y,
         // ...
+tag::object_new_always_visible[]
         always_visible: false,
+end::object_new_always_visible[]
     }
 }
 ----
@@ -246,13 +256,16 @@ monster is killed:
 
 [source]
 ----
+tag::take_damage_header[]
 pub fn take_damage(&mut self, damage: i32, game: &mut Game) -> Option<i32> {  // <1>
+end::take_damage_header[]
     // apply damage if possible
     if let Some(fighter) = self.fighter.as_mut() {
         if damage > 0 {
             fighter.hp -= damage;
         }
     }
+tag::execute_death_callback[]
     // check for death, call the death function
     if let Some(fighter) = self.fighter {
         if fighter.hp <= 0 {
@@ -262,6 +275,7 @@ pub fn take_damage(&mut self, damage: i32, game: &mut Game) -> Option<i32> {  //
         }
     }
     None  // <3>
+end::execute_death_callback[]
 }
 ----
 <1> May return a number of XP if `take_damage` killed the monster
@@ -338,7 +352,9 @@ just as easily.
 ----
 struct Object {
     // ...
+tag::object_field_level[]
     level: i32,
+end::object_field_level[]
 }
 ----
 
@@ -349,7 +365,9 @@ And initialise it to `1` in Object's `new` method:
     pub fn new(x: i32, y: i32, char: char, name: &str, color: Color, blocks: bool) -> Self {
         Object {
             // ...
+tag::object_new_level[]
             level: 1,
+end::object_new_level[]
         }
     }
 ----
@@ -362,9 +380,11 @@ Add constants so it can be easily tweaked later:
 
 [source]
 ----
+tag::level_up_consts[]
 // experience and level-ups
 const LEVEL_UP_BASE: i32 = 200;
 const LEVEL_UP_FACTOR: i32 = 150;
+end::level_up_consts[]
 ----
 
 Now the function that level's the player up if they have enough
@@ -372,20 +392,22 @@ experience:
 
 [source]
 ----
-fn level_up(objects: &mut [Object], game: &mut Game, tcod: &mut Tcod) {
+tag::level_up_fn_header[]
+fn level_up(tcod: &mut Tcod, game: &mut Game, objects: &mut [Object]) {
     let player = &mut objects[PLAYER];
     let level_up_xp = LEVEL_UP_BASE + player.level * LEVEL_UP_FACTOR;
     // see if the player's experience is enough to level-up
     if player.fighter.as_ref().map_or(0, |f| f.xp) >= level_up_xp {
         // it is! level up
         player.level += 1;
-        game.log.add(
+        game.messages.add(
             format!(
                 "Your battle skills grow stronger! You reached level {}!",
                 player.level
             ),
-            colors::YELLOW,
+            YELLOW,
         );
+end::level_up_fn_header[]
         // ... TODO increase players's stats!
     }
 }
@@ -402,6 +424,7 @@ Put this in place of the TODO comment:
 
 [source]
 ----
+tag::level_up_fn_fighter[]
 let fighter = player.fighter.as_mut().unwrap();
 let mut choice = None;
 while choice.is_none() {
@@ -431,18 +454,28 @@ match choice.unwrap() {
     }
     _ => unreachable!(),
 }
+end::level_up_fn_fighter[]
 ----
 
-We'll need to set `const LEVEL_SCREEN_WIDTH: i32 = 40` on top of the
-file and then it should compile.
+We'll need to add the new constant on top of the file and then it
+should compile:
+
+[source]
+----
+tag::level_screen_width_const[]
+const LEVEL_SCREEN_WIDTH: i32 = 40;
+end::level_screen_width_const[]
+----
 
 Now we can call `level_up` in the main loop (in `play_game`) after
 `tcod.root.flush()`:
 
 [source]
 ----
+tag::call_level_up[]
 // level up if needed
-level_up(objects, game, tcod);
+level_up(tcod, game, objects);
+end::call_level_up[]
 ----
 
 So the player can now level up, but it would be great to show the
@@ -451,6 +484,7 @@ current stats somewhere. Let's display a little message box when the
 
 [source]
 ----
+tag::handle_character_key_header[]
 (Key { printable: 'c', .. }, true) => {
     // show character information
     let player = &objects[PLAYER];
@@ -459,6 +493,8 @@ current stats somewhere. Let's display a little message box when the
     if let Some(fighter) = player.fighter.as_ref() {
         let msg = format!(
             "Character information
+end::handle_character_key_header[]
+tag::handle_character_key_unindented_text[]
 
 Level: {}
 Experience: {}
@@ -467,6 +503,8 @@ Experience to level up: {}
 Maximum HP: {}
 Attack: {}
 Defense: {}",
+end::handle_character_key_unindented_text[]
+tag::handle_character_key_footer[]
             level, fighter.xp, level_up_xp, fighter.max_hp, fighter.power, fighter.defense
         );
         msgbox(&msg, CHARACTER_SCREEN_WIDTH, &mut tcod.root);
@@ -474,11 +512,19 @@ Defense: {}",
 
     DidntTakeTurn
 }
+end::handle_character_key_footer[]
 ----
 
 This will build up a multiline string that we use msgbox to show.
-We'll need to define `const CHARACTER_SCREEN_WIDTH: i32 = 30;` at the
-top of the file and then it should all work.
+We'll need to define the new constant at the top of the file and then
+it should all work:
+
+[source]
+----
+tag::character_screen_width_const[]
+const CHARACTER_SCREEN_WIDTH: i32 = 30;
+end::character_screen_width_const[]
+----
 
 It would also be nice if we showed how much XP did the player get for
 slaying a monster. We can modify the log message in `monster_death`:
@@ -496,7 +542,7 @@ game.log.add(
 ----
 
 
-/
+
 Finally, completely unrelated to the character progression, but let's
 add diagonal movement and sleep command using the keys on the numpad.
 
@@ -505,42 +551,44 @@ The key codes for the numpad keys are `NumPad0` to `NumPad9`. So in
 
 [source]
 ----
+tag::movement_keys[]
 // movement keys
-(Key { code: Up, .. }, true) | (Key { code: NumPad8, ..}, true) => {
-    player_move_or_attack(0, -1, objects, game);
+(Key { code: Up, .. }, true) | (Key { code: NumPad8, .. }, true) => {
+    player_move_or_attack(0, -1, game, objects);
     TookTurn
 }
-(Key { code: Down, .. }, true) | (Key { code: NumPad2, ..}, true) => {
-    player_move_or_attack(0, 1, objects, game);
+(Key { code: Down, .. }, true) | (Key { code: NumPad2, .. }, true) => {
+    player_move_or_attack(0, 1, game, objects);
     TookTurn
 }
-(Key { code: Left, .. }, true) | (Key { code: NumPad4, ..}, true) => {
-    player_move_or_attack(-1, 0, objects, game);
+(Key { code: Left, .. }, true) | (Key { code: NumPad4, .. }, true) => {
+    player_move_or_attack(-1, 0, game, objects);
     TookTurn
 }
-(Key { code: Right, .. }, true) | (Key { code: NumPad6, ..}, true) => {
-    player_move_or_attack(1, 0, objects, game);
+(Key { code: Right, .. }, true) | (Key { code: NumPad6, .. }, true) => {
+    player_move_or_attack(1, 0, game, objects);
     TookTurn
 }
-(Key { code: Home, .. }, true) | (Key { code: NumPad7, ..}, true) => {
-    player_move_or_attack(-1, -1, objects, game);
+(Key { code: Home, .. }, true) | (Key { code: NumPad7, .. }, true) => {
+    player_move_or_attack(-1, -1, game, objects);
     TookTurn
 }
-(Key { code: PageUp, .. }, true) | (Key { code: NumPad9, ..}, true) => {
-    player_move_or_attack(1, -1, objects, game);
+(Key { code: PageUp, .. }, true) | (Key { code: NumPad9, .. }, true) => {
+    player_move_or_attack(1, -1, game, objects);
     TookTurn
 }
-(Key { code: End, .. }, true) | (Key { code: NumPad1, ..}, true) => {
-    player_move_or_attack(-1, 1, objects, game);
+(Key { code: End, .. }, true) | (Key { code: NumPad1, .. }, true) => {
+    player_move_or_attack(-1, 1, game, objects);
     TookTurn
 }
-(Key { code: PageDown, .. }, true) | (Key { code: NumPad3, ..}, true) => {
-    player_move_or_attack(1, 1, objects, game);
+(Key { code: PageDown, .. }, true) | (Key { code: NumPad3, .. }, true) => {
+    player_move_or_attack(1, 1, game, objects);
     TookTurn
 }
 (Key { code: NumPad5, .. }, true) => {
-    TookTurn  // do nothing, i.e. wait for the monster to come to you
+    TookTurn // do nothing, i.e. wait for the monster to come to you
 }
+end::movement_keys[]
 ----
 
 Now we can use arrows and numpad to move around. And pressing `5` will

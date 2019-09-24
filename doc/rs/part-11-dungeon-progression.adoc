@@ -20,6 +20,8 @@ include::../part-7-gui.adoc[tag=map_size_consts]
 include::../part-7-gui.adoc[tag=panel_consts]
 include::../part-7-gui.adoc[tag=msg_consts]
 include::../part-8-items.adoc[tag=inventory_consts]
+include::../part-11-dungeon-progression.adoc[tag=character_screen_width_const]
+include::../part-11-dungeon-progression.adoc[tag=level_screen_width_const]
 
 include::../part-3-dungeon.adoc[tag=room_consts]
 include::../part-5-combat.adoc[tag=max_room_monsters]
@@ -29,6 +31,8 @@ include::../part-8-items.adoc[tag=heal_consts]
 include::../part-9-spells.adoc[tag=lightning_consts]
 include::../part-9-spells.adoc[tag=confuse_consts]
 include::../part-9-spells.adoc[tag=fireball_consts]
+
+include::../part-11-dungeon-progression.adoc[tag=level_up_consts]
 
 include::../part-4-fov-exploration.adoc[tag=fov_consts]
 
@@ -48,7 +52,7 @@ include::../part-7-gui.adoc[tag=struct_messages]
 include::../part-7-gui.adoc[tag=impl_messages]
 
 include::../part-10-menu-saving.adoc[tag=derive_serde_traits]
-include::../part-8-items.adoc[tag=game_struct]
+include::../part-11-dungeon-progression.adoc[tag=game_struct]
 
 include::../part-4-fov-exploration.adoc[tag=tile_struct_doc]
 include::../part-10-menu-saving.adoc[tag=derive_copy_debug_serde_traits]
@@ -70,12 +74,16 @@ include::../part-2-object-map.adoc[tag=object_doc_comment]
 include::../part-10-menu-saving.adoc[tag=derive_debug_serde_traits]
 include::../part-6-going-berserk.adoc[tag=object_fields]
 include::../part-8-items.adoc[tag=object_components,indent=4]
+include::../part-11-dungeon-progression.adoc[tag=object_field_always_visible,indent=4]
+include::../part-11-dungeon-progression.adoc[tag=object_field_level,indent=4]
 }
 
 include::../part-2-object-map.adoc[tag=object_impl_header]
 include::../part-6-going-berserk.adoc[tag=object_new_header,indent=4]
 include::../part-6-going-berserk.adoc[tag=object_new_fields,indent=8]
 include::../part-8-items.adoc[tag=object_new_components,indent=12]
+include::../part-11-dungeon-progression.adoc[tag=object_new_always_visible,indent=12]
+include::../part-11-dungeon-progression.adoc[tag=object_new_level,indent=12]
         }
     }
 
@@ -89,9 +97,9 @@ include::../part-6-going-berserk.adoc[tag=distance_to,indent=4]
 
 include::../part-9-spells.adoc[tag=object_distance_method,indent=4]
 
-include::../part-7-gui.adoc[tag=take_damage_header,indent=4]
+include::../part-11-dungeon-progression.adoc[tag=take_damage_header,indent=4]
 include::../part-6-going-berserk.adoc[tag=apply_damage,indent=8]
-include::../part-7-gui.adoc[tag=execute_death_callback,indent=8]
+include::../part-11-dungeon-progression.adoc[tag=execute_death_callback,indent=8]
     }
 
 include::../part-7-gui.adoc[tag=attack,indent=4]
@@ -175,6 +183,8 @@ include::../part-3-dungeon.adoc[tag=create_v_tunnel]
 include::../part-5-combat.adoc[tag=make_map_header]
 include::../part-3-dungeon.adoc[tag=make_map_fill]
 
+include::../part-11-dungeon-progression.adoc[tag=remove_everything_but_player,indent=4]
+
 include::../part-3-dungeon.adoc[tag=make_map_empty_rooms_vec,indent=4]
 
 include::../part-3-dungeon.adoc[tag=make_map_for_loop_header,indent=4]
@@ -197,6 +207,8 @@ include::../part-3-dungeon.adoc[tag=connect_rooms,indent=12]
 include::../part-3-dungeon.adoc[tag=push_new_room,indent=12]
         }
     }
+
+include::../part-11-dungeon-progression.adoc[tag=create_stairs,indent=4]
 
 include::../part-5-combat.adoc[tag=make_map_footer]
 }
@@ -228,6 +240,8 @@ include::../part-9-spells.adoc[tag=objects_push_item,indent=12]
     }
 }
 
+include::../part-11-dungeon-progression.adoc[tag=next_level_fn]
+
 include::../part-7-gui.adoc[tag=render_bar_header]
 include::../part-7-gui.adoc[tag=render_bar_panel,indent=4]
 
@@ -254,6 +268,8 @@ include::../part-7-gui.adoc[tag=prepare_gui_render,indent=4]
 include::../part-7-gui.adoc[tag=render_messages,indent=4]
 
 include::../part-7-gui.adoc[tag=show_player_stats,indent=4]
+
+include::../part-11-dungeon-progression.adoc[tag=show_dungeon_level,indent=4]
 
 include::../part-7-gui.adoc[tag=hovered_objects,indent=4]
 
@@ -298,7 +314,7 @@ include::../part-5-combat.adoc[tag=use_player_action_wildcard,indent=4]
 include::../part-7-gui.adoc[tag=match_key_header,indent=4]
 include::../part-5-combat.adoc[tag=match_special_keys,indent=8]
 
-include::../part-5-combat.adoc[tag=movement_keys,indent=8]
+include::../part-11-dungeon-progression.adoc[tag=movement_keys,indent=8]
 
 include::../part-8-items.adoc[tag=handle_pick_up_key,indent=8]
 
@@ -306,7 +322,18 @@ include::../part-8-items.adoc[tag=handle_inventory_key,indent=8]
 
 include::../part-9-spells.adoc[tag=handle_drop_key,indent=8]
 
+include::../part-11-dungeon-progression.adoc[tag=handle_stairs_key,indent=8]
+
+include::../part-11-dungeon-progression.adoc[tag=handle_character_key_header,indent=8]
+include::../part-11-dungeon-progression.adoc[tag=handle_character_key_unindented_text]
+include::../part-11-dungeon-progression.adoc[tag=handle_character_key_footer,indent=8]
+
 include::../part-5-combat.adoc[tag=match_key_footer,indent=8]
+    }
+}
+
+include::../part-11-dungeon-progression.adoc[tag=level_up_fn_header]
+include::../part-11-dungeon-progression.adoc[tag=level_up_fn_fighter,indent=8]
     }
 }
 
@@ -355,6 +382,8 @@ include::../part-5-combat.adoc[tag=check_fov_recompute,indent=8]
 include::../part-10-menu-saving.adoc[tag=call_render_all,indent=8]
 
 include::../part-1-graphics.adoc[tag=root_flush,indent=8]
+
+include::../part-11-dungeon-progression.adoc[tag=call_level_up,indent=8]
 
 include::../part-7-gui.adoc[tag=previous_player_position,indent=8]
 include::../part-10-menu-saving.adoc[tag=call_handle_keys,indent=8]
