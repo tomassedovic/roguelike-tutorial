@@ -527,7 +527,7 @@ fn target_monster(
 }
 
 /// find closest enemy, up to a maximum range, and in the player's FOV
-fn closest_monster(max_range: i32, objects: &mut [Object], tcod: &Tcod) -> Option<usize> {
+fn closest_monster(max_range: i32, objects: &[Object], tcod: &Tcod) -> Option<usize> {
     let mut closest_enemy = None;
     let mut closest_dist = (max_range + 1) as f32; // start with (slightly more than) maximum range
 
