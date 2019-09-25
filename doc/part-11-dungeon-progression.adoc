@@ -137,11 +137,17 @@ in `new_game`:
 
 [source]
 ----
+tag::game_init[]
 let mut game = Game {
-    // ...
-    dungeon_level: 1,
+    // generate map (at this point it's not drawn to the screen)
+    map: make_map(&mut objects),
+    messages: Messages::new(),
+    inventory: vec![],
+    dungeon_level: 1,  // <1>
 };
+end::game_init[]
 ----
+<1>: Set `dungeon_level` to `1`
 
 and in `next_level` before calling `make_map`:
 
@@ -206,11 +212,15 @@ Now update `render_all` to take it into account. When building the
 
 [source]
 ----
-.filter(|o| {
-    tcod.fov.is_in_fov(o.x, o.y)
-        || (o.always_visible && game.map[o.x as usize][o.y as usize].explored)
-})
-.collect();
+tag::objects_to_draw[]
+let mut to_draw: Vec<_> = objects
+    .iter()
+    .filter(|o| {
+        tcod.fov.is_in_fov(o.x, o.y)
+            || (o.always_visible && game.map[o.x as usize][o.y as usize].explored)
+    })
+    .collect();
+end::objects_to_draw[]
 ----
 
 We keep the old `is_in_fov` test, but now we can also show the object
@@ -226,7 +236,26 @@ stairs.always_visible = true;
 you will also have to add `mut` to `let stairs` a line above.
 
 And let's do the same for items, too! In `place_objects` before
-`objects.push(item)`.
+`objects.push(item)`:
+
+[source]
+----
+tag::place_healing_potion[]
+let dice = rand::random::<f32>();
+let mut item = if dice < 0.7 {  // <1>
+    // create a healing potion (70% chance)
+    let mut object = Object::new(x, y, '!', "healing potion", VIOLET, false);
+    object.item = Some(Item::Heal);
+    object
+end::place_healing_potion[]
+}
+...
+tag::item_always_visible[]
+item.always_visible = true;
+end::item_always_visible[]
+objects.push(item);
+----
+<1>: Item must be `mut` now
 
 
 == Character progression
@@ -237,18 +266,77 @@ level up. We'll put a new `xp` field into the `Fighter` struct:
 
 [source]
 ----
+tag::fighter_struct_definition[]
 struct Fighter {
-    // ...
-    xp: i32,
+    max_hp: i32,
+    hp: i32,
+    defense: i32,
+    power: i32,
+    xp: i32,  // <1>
+    on_death: DeathCallback,
 }
+end::fighter_struct_definition[]
 ----
+<1>: Added the `xp` field
 
 When setting the orc and trolls' `Fighter` component in
 `place_objects`, we'll add 35 and 100 `xp` respectively. Feel free to
 plug your own values here.
 
+[source]
+----
+tag::generate_monster_cb[]
+let mut monster = if rand::random::<f32>() < 0.8 {
+    // 80% chance of getting an orc
+    // create an orc
+    let mut orc = Object::new(x, y, 'o', "orc", DESATURATED_GREEN, true);
+    orc.fighter = Some(Fighter {
+        max_hp: 10,
+        hp: 10,
+        defense: 0,
+        power: 3,
+        xp: 35,  // <1>
+        on_death: DeathCallback::Monster,
+    });
+    orc.ai = Some(Ai::Basic);
+    orc
+} else {
+    // create a troll
+    let mut troll = Object::new(x, y, 'T', "troll", DARKER_GREEN, true);
+    troll.fighter = Some(Fighter {
+        max_hp: 16,
+        hp: 16,
+        defense: 1,
+        power: 4,
+        xp: 100,  // <2>
+        on_death: DeathCallback::Monster,
+    });
+    troll.ai = Some(Ai::Basic);
+    troll
+};
+end::generate_monster_cb[]
+----
+<1>: Defeating an orc gives you `35` XP
+<2>: Defeating a troll gives you `100` XP
+
+
 We'll have to set player's XP in `new_game` to something as well.
 Let's put a `0` in and we'll use it to track player's experience.
+
+[source]
+----
+tag::player_fighter_cb[]
+player.fighter = Some(Fighter {
+    max_hp: 30,
+    hp: 30,
+    defense: 2,
+    power: 5,
+    xp: 0,  // <1>
+    on_death: DeathCallback::Player,
+});
+end::player_fighter_cb[]
+----
+<1>: Added `xp`
 
 
 Now update `take_damage` to return the experience points when a
@@ -283,15 +371,17 @@ end::execute_death_callback[]
 <3> We did not kill the monster, don't return anything
 
 
-Now in `attack`, when an attacker kills its target, let's increase its
+Now in `attack`, when an attacker kills their target, let's increase their
 xp by replacing the `target.take_damage(...)` call with:
 
 [source]
 ----
+tag::attack_take_damage_xp[]
 if let Some(xp) = target.take_damage(damage, game) {
     // yield experience to the player
     self.fighter.as_mut().unwrap().xp += xp;
 }
+end::attack_take_damage_xp[]
 ----
 
 And we need to do the same in the two other places we're calling
@@ -299,9 +389,11 @@ And we need to do the same in the two other places we're calling
 
 [source]
 ----
+tag::cast_lightning_fn_damage_xp[]
 if let Some(xp) = objects[monster_id].take_damage(LIGHTNING_DAMAGE, game) {
     objects[PLAYER].fighter.as_mut().unwrap().xp += xp;
 }
+end::cast_lightning_fn_damage_xp[]
 ----
 
 The `cast_fireball` function is going to be slightly trickier because
@@ -314,15 +406,16 @@ variable and then give it all to the player afterwards:
 
 [source]
 ----
+tag::cast_fireball_fn_damage_xp[]
 let mut xp_to_gain = 0;  // <1>
 for (id, obj) in objects.iter_mut().enumerate() {  // <2>
     if obj.distance(x, y) <= FIREBALL_RADIUS as f32 && obj.fighter.is_some() {
-        game.log.add(
+        game.messages.add(
             format!(
                 "The {} gets burned for {} hit points.",
                 obj.name, FIREBALL_DAMAGE
             ),
-            colors::ORANGE,
+            ORANGE,
         );
         if let Some(xp) = obj.take_damage(FIREBALL_DAMAGE, game) {
             if id != PLAYER {  // <3>
@@ -333,6 +426,7 @@ for (id, obj) in objects.iter_mut().enumerate() {  // <2>
     }
 }
 objects[PLAYER].fighter.as_mut().unwrap().xp += xp_to_gain;  // <4>
+end::cast_fireball_fn_damage_xp[]
 ----
 <1> Keep track of all the XP player should receive
 <2> Use `enumerate` to get the object's index as well
@@ -531,14 +625,18 @@ slaying a monster. We can modify the log message in `monster_death`:
 
 [source]
 ----
-game.log.add(
+tag::monster_death_message[]
+// transform it into a nasty corpse! it doesn't block, can't be
+// attacked and doesn't move
+game.messages.add(
     format!(
         "{} is dead! You gain {} experience points.",
         monster.name,
         monster.fighter.unwrap().xp
     ),
-    colors::ORANGE,
+    ORANGE,
 );
+end::monster_death_message[]
 ----
 
 

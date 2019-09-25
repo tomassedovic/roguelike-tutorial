@@ -456,6 +456,7 @@ impl DeathCallback {
 end::death_callback_impl[]
 
 tag::attack[]
+tag::attack_beginning[]
 pub fn attack(&mut self, target: &mut Object, game: &mut Game) {
     // a simple formula for attack damage
     let damage = self.fighter.map_or(0, |f| f.power) - target.fighter.map_or(0, |f| f.defense);
@@ -468,7 +469,9 @@ pub fn attack(&mut self, target: &mut Object, game: &mut Game) {
             ),
             WHITE,
         );
+end::attack_beginning[]
         target.take_damage(damage, game);
+tag::attack_ending[]
     } else {
         game.messages.add(
             format!(
@@ -479,6 +482,7 @@ pub fn attack(&mut self, target: &mut Object, game: &mut Game) {
         );
     }
 }
+end::attack_ending[]
 end::attack[]
 
 fn main() {

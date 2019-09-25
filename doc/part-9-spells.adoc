@@ -73,6 +73,7 @@ Now we need to write the `cast_lightning` function!
 [source]
 ----
 tag::cast_lightning_fn[]
+tag::cast_lightning_fn_beginning[]
 fn cast_lightning(
     _inventory_id: usize,
     tcod: &mut Tcod,
@@ -91,7 +92,9 @@ fn cast_lightning(
             ),
             LIGHT_BLUE,
         );
+end::cast_lightning_fn_beginning[]
         objects[monster_id].take_damage(LIGHTNING_DAMAGE, game);
+tag::cast_lightning_fn_ending[]
         UseResult::UsedUp
     } else {
         // no enemy found within maximum range
@@ -100,6 +103,7 @@ fn cast_lightning(
         UseResult::Cancelled
     }
 }
+end::cast_lightning_fn_ending[]
 end::cast_lightning_fn[]
 ----
 
@@ -577,6 +581,7 @@ spell:
 [source]
 ----
 tag::cast_fireball_fn[]
+tag::cast_fireball_fn_beginning[]
 fn cast_fireball(
     _inventory_id: usize,
     tcod: &mut Tcod,
@@ -600,6 +605,7 @@ fn cast_fireball(
         ORANGE,
     );
 
+end::cast_fireball_fn_beginning[]
     for obj in objects {
         if obj.distance(x, y) <= FIREBALL_RADIUS as f32 && obj.fighter.is_some() {
             game.messages.add(
@@ -612,9 +618,11 @@ fn cast_fireball(
             obj.take_damage(FIREBALL_DAMAGE, game);
         }
     }
+tag::cast_fireball_fn_ending[]
 
     UseResult::UsedUp
 }
+end::cast_fireball_fn_ending[]
 end::cast_fireball_fn[]
 ----
 

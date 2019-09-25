@@ -683,12 +683,14 @@ let mut to_draw: Vec<_> = objects
     .iter()
     .filter(|o| tcod.fov.is_in_fov(o.x, o.y))
     .collect();
+tag::sort_and_draw_objects[]
 // sort so that non-blocknig objects come first
 to_draw.sort_by(|o1, o2| o1.blocks.cmp(&o2.blocks));
 // draw the objects in the list
 for object in &to_draw {
     object.draw(&mut tcod.con);
 }
+end::sort_and_draw_objects[]
 end::objects_to_draw[]
 ----
 

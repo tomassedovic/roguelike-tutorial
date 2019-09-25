@@ -1431,7 +1431,6 @@ fn new_game(tcod: &mut Tcod) -> (Game, Vec<Object>) {
     let mut game = Game {
         // generate map (at this point it's not drawn to the screen)
         map: make_map(&mut objects),
-        // create the list of game messages and their colors, starts empty
         messages: Messages::new(),
         inventory: vec![],
         dungeon_level: 1,

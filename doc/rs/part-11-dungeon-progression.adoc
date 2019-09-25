@@ -102,7 +102,9 @@ include::../part-6-going-berserk.adoc[tag=apply_damage,indent=8]
 include::../part-11-dungeon-progression.adoc[tag=execute_death_callback,indent=8]
     }
 
-include::../part-7-gui.adoc[tag=attack,indent=4]
+include::../part-7-gui.adoc[tag=attack_beginning,indent=4]
+include::../part-11-dungeon-progression.adoc[tag=attack_take_damage_xp,indent=12]
+include::../part-7-gui.adoc[tag=attack_ending,indent=4]
 
 include::../part-8-items.adoc[tag=heal_fn,indent=4]
 }
@@ -119,7 +121,7 @@ include::../part-5-combat.adoc[tag=is_blocked]
 
 include::../part-6-going-berserk.adoc[tag=fighter_struct_doc]
 include::../part-10-menu-saving.adoc[tag=derive_copy_eq_serde_traits]
-include::../part-6-going-berserk.adoc[tag=fighter_struct_definition]
+include::../part-11-dungeon-progression.adoc[tag=fighter_struct_definition]
 
 include::../part-10-menu-saving.adoc[tag=derive_copy_eq_serde_traits]
 include::../part-6-going-berserk.adoc[tag=death_callback_enum_definition]
@@ -165,14 +167,18 @@ include::../part-9-spells.adoc[tag=closest_monster_fn]
 
 include::../part-8-items.adoc[tag=cast_heal_fn]
 
-include::../part-9-spells.adoc[tag=cast_lightning_fn]
+include::../part-9-spells.adoc[tag=cast_lightning_fn_beginning]
+include::../part-11-dungeon-progression.adoc[tag=cast_lightning_fn_damage_xp,indent=8]
+include::../part-9-spells.adoc[tag=cast_lightning_fn_ending]
 
 include::../part-9-spells.adoc[tag=cast_confuse_header]
 include::../part-9-spells.adoc[tag=cast_confuse_target,indent=4]
 include::../part-9-spells.adoc[tag=cast_confuse_action,indent=4]
 }
 
-include::../part-9-spells.adoc[tag=cast_fireball_fn]
+include::../part-9-spells.adoc[tag=cast_fireball_fn_beginning]
+include::../part-11-dungeon-progression.adoc[tag=cast_fireball_fn_damage_xp,indent=4]
+include::../part-9-spells.adoc[tag=cast_fireball_fn_ending]
 
 include::../part-3-dungeon.adoc[tag=create_room]
 
@@ -220,7 +226,7 @@ include::../part-5-combat.adoc[tag=place_objects_for_loop,indent=4]
 include::../part-5-combat.adoc[tag=place_objects_rand_pos,indent=8]
 
 include::../part-5-combat.adoc[tag=is_blocked_check,indent=8]
-include::../part-6-going-berserk.adoc[tag=generate_monster_cb,indent=12]
+include::../part-11-dungeon-progression.adoc[tag=generate_monster_cb,indent=12]
 include::../part-5-combat.adoc[tag=push_monster,indent=12]
         }
     }
@@ -231,10 +237,11 @@ include::../part-8-items.adoc[tag=place_item_for_loop,indent=4]
 include::../part-8-items.adoc[tag=choose_item_random_pos,indent=8]
 
 include::../part-8-items.adoc[tag=item_pos_not_blocked,indent=8]
-include::../part-9-spells.adoc[tag=place_healing_potion,indent=12]
+include::../part-11-dungeon-progression.adoc[tag=place_healing_potion,indent=12]
 include::../part-9-spells.adoc[tag=place_lightning_bolt,indent=12]
 include::../part-9-spells.adoc[tag=place_fireball,indent=12]
 include::../part-9-spells.adoc[tag=place_confusion,indent=12]
+include::../part-11-dungeon-progression.adoc[tag=item_always_visible,indent=12]
 include::../part-9-spells.adoc[tag=objects_push_item,indent=12]
         }
     }
@@ -259,7 +266,8 @@ include::../part-4-fov-exploration.adoc[tag=exploration_visibility,indent=12]
         }
     }
 
-include::../part-6-going-berserk.adoc[tag=objects_to_draw,indent=4]
+include::../part-11-dungeon-progression.adoc[tag=objects_to_draw,indent=4]
+include::../part-6-going-berserk.adoc[tag=sort_and_draw_objects,indent=4]
 
 include::../part-2-object-map.adoc[tag=render_blit,indent=4]
 
@@ -346,17 +354,17 @@ include::../part-6-going-berserk.adoc[tag=player_death_modifications]
 }
 
 include::../part-7-gui.adoc[tag=monster_death_header]
-include::../part-7-gui.adoc[tag=monster_death_message]
+include::../part-11-dungeon-progression.adoc[tag=monster_death_message,indent=4]
 include::../part-6-going-berserk.adoc[tag=monster_death_modifications]
 }
 
 include::../part-10-menu-saving.adoc[tag=new_game_header]
 include::../part-5-combat.adoc[tag=create_player,indent=4]
-include::../part-6-going-berserk.adoc[tag=player_fighter_cb,indent=4]
+include::../part-11-dungeon-progression.adoc[tag=player_fighter_cb,indent=4]
 
 include::../part-5-combat.adoc[tag=create_objects_list,indent=4]
 
-include::../part-8-items.adoc[tag=game_init,indent=4]
+include::../part-11-dungeon-progression.adoc[tag=game_init,indent=4]
 
 include::../part-10-menu-saving.adoc[tag=call_initialise_fov]
 
