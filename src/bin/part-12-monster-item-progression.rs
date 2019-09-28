@@ -327,7 +327,7 @@ fn mut_two<T>(first_index: usize, second_index: usize, items: &mut [T]) -> (&mut
 }
 
 /// add to the player's inventory and remove from the map
-fn pick_item_up(object_id: usize, objects: &mut Vec<Object>, game: &mut Game) {
+fn pick_item_up(object_id: usize, game: &mut Game, objects: &mut Vec<Object>) {
     if game.inventory.len() >= 26 {
         game.messages.add(
             format!(
@@ -433,7 +433,7 @@ fn ai_confused(
 ) -> Ai {
     if num_turns >= 0 {
         // still confused ...
-        // move in a random idrection, and decrease the number of turns confused
+        // move in a random direction, and decrease the number of turns confused
         move_by(
             monster_id,
             rand::thread_rng().gen_range(-1, 2),
@@ -495,7 +495,7 @@ fn use_item(inventory_id: usize, tcod: &mut Tcod, game: &mut Game, objects: &mut
     }
 }
 
-fn drop_item(inventory_id: usize, objects: &mut Vec<Object>, game: &mut Game) {
+fn drop_item(inventory_id: usize, game: &mut Game, objects: &mut Vec<Object>) {
     let mut item = game.inventory.remove(inventory_id);
     item.set_pos(objects[PLAYER].x, objects[PLAYER].y);
     game.messages
@@ -563,7 +563,7 @@ fn target_monster(
 }
 
 /// find closest enemy, up to a maximum range, and in the player's FOV
-fn closest_monster(max_range: i32, tcod: &Tcod, objects: &[Object]) -> Option<usize> {
+fn closest_monster(tcod: &Tcod, objects: &[Object], max_range: i32) -> Option<usize> {
     let mut closest_enemy = None;
     let mut closest_dist = (max_range + 1) as f32; // start with (slightly more than) maximum range
 
@@ -612,7 +612,7 @@ fn cast_lightning(
     objects: &mut [Object],
 ) -> UseResult {
     // find closest enemy (inside a maximum range and damage it)
-    let monster_id = closest_monster(LIGHTNING_RANGE, tcod, objects);
+    let monster_id = closest_monster(tcod, objects, LIGHTNING_RANGE);
     if let Some(monster_id) = monster_id {
         // zap it!
         game.messages.add(
@@ -832,7 +832,7 @@ fn from_dungeon_level(table: &[Transition], level: u32) -> u32 {
 fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>, level: u32) {
     use rand::distributions::{IndependentSample, Weighted, WeightedChoice};
 
-    // maxumum number of monsters per room
+    // maximum number of monsters per room
     let max_monsters = from_dungeon_level(
         &[
             Transition { level: 1, value: 2 },
@@ -1132,7 +1132,7 @@ fn render_all(tcod: &mut Tcod, game: &mut Game, objects: &[Object], fov_recomput
 
     // blit the contents of "con" to the root console
     blit(
-        &mut tcod.con,
+        &tcod.con,
         (0, 0),
         (MAP_WIDTH, MAP_HEIGHT),
         &mut tcod.root,
@@ -1202,7 +1202,7 @@ fn render_all(tcod: &mut Tcod, game: &mut Game, objects: &[Object], fov_recomput
     );
 }
 
-fn player_move_or_attack(dx: i32, dy: i32, objects: &mut [Object], game: &mut Game) {
+fn player_move_or_attack(dx: i32, dy: i32, game: &mut Game, objects: &mut [Object]) {
     // the coordinates the player is moving to/attacking
     let x = objects[PLAYER].x + dx;
     let y = objects[PLAYER].y + dy;
@@ -1269,7 +1269,7 @@ fn menu<T: AsRef<str>>(header: &str, options: &[T], width: i32, root: &mut Root)
     // blit the contents of "window" to the root console
     let x = SCREEN_WIDTH / 2 - width / 2;
     let y = SCREEN_HEIGHT / 2 - height / 2;
-    tcod::console::blit(&mut window, (0, 0), (width, height), root, (x, y), 1.0, 0.7);
+    blit(&window, (0, 0), (width, height), root, (x, y), 1.0, 0.7);
 
     // present the root console to the player and wait for a key-press
     root.flush();
@@ -1334,35 +1334,35 @@ fn handle_keys(tcod: &mut Tcod, game: &mut Game, objects: &mut Vec<Object>) -> P
 
         // movement keys
         (Key { code: Up, .. }, true) | (Key { code: NumPad8, .. }, true) => {
-            player_move_or_attack(0, -1, objects, game);
+            player_move_or_attack(0, -1, game, objects);
             TookTurn
         }
         (Key { code: Down, .. }, true) | (Key { code: NumPad2, .. }, true) => {
-            player_move_or_attack(0, 1, objects, game);
+            player_move_or_attack(0, 1, game, objects);
             TookTurn
         }
         (Key { code: Left, .. }, true) | (Key { code: NumPad4, .. }, true) => {
-            player_move_or_attack(-1, 0, objects, game);
+            player_move_or_attack(-1, 0, game, objects);
             TookTurn
         }
         (Key { code: Right, .. }, true) | (Key { code: NumPad6, .. }, true) => {
-            player_move_or_attack(1, 0, objects, game);
+            player_move_or_attack(1, 0, game, objects);
             TookTurn
         }
         (Key { code: Home, .. }, true) | (Key { code: NumPad7, .. }, true) => {
-            player_move_or_attack(-1, -1, objects, game);
+            player_move_or_attack(-1, -1, game, objects);
             TookTurn
         }
         (Key { code: PageUp, .. }, true) | (Key { code: NumPad9, .. }, true) => {
-            player_move_or_attack(1, -1, objects, game);
+            player_move_or_attack(1, -1, game, objects);
             TookTurn
         }
         (Key { code: End, .. }, true) | (Key { code: NumPad1, .. }, true) => {
-            player_move_or_attack(-1, 1, objects, game);
+            player_move_or_attack(-1, 1, game, objects);
             TookTurn
         }
         (Key { code: PageDown, .. }, true) | (Key { code: NumPad3, .. }, true) => {
-            player_move_or_attack(1, 1, objects, game);
+            player_move_or_attack(1, 1, game, objects);
             TookTurn
         }
         (Key { code: NumPad5, .. }, true) => {
@@ -1375,7 +1375,7 @@ fn handle_keys(tcod: &mut Tcod, game: &mut Game, objects: &mut Vec<Object>) -> P
                 .iter()
                 .position(|object| object.pos() == objects[PLAYER].pos() && object.item.is_some());
             if let Some(item_id) = item_id {
-                pick_item_up(item_id, objects, game);
+                pick_item_up(item_id, game, objects);
             }
             DidntTakeTurn
         }
@@ -1401,7 +1401,7 @@ fn handle_keys(tcod: &mut Tcod, game: &mut Game, objects: &mut Vec<Object>) -> P
                 &mut tcod.root,
             );
             if let Some(inventory_index) = inventory_index {
-                drop_item(inventory_index, objects, game);
+                drop_item(inventory_index, game, objects);
             }
             DidntTakeTurn
         }
@@ -1541,14 +1541,13 @@ fn new_game(tcod: &mut Tcod) -> (Game, Vec<Object>) {
 
     // the list of objects with just the player
     let mut objects = vec![player];
-    let level = 1;
 
     let mut game = Game {
         // generate map (at this point it's not drawn to the screen)
-        map: make_map(&mut objects, level),
+        map: make_map(&mut objects, 1),
         messages: Messages::new(),
         inventory: vec![],
-        dungeon_level: level,
+        dungeon_level: 1,
     };
 
     initialise_fov(tcod, &game.map);
@@ -1606,7 +1605,7 @@ fn play_game(tcod: &mut Tcod, game: &mut Game, objects: &mut Vec<Object>) {
         previous_player_position = objects[PLAYER].pos();
         let player_action = handle_keys(tcod, game, objects);
         if player_action == PlayerAction::Exit {
-            save_game(objects, game).unwrap();
+            save_game(game, objects).unwrap();
             break;
         }
 
@@ -1621,18 +1620,18 @@ fn play_game(tcod: &mut Tcod, game: &mut Game, objects: &mut Vec<Object>) {
     }
 }
 
-fn save_game(objects: &[Object], game: &Game) -> Result<(), Box<dyn Error>> {
-    let save_data = serde_json::to_string(&(objects, game))?;
+fn save_game(game: &Game, objects: &[Object]) -> Result<(), Box<dyn Error>> {
+    let save_data = serde_json::to_string(&(game, objects))?;
     let mut file = File::create("savegame")?;
     file.write_all(save_data.as_bytes())?;
     Ok(())
 }
 
-fn load_game() -> Result<(Vec<Object>, Game), Box<dyn Error>> {
+fn load_game() -> Result<(Game, Vec<Object>), Box<dyn Error>> {
     let mut json_save_state = String::new();
     let mut file = File::open("savegame")?;
     file.read_to_string(&mut json_save_state)?;
-    let result = serde_json::from_str::<(Vec<Object>, Game)>(&json_save_state)?;
+    let result = serde_json::from_str::<(Game, Vec<Object>)>(&json_save_state)?;
     Ok(result)
 }
 
@@ -1674,7 +1673,7 @@ fn main_menu(tcod: &mut Tcod) {
             Some(1) => {
                 // load game
                 match load_game() {
-                    Ok((mut objects, mut game)) => {
+                    Ok((mut game, mut objects)) => {
                         initialise_fov(tcod, &game.map);
                         play_game(tcod, &mut game, &mut objects);
                     }
@@ -1694,16 +1693,17 @@ fn main_menu(tcod: &mut Tcod) {
 }
 
 fn main() {
+    tcod::system::set_fps(LIMIT_FPS);
+
     let root = Root::initializer()
         .font("arial10x10.png", FontLayout::Tcod)
         .font_type(FontType::Greyscale)
         .size(SCREEN_WIDTH, SCREEN_HEIGHT)
         .title("Rust/libtcod tutorial")
         .init();
-    tcod::system::set_fps(LIMIT_FPS);
 
     let mut tcod = Tcod {
-        root: root,
+        root,
         con: Offscreen::new(MAP_WIDTH, MAP_HEIGHT),
         panel: Offscreen::new(SCREEN_WIDTH, PANEL_HEIGHT),
         fov: FovMap::new(MAP_WIDTH, MAP_HEIGHT),

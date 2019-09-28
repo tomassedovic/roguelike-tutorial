@@ -56,8 +56,11 @@ onto it. We'll also heal the player because we're feeling generous!
 [source]
 ----
 tag::next_level_fn[]
+tag::next_level_fn_header[]
 /// Advance to the next level
 fn next_level(tcod: &mut Tcod, game: &mut Game, objects: &mut Vec<Object>) {
+end::next_level_fn_header[]
+tag::next_level_fn_beginning[]
     game.messages.add(
         "You take a moment to rest, and recover your strength.",
         VIOLET,
@@ -70,10 +73,13 @@ fn next_level(tcod: &mut Tcod, game: &mut Game, objects: &mut Vec<Object>) {
          the heart of the dungeon...",
         RED,
     );
+end::next_level_fn_beginning[]
+tag::next_level_fn_build_level[]
     game.dungeon_level += 1;
     game.map = make_map(objects);
     initialise_fov(tcod, &game.map);
 }
+end::next_level_fn_build_level[]
 end::next_level_fn[]
 ----
 
