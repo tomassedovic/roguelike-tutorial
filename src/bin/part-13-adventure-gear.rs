@@ -470,7 +470,7 @@ fn is_blocked(x: i32, y: i32, map: &Map, objects: &[Object]) -> bool {
     // now check for any blocking objects
     objects
         .iter()
-        .any(|object| object.blocks && object.x == x && object.y == y)
+        .any(|object| object.blocks && object.pos() == (x, y))
 }
 
 // combat-related properties and methods (monster, player, NPC).
@@ -493,7 +493,7 @@ enum DeathCallback {
 impl DeathCallback {
     fn callback(self, object: &mut Object, game: &mut Game) {
         use DeathCallback::*;
-        let callback: fn(&mut Object, &mut Game) = match self {
+        let callback = match self {
             Player => player_death,
             Monster => monster_death,
         };
@@ -1009,7 +1009,7 @@ fn from_dungeon_level(table: &[Transition], level: u32) -> u32 {
 fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>, level: u32) {
     use rand::distributions::{IndependentSample, Weighted, WeightedChoice};
 
-    // maxumum number of monsters per room
+    // maximum number of monsters per room
     let max_monsters = from_dungeon_level(
         &[
             Transition { level: 1, value: 2 },
@@ -1778,7 +1778,6 @@ fn new_game(tcod: &mut Tcod) -> (Game, Vec<Object>) {
     let mut game = Game {
         // generate map (at this point it's not drawn to the screen)
         map: make_map(&mut objects, 1),
-        // create the list of game messages and their colors, starts empty
         messages: Messages::new(),
         inventory: vec![],
         dungeon_level: 1,
