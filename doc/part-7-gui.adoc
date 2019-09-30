@@ -457,9 +457,12 @@ end::death_callback_impl[]
 
 tag::attack[]
 tag::attack_beginning[]
+tag::attack_header[]
 pub fn attack(&mut self, target: &mut Object, game: &mut Game) {
+end::attack_header[]
     // a simple formula for attack damage
     let damage = self.fighter.map_or(0, |f| f.power) - target.fighter.map_or(0, |f| f.defense);
+tag::if_damage_gt_zero[]
     if damage > 0 {
         // make the target take some damage
         game.messages.add(
@@ -469,6 +472,7 @@ pub fn attack(&mut self, target: &mut Object, game: &mut Game) {
             ),
             WHITE,
         );
+end::if_damage_gt_zero[]
 end::attack_beginning[]
         target.take_damage(damage, game);
 tag::attack_ending[]

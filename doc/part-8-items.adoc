@@ -108,6 +108,7 @@ To have the item find its way to player's inventory, we'll add a
 [source]
 ----
 tag::pick_item_up_fn[]
+tag::pick_item_up_if_branch[]
 /// add to the player's inventory and remove from the map
 fn pick_item_up(object_id: usize, game: &mut Game, objects: &mut Vec<Object>) {
     if game.inventory.len() >= 26 {
@@ -119,6 +120,7 @@ fn pick_item_up(object_id: usize, game: &mut Game, objects: &mut Vec<Object>) {
             RED,
         );
     } else {
+end::pick_item_up_if_branch[]
         let item = objects.swap_remove(object_id);
         game.messages
             .add(format!("You picked up a {}!", item.name), GREEN);
@@ -502,13 +504,17 @@ tag::use_item_match_use[]
         match on_use(inventory_id, tcod, game, objects) {
 end::use_item_match_use[]
 tag::use_item_process_result[]
+tag::use_item_process_result_used_up[]
             UseResult::UsedUp => {
                 // destroy after use, unless it was cancelled for some reason
                 game.inventory.remove(inventory_id);
             }
+end::use_item_process_result_used_up[]
+tag::use_item_process_result_cancelled[]
             UseResult::Cancelled => {
                 game.messages.add("Cancelled", WHITE);
             }
+end::use_item_process_result_cancelled[]
         }
 end::use_item_process_result[]
 tag::use_item_else[]

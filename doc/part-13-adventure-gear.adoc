@@ -52,7 +52,9 @@ We'll add this new component to our `Object` and its `new` method:
 ----
 struct Object {
     ...
+tag::object_field_equipment[]
     equipment: Option<Equipment>,
+end::object_field_equipment[]
 }
 
 
@@ -60,7 +62,9 @@ impl Object {
     pub fn new(x: i32, y: i32, char: char, name: &str, color: Color, blocks: bool) -> Self {
         Object {
             ...
+tag::object_new_equipment[]
             equipment: None,
+end::object_new_equipment[]
         }
     }
     ...
@@ -225,11 +229,25 @@ can rely on it to tell you where to look):
 
 [source]
 ----
+tag::use_result_enum[]
+enum UseResult {
+    UsedUp,
+    UsedAndKept,
+    Cancelled,
+}
+end::use_result_enum[]
+----
+
+
+[source]
+----
 match on_use(inventory_id, objects, game, tcod) {
     UseResult::UsedUp => {
         ...
     }
-    UseResult::UsedAndKept => {}, // do nothing
+tag::use_item_process_result_used_and_kept[]
+    UseResult::UsedAndKept => {} // do nothing
+end::use_item_process_result_used_and_kept[]
     UseResult::Cancelled => {
         ...
     }
@@ -313,9 +331,10 @@ their slots are available. In the `pick_item_up` function, in the
 
 [source]
 ----
+tag::pick_item_up_else_branch[]
 let item = objects.swap_remove(object_id);
 game.messages
-    .add(format!("You picked up a {}!", item.name), colors::GREEN);
+    .add(format!("You picked up a {}!", item.name), GREEN);
 let index = game.inventory.len();
 let slot = item.equipment.map(|e| e.slot);
 game.inventory.push(item);
@@ -326,6 +345,7 @@ if let Some(slot) = slot {
         game.inventory[index].equip(&mut game.messages);
     }
 }
+end::pick_item_up_else_branch[]
 ----
 
 We take the inventory index of the picked up item and an `Option` of
@@ -714,7 +734,10 @@ For example, here's the final damage formula in `attack`:
 
 [source]
 ----
+tag::attack_damage_formula[]
+// a simple formula for attack damage
 let damage = self.power(game) - target.defense(game);
+end::attack_damage_formula[]
 ----
 
 
@@ -728,6 +751,7 @@ So the final `Fighter` struct looks like this:
 
 [source]
 ----
+tag::fighter_struct_definition[]
 struct Fighter {
     hp: i32,
     base_max_hp: i32,
@@ -736,6 +760,7 @@ struct Fighter {
     xp: i32,
     on_death: DeathCallback,
 }
+end::fighter_struct_definition[]
 ----
 
 The `Equipment` struct:
@@ -842,6 +867,7 @@ called `Shield`:
 
 [source]
 ----
+tag::enum_item_definition[]
 enum Item {
     Heal,
     Lightning,
@@ -850,6 +876,7 @@ enum Item {
     Sword,  // <1>
     Shield,  // <2>
 }
+end::enum_item_definition[]
 ----
 <1> `Equipment` -> `Sword`
 <2> This is new
@@ -858,6 +885,7 @@ and in `use_item`:
 
 [source]
 ----
+tag::use_item_get_on_use[]
 let on_use = match item {
     Heal => cast_heal,
     Lightning => cast_lightning,
@@ -866,6 +894,7 @@ let on_use = match item {
     Sword => toggle_equipment,  // <1>
     Shield => toggle_equipment,  // <2>
 };
+end::use_item_get_on_use[]
 ----
 <1> `Equipment` -> `Sword`
 <2> This is new
