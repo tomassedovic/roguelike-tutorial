@@ -549,7 +549,7 @@ match choice {
     Some(1) => {
         // load game
         let (mut objects, mut game) = load_game().unwrap();
-        initialise_fov(&game.map, &mut tcod.fov);
+        initialise_fov(tcod, &game.map);
         play_game(&mut objects, &mut game, tcod);
     }
     Some(2) => {  // quit ...}
