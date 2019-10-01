@@ -2,6 +2,7 @@
 :outfilesuffix: .rs
 
 ++++
+include::../notice.adoc[]
 include::../part-3-dungeon.adoc[tag=use_cmp]
 
 include::../part-1-graphics.adoc[tag=use_tcod]
