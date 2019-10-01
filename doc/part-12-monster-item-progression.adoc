@@ -53,16 +53,16 @@ structs:
 [source]
 ----
 // monster random table
-    let monster_chances = &mut [
-        Weighted {
-            weight: 80,
-            item: "orc",
-        },
-        Weighted {
-            weight: 20,
-            item: "troll",
-        },
-    ];
+let monster_chances = &mut [
+    Weighted {
+        weight: 80,
+        item: "orc",
+    },
+    Weighted {
+        weight: 20,
+        item: "troll",
+    },
+];
 let monster_choice = WeightedChoice::new(monster_chances);
 ----
 
@@ -81,7 +81,9 @@ the `IndependentSample` trait into scope as well:
 
 [source]
 ----
-use rand::distributions::{Weighted, WeightedChoice, IndependentSample};
+tag::use_rand_types[]
+use rand::distributions::{IndependentSample, Weighted, WeightedChoice};
+end::use_rand_types[]
 ----
 
 And now let's fix the monster random generation from a bunch of ifs to
@@ -89,17 +91,23 @@ a neat `match` block:
 
 [source]
 ----
+tag::generate_monster_orc_branch[]
 let mut monster = match monster_choice.ind_sample(&mut rand::thread_rng()) {
     "orc" => {
         // create an orc
+end::generate_monster_orc_branch[]
         ...
+tag::generate_monster_troll_branch[]
     }
     "troll" => {
         // create a troll
+end::generate_monster_troll_branch[]
         ...
+tag::generate_monster_else_branch[]
     }
     _ => unreachable!(),
 };
+end::generate_monster_else_branch[]
 ----
 
 The `"orc"` and `"troll"` blocks will contain the same code as the
@@ -149,28 +157,40 @@ instead:
 
 [source]
 ----
+tag::place_items_table[]
 let mut item = match item_choice.ind_sample(&mut rand::thread_rng()) {
     Item::Heal => {
         // create a healing potion
-        ...
+        let mut object = Object::new(x, y, '!', "healing potion", VIOLET, false);
+        object.item = Some(Item::Heal);
+        object
     }
     Item::Lightning => {
         // create a lightning bolt scroll
-        ...
+        let mut object =
+            Object::new(x, y, '#', "scroll of lightning bolt", LIGHT_YELLOW, false);
+        object.item = Some(Item::Lightning);
+        object
     }
     Item::Fireball => {
         // create a fireball scroll
-        ...
+        let mut object =
+            Object::new(x, y, '#', "scroll of fireball", LIGHT_YELLOW, false);
+        object.item = Some(Item::Fireball);
+        object
     }
     Item::Confuse => {
         // create a confuse scroll
-        ...
+        let mut object =
+            Object::new(x, y, '#', "scroll of confusion", LIGHT_YELLOW, false);
+        object.item = Some(Item::Confuse);
+        object
     }
+end::place_items_table[]
 };
 ----
 
-and again just move the code from the if/else blocs here. And as you
-can see, we don't have to add a catch-all branch for items, because we
+As you can see, we don't have to add a catch-all branch for items, because we
 handle all the variants of `Item`.
 
 
@@ -205,10 +225,12 @@ a struct that defines the level and value:
 
 [source]
 ----
+tag::transition_struct[]
 struct Transition {
     level: u32,
     value: u32,
 }
+end::transition_struct[]
 ----
 
 Then we can define a list of these transition points and have a
@@ -221,6 +243,7 @@ function:
 
 [source]
 ----
+tag::from_dungeon_level_fn[]
 /// Returns a value that depends on level. the table specifies what
 /// value occurs after each level, default is 0.
 fn from_dungeon_level(table: &[Transition], level: u32) -> u32 {
@@ -230,6 +253,7 @@ fn from_dungeon_level(table: &[Transition], level: u32) -> u32 {
         .find(|transition| level >= transition.level)
         .map_or(0, |transition| transition.value)
 }
+end::from_dungeon_level_fn[]
 ----
 
 It takes a list of transitions, goes through them in reverse order
@@ -248,6 +272,8 @@ chances. In `place_objects`:
 
 [source]
 ----
+tag::monster_tables[]
+// maximum number of monsters per room
 let max_monsters = from_dungeon_level(
     &[
         Transition { level: 1, value: 2 },
@@ -289,6 +315,8 @@ let monster_chances = &mut [
         item: "troll",
     },
 ];
+let monster_choice = WeightedChoice::new(monster_chances);
+end::monster_tables[]
 ----
 
 We define a transition table for the maximum number of monsters and we
@@ -298,6 +326,8 @@ Now for items a little lower down:
 
 [source]
 ----
+tag::item_tables[]
+tag::item_tables_max_items[]
 // maximum number of items per room
 let max_items = from_dungeon_level(
     &[
@@ -306,7 +336,9 @@ let max_items = from_dungeon_level(
     ],
     level,
 );
+end::item_tables_max_items[]
 
+tag::item_tables_spells[]
 // item random table
 let item_chances = &mut [
     // healing potion always shows up, even if all other items have 0 chance
@@ -344,25 +376,155 @@ let item_chances = &mut [
         ),
         item: Item::Confuse,
     },
+end::item_tables_spells[]
+tag::item_tables_end[]
 ];
+let item_choice = WeightedChoice::new(item_chances);
+end::item_tables_end[]
+end::item_tables[]
 
 ...
 
+tag::random_item_count[]
 // choose random number of items
 let num_items = rand::thread_rng().gen_range(0, max_items + 1);
+end::random_item_count[]
+----
+
+We must also pass `level` to `place_object`.
+And since `place_objects` is called from `make_map`, we need to add it there too:
+
+[source]
+----
+tag::place_objects_header[]
+fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>, level: u32) {
+end::place_objects_header[]
+    ...
+}
+
+tag::make_map_header[]
+fn make_map(objects: &mut Vec<Object>, level: u32) -> Map {
+end::make_map_header[]
+    ...
+tag::call_place_objects[]
+    // add some content to this room, such as monsters
+    place_objects(new_room, &map, objects, level);
+end::call_place_objects[]
+    ...
+}
+----
+
+And we need to pass it to the two places we call `make_map`.
+First, where we create the new game:
+
+[source]
+----
+tag::game_init[]
+let mut game = Game {
+    // generate map (at this point it's not drawn to the screen)
+    map: make_map(&mut objects, 1),  // <1>
+    messages: Messages::new(),
+    inventory: vec![],
+    dungeon_level: 1,
+};
+end::game_init[]
+----
+<1> Pass `1` (the first level) to `make_map`
+
+NOTE: We're now using the number `1` for the same thing in two different places:
+`map` and `dungeon_level`.
+You can pull it out to a variable or a `const` if this bothers you.
+
+And second, when we generate a new map after descending deeper into the dungeon:
+
+[source]
+----
+include::part-11-dungeon-progression.adoc[tag=next_level_fn_beginning]
+    ...
+tag::next_level_fn_build_level[]
+    game.dungeon_level += 1;
+    game.map = make_map(objects, game.dungeon_level);
+    initialise_fov(tcod, &game.map);
+}
+end::next_level_fn_build_level[]
 ----
 
 You can now remove the `MAX_ROOM_MONSTERS` and `MAX_ROOM_ITEMS`
 constants (which the compiler will remind you to do) and change some
 of the stats to make the game more balanced:
 
-* HEAL_AMOUNT = 40
-* LIGHTNING_DAMAGE = 40
-* FIREBALL_DAMAGE = 25
+[source]
+----
+tag::heal_consts[]
+const HEAL_AMOUNT: i32 = 40;  // <1>
+end::heal_consts[]
+...
+tag::fireball_consts[]
+const FIREBALL_RADIUS: i32 = 3;
+const FIREBALL_DAMAGE: i32 = 25;  // <2>
+end::fireball_consts[]
+----
+<1> Changed from `4` to `40`
+<2> Changed from `12` to `25`
 
-For the player, set `hp` and `max_hp` to 100, `defense` to 1 and
-`power` to 4. For the orcs: `hp=20`, `defense=0` and `power=4`. And
-for the trolls: `hp=30`, `defense=2` and `power=8`.
+And finally, let's update the stats of our monsters and player to reflect the new reality:
+
+[source]
+----
+// create an orc
+tag::generate_orc[]
+let mut orc = Object::new(x, y, 'o', "orc", DESATURATED_GREEN, true);
+orc.fighter = Some(Fighter {
+    max_hp: 20,  // <1>
+    hp: 20,  // <2>
+    defense: 0,
+    power: 4,  // <3>
+    xp: 35,
+    on_death: DeathCallback::Monster,
+});
+orc.ai = Some(Ai::Basic);
+orc
+end::generate_orc[]
+
+// create a troll
+tag::generate_troll[]
+let mut troll = Object::new(x, y, 'T', "troll", DARKER_GREEN, true);
+troll.fighter = Some(Fighter {
+    max_hp: 30,  // <4>
+    hp: 30,  // <5>
+    defense: 2,  // <6>
+    power: 8,  // <7>
+    xp: 100,
+    on_death: DeathCallback::Monster,
+});
+troll.ai = Some(Ai::Basic);
+troll
+end::generate_troll[]
+
+
+// create object representing the player
+tag::player_fighter[]
+player.fighter = Some(Fighter {
+    max_hp: 100,  // <8>
+    hp: 100,  // <9>
+    defense: 1,  // <10>
+    power: 4,  // <11>
+    xp: 0,
+    on_death: DeathCallback::Player,
+});
+end::player_fighter[]
+----
+<1> Change orc's `max_hp` from 10 to 20
+<2> Change orc's `hp` from 10 to 20
+<3> Change orc's `power` from 3 to 4
+<4> Change troll's `max_hp` from 16 to 30
+<5> Change troll's `hp` from 16 to 30
+<6> Change troll's `defense` from 1 to 2
+<7> Change troll's `power` from 4 to 8
+<8> Change player's `max_hp` from 30 to 100
+<9> Change player's `hp` from 30 to 100
+<10> Change player's `defense` from 2 to 1
+<11> Change player's `power` from 5 to 4
 
 And that's it. Try playing it for a bit. It will be challenging and
 you can't just bash your way through. Try to reach the level 10 or so.

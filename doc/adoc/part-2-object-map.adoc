@@ -1,0 +1,1 @@
+include::../part-2-object-map.adoc[tag=**]

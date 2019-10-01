@@ -1,0 +1,1 @@
+include::../part-4-fov-exploration.adoc[tag=**]

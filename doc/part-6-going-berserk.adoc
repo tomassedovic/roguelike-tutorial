@@ -21,6 +21,7 @@ hit points (for healing), defense and attack power.
 
 [source]
 ----
+tag::fighter_struct[]
 // combat-related properties and methods (monster, player, NPC).
 #[derive(Clone, Copy, Debug, PartialEq)]
 struct Fighter {
@@ -29,6 +30,7 @@ struct Fighter {
     defense: i32,
     power: i32,
 }
+end::fighter_struct[]
 ----
 
 Next is the component for monster artificial intelligence. For now, it
@@ -36,25 +38,67 @@ will not carry any data, but we'll soon remedy that.
 
 [source]
 ----
-#[derive(Clone, Copy, Debug, PartialEq)]
-struct Ai;
+tag::ai_struct[]
+#[derive(Clone, Debug, PartialEq)]
+enum Ai {
+    Basic,
+}
+end::ai_struct[]
 ----
 
 And update the `Object` definition:
 
 [source]
 ----
-fighter: Option<Fighter>,
-ai: Option<Ai>,
+tag::object_struct[]
+tag::object_fields[]
+struct Object {
+    x: i32,
+    y: i32,
+    char: char,
+    color: Color,
+    name: String,
+    blocks: bool,
+    alive: bool,
+end::object_fields[]
+tag::object_components[]
+    fighter: Option<Fighter>,  // <1>
+    ai: Option<Ai>,  // <2>
+end::object_components[]
+}
+end::object_struct[]
 ----
+<1> Added the `Fighter` component
+<2> Added the `Ai` component
 
 and `Object::new`:
 
 [source]
 ----
-fighter: None,
-ai: None,
+tag::object_new[]
+tag::object_new_header[]
+pub fn new(x: i32, y: i32, char: char, name: &str, color: Color, blocks: bool) -> Self {
+end::object_new_header[]
+tag::object_new_fields[]
+    Object {
+        x: x,
+        y: y,
+        char: char,
+        color: color,
+        name: name.into(),
+        blocks: blocks,
+        alive: false,
+end::object_new_fields[]
+tag::object_new_components[]
+        fighter: None,  // <1>
+        ai: None,  // <2>
+end::object_new_components[]
+    }
+}
+end::object_new[]
 ----
+<1> Initialise the `Fighter` component to `None`
+<2> Initialise the `Ai` component to `None`
 
 This means that the newly-created objects will not have any
 components. We can add them ourselves, though!
@@ -63,12 +107,14 @@ First the player:
 
 [source]
 ----
+tag::player_fighter[]
 player.fighter = Some(Fighter {
     max_hp: 30,
     hp: 30,
     defense: 2,
     power: 5,
 });
+end::player_fighter[]
 ----
 
 (you'll need to make the `player` variable mutable because we're
@@ -81,29 +127,32 @@ defined:
 
 [source]
 ----
-if ... {
+tag::generate_monster[]
+let mut monster = if rand::random::<f32>() < 0.8 {
+    // 80% chance of getting an orc
     // create an orc
-    let mut orc = Object::new(x, y, 'o', "orc", colors::DESATURATED_GREEN, true);
+    let mut orc = Object::new(x, y, 'o', "orc", DESATURATED_GREEN, true);
     orc.fighter = Some(Fighter {
         max_hp: 10,
         hp: 10,
         defense: 0,
         power: 3,
     });
-    orc.ai = Some(Ai);
+    orc.ai = Some(Ai::Basic);
     orc
 } else {
     // create a troll
-    let mut troll = Object::new(x, y, 'T', "troll", colors::DARKER_GREEN, true);
+    let mut troll = Object::new(x, y, 'T', "troll", DARKER_GREEN, true);
     troll.fighter = Some(Fighter {
         max_hp: 16,
         hp: 16,
         defense: 1,
         power: 4,
     });
-    troll.ai = Some(Ai);
+    troll.ai = Some(Ai::Basic);
     troll
-}
+};
+end::generate_monster[]
 ----
 
 == AI
@@ -117,6 +166,7 @@ usually) to move towards a position (the player's coordinates, usually).
 
 [source]
 ----
+tag::move_towards[]
 fn move_towards(id: usize, target_x: i32, target_y: i32, map: &Map, objects: &mut [Object]) {
     // vector from this object to the target, and distance
     let dx = target_x - objects[id].x;
@@ -129,6 +179,7 @@ fn move_towards(id: usize, target_x: i32, target_y: i32, map: &Map, objects: &mu
     let dy = (dy as f32 / distance).round() as i32;
     move_by(id, dx, dy, map, objects);
 }
+end::move_towards[]
 ----
 
 Next we'll add a method on `Object` that will tell us the distance to
@@ -136,12 +187,14 @@ another object.
 
 [source]
 ----
+tag::distance_to[]
 /// return the distance to another object
 pub fn distance_to(&self, other: &Object) -> f32 {
     let dx = other.x - self.x;
     let dy = other.y - self.y;
     ((dx.pow(2) + dy.pow(2)) as f32).sqrt()
 }
+end::distance_to[]
 ----
 
 All right, let's use them to implement some basic behaviour: if the
@@ -149,15 +202,20 @@ monster is close, it will attack, otherwise it will move closer.
 
 [source]
 ----
-fn ai_take_turn(monster_id: usize, map: &Map, objects: &mut [Object], fov_map: &FovMap) {
+tag::ai_take_turn[]
+tag::ai_take_turn_header[]
+fn ai_take_turn(monster_id: usize, tcod: &Tcod, game: &Game, objects: &mut [Object]) {
+tag::ai_take_turn_monster_move[]
     // a basic monster takes its turn. If you can see it, it can see you
     let (monster_x, monster_y) = objects[monster_id].pos();
-    if fov_map.is_in_fov(monster_x, monster_y) {
+    if tcod.fov.is_in_fov(monster_x, monster_y) {
         if objects[monster_id].distance_to(&objects[PLAYER]) >= 2.0 {
             // move towards player if far away
             let (player_x, player_y) = objects[PLAYER].pos();
-            move_towards(monster_id, player_x, player_y, map, objects);
+            move_towards(monster_id, player_x, player_y, &game.map, objects);
         } else if objects[PLAYER].fighter.map_or(false, |f| f.hp > 0) {
+end::ai_take_turn_monster_move[]
+end::ai_take_turn_header[]
             // close enough, attack! (if the player is still alive.)
             let monster = &objects[monster_id];
             println!(
@@ -167,6 +225,7 @@ fn ai_take_turn(monster_id: usize, map: &Map, objects: &mut [Object], fov_map: &
         }
     }
 }
+end::ai_take_turn[]
 ----
 
 But for any of this to have effect, we need to call it from the main
@@ -174,17 +233,22 @@ loop:
 
 [source]
 ----
-for id in 0..objects.len() {
-    if objects[id].ai.is_some() {
-        ai_take_turn(id, &map, &mut objects, &fov_map);
+tag::monsters_take_turn[]
+// let monsters take their turn
+if objects[PLAYER].alive && player_action != PlayerAction::DidntTakeTurn {
+    for id in 0..objects.len() {
+        if objects[id].ai.is_some() {
+            ai_take_turn(id, &tcod, &game, &mut objects);
+        }
     }
 }
+end::monsters_take_turn[]
 ----
 
 When you test it now, you can see the monsters following you around
 and trying to attack you.
 
-The whole code is available link:part-6a-ai.rs.txt[here].
+The whole code is available link:part-6a-ai.rs[here].
 
 == Sword-fighting
 
@@ -196,13 +260,17 @@ damage system, whatever it may be.
 
 [source]
 ----
+tag::take_damage[]
 pub fn take_damage(&mut self, damage: i32) {
+tag::apply_damage[]
     // apply damage if possible
     if let Some(fighter) = self.fighter.as_mut() {
         if damage > 0 {
             fighter.hp -= damage;
         }
     }
+end::apply_damage[]
+end::take_damage[]
 }
 ----
 
@@ -211,6 +279,7 @@ there's the method to attack another object:
 
 [source]
 ----
+tag::attack[]
 pub fn attack(&mut self, target: &mut Object) {
     // a simple formula for attack damage
     let damage = self.fighter.map_or(0, |f| f.power) - target.fighter.map_or(0, |f| f.defense);
@@ -228,6 +297,7 @@ pub fn attack(&mut self, target: &mut Object) {
         );
     }
 }
+end::attack[]
 ----
 
 It calls the previous method in order to handle taking damage. We
@@ -263,6 +333,7 @@ our object from both:
 
 [source]
 ----
+tag::mut_two[]
 /// Mutably borrow two *separate* elements from the given slice.
 /// Panics when the indexes are equal or out of bounds.
 fn mut_two<T>(first_index: usize, second_index: usize, items: &mut [T]) -> (&mut T, &mut T) {
@@ -275,23 +346,28 @@ fn mut_two<T>(first_index: usize, second_index: usize, items: &mut [T]) -> (&mut
         (&mut second_slice[0], &mut first_slice[second_index])
     }
 }
+end::mut_two[]
 ----
 
 And now monster's attack looks like this:
 
 [source]
 ----
+tag::monster_attack[]
 // close enough, attack! (if the player is still alive.)
 let (monster, player) = mut_two(monster_id, PLAYER, objects);
 monster.attack(player);
+end::monster_attack[]
 ----
 
 And do the same to the player's dummy attack code in `player_move_or_attack`:
 
 [source]
 ----
+tag::player_attack[]
 let (player, target) = mut_two(PLAYER, target_id, objects);
 player.attack(target);
+end::player_attack[]
 ----
 
 
@@ -303,9 +379,11 @@ attack you. This is how you make a simple GUI! At the end of the
 
 [source]
 ----
+tag::show_player_stats[]
 // show the player's stats
+tcod.root.set_default_foreground(WHITE);
 if let Some(fighter) = objects[PLAYER].fighter {
-    root.print_ex(
+    tcod.root.print_ex(
         1,
         SCREEN_HEIGHT - 2,
         BackgroundFlag::None,
@@ -313,6 +391,7 @@ if let Some(fighter) = objects[PLAYER].fighter {
         format!("HP: {}/{} ", fighter.hp, fighter.max_hp),
     );
 }
+end::show_player_stats[]
 ----
 
 NOTE: We render the hitpoints only when the _player_ has the `Fighter`
@@ -335,17 +414,37 @@ parameter when creating a `Fighter` instance.
 
 [source]
 ----
-struct Fighter {
-   // ...
-   on_death: DeathCallback,
-}
-
-
+tag::fighter_struct_with_cb[]
+tag::fighter_struct_doc[]
+// combat-related properties and methods (monster, player, NPC).
+end::fighter_struct_doc[]
 #[derive(Clone, Copy, Debug, PartialEq)]
+tag::fighter_struct_definition[]
+struct Fighter {
+    max_hp: i32,
+    hp: i32,
+    defense: i32,
+    power: i32,
+    on_death: DeathCallback,  // <1>
+}
+end::fighter_struct_definition[]
+end::fighter_struct_with_cb[]
+----
+<1> New `on_death` callback field
+
+Let us define the callback as well:
+
+[source]
+----
+tag::death_callback_enum[]
+#[derive(Clone, Copy, Debug, PartialEq)]
+tag::death_callback_enum_definition[]
 enum DeathCallback {
     Player,
     Monster,
 }
+end::death_callback_enum_definition[]
+end::death_callback_enum[]
 ----
 
 We're adding another field to `Fighter` of a new enum `DeathCallback`.
@@ -356,6 +455,7 @@ Next, we'll add a method that will let us call the callback:
 
 [source]
 ----
+tag::death_callback_impl[]
 impl DeathCallback {
     fn callback(self, object: &mut Object) {
         use DeathCallback::*;
@@ -366,6 +466,7 @@ impl DeathCallback {
         callback(object);
     }
 }
+end::death_callback_impl[]
 ----
 
 It checks to see which callback it represents and invokes the right
@@ -373,8 +474,62 @@ function (`player_death` or `monster_death`). The callback functions
 take one parameter -- the mutable reference to the dying object. This
 is so we can change its properties on death.
 
-Before we get to writing those, lets make sure our callbacks actually
-get triggered when an object dies!
+And we also need to set the callback for every `Fighter` instance.
+Here's the player's one:
+
+[source]
+----
+tag::player_fighter_cb[]
+player.fighter = Some(Fighter {
+    max_hp: 30,
+    hp: 30,
+    defense: 2,
+    power: 5,
+    on_death: DeathCallback::Player,  // <1>
+});
+end::player_fighter_cb[]
+----
+<1> Added `on_death` callback
+
+
+And this is for the monsters (in `place_objects`):
+
+[source]
+----
+tag::generate_monster_cb[]
+let mut monster = if rand::random::<f32>() < 0.8 {
+    // 80% chance of getting an orc
+    // create an orc
+    let mut orc = Object::new(x, y, 'o', "orc", DESATURATED_GREEN, true);
+    orc.fighter = Some(Fighter {
+        max_hp: 10,
+        hp: 10,
+        defense: 0,
+        power: 3,
+        on_death: DeathCallback::Monster,  // <1>
+    });
+    orc.ai = Some(Ai::Basic);
+    orc
+} else {
+    // create a troll
+    let mut troll = Object::new(x, y, 'T', "troll", DARKER_GREEN, true);
+    troll.fighter = Some(Fighter {
+        max_hp: 16,
+        hp: 16,
+        defense: 1,
+        power: 4,
+        on_death: DeathCallback::Monster,  // <2>
+    });
+    troll.ai = Some(Ai::Basic);
+    troll
+};
+end::generate_monster_cb[]
+----
+<1> Added `on_death` callback
+<2> Added `on_death` callback
+
+Before we get to writing the concrete callback implementations, lets
+make sure our they actually get triggered when an object dies!
 
 We'll do that in `take_damage` rather than `attack`, because an object
 may die from causes other than combat, such as a trap, hunger or
@@ -388,6 +543,7 @@ Put this at the end of the `take_damage` method:
 if let Some(fighter) = self.fighter.as_mut() {
     // ...
 }
+tag::execute_death_callback[]
 // check for death, call the death function
 if let Some(fighter) = self.fighter {
     if fighter.hp <= 0 {
@@ -395,6 +551,7 @@ if let Some(fighter) = self.fighter {
         fighter.on_death.callback(self);
     }
 }
+end::execute_death_callback[]
 ----
 
 The first `if let` check looks almost identical to the one that's already
@@ -427,26 +584,34 @@ callbacks!
 
 [source]
 ----
+tag::player_death[]
 fn player_death(player: &mut Object) {
     // the game ended!
     println!("You died!");
 
+tag::player_death_modifications[]
     // for added effect, transform the player into a corpse!
     player.char = '%';
-    player.color = colors::DARK_RED;
+    player.color = DARK_RED;
+end::player_death_modifications[]
 }
+end::player_death[]
 
+tag::monster_death[]
 fn monster_death(monster: &mut Object) {
     // transform it into a nasty corpse! it doesn't block, can't be
     // attacked and doesn't move
     println!("{} is dead!", monster.name);
+tag::monster_death_modifications[]
     monster.char = '%';
-    monster.color = colors::DARK_RED;
+    monster.color = DARK_RED;
     monster.blocks = false;
     monster.fighter = None;
     monster.ai = None;
     monster.name = format!("remains of {}", monster.name);
+end::monster_death_modifications[]
 }
+end::monster_death[]
 ----
 
 Notice that the monster's components were disabled, so it doesn't run
@@ -466,10 +631,12 @@ following:
 
 [source]
 ----
+tag::attack_target_id[]
 // try to find an attackable object there
 let target_id = objects
     .iter()
     .position(|object| object.fighter.is_some() && object.pos() == (x, y));
+end::attack_target_id[]
 ----
 
 `is_some` is a method on `Option` that will tell you whether it's
@@ -489,7 +656,7 @@ let mut to_draw: Vec<_> = objects.iter().collect();
 to_draw.sort_by(|o1, o2| { o1.blocks.cmp(&o2.blocks) });
 // draw the objects in the list
 for object in &to_draw {
-    if fov_map.is_in_fov(object.x, object.y) {
+    if tcod.map.is_in_fov(object.x, object.y) {
         object.draw(con);
     }
 }
@@ -511,16 +678,20 @@ we'll only sort items that we actually want to draw.
 
 [source]
 ----
+tag::objects_to_draw[]
 let mut to_draw: Vec<_> = objects
     .iter()
-    .filter(|o| fov_map.is_in_fov(o.x, o.y))
+    .filter(|o| tcod.fov.is_in_fov(o.x, o.y))
     .collect();
+tag::sort_and_draw_objects[]
 // sort so that non-blocknig objects come first
 to_draw.sort_by(|o1, o2| o1.blocks.cmp(&o2.blocks));
 // draw the objects in the list
 for object in &to_draw {
-    object.draw(con);
+    object.draw(&mut tcod.con);
 }
+end::sort_and_draw_objects[]
+end::objects_to_draw[]
 ----
 
 It's finally ready to play, and it actually feels like a game! It's been
@@ -531,6 +702,6 @@ over them! (_Ugh!_) See if you can finish off all of them before they do
 the same to you.
 
 
-Here's link:part-6b-untimely-deaths.rs.txt[the complete code so far].
+Here's link:part-6b-untimely-deaths.rs[the complete code so far].
 
 Continue to <<part-7-gui#,the next part>>.

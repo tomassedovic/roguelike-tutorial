@@ -1,5 +1,7 @@
 = Field-of-view and exploration
+:icons: font
 :source-highlighter: pygments
+:source-language: rust
 ifdef::env-github[:outfilesuffix: .adoc]
 
 :fov-study: http://www.roguebasin.com/index.php?title=Comparative_study_of_field_of_view_algorithms_for_2D_grid_based_worlds
@@ -31,15 +33,18 @@ the player.)
 
 [source,rust]
 ----
-const FOV_ALGO: FovAlgorithm = FovAlgorithm::Basic;
-const FOV_LIGHT_WALLS: bool = true;
+tag::fov_consts[]
+const FOV_ALGO: FovAlgorithm = FovAlgorithm::Basic; // default FOV algorithm
+const FOV_LIGHT_WALLS: bool = true; // light walls or not
 const TORCH_RADIUS: i32 = 10;
+end::fov_consts[]
 ----
 
 And we need to add colours for the lit tiles:
 
 [source,rust]
 ----
+tag::colors[]
 const COLOR_DARK_WALL: Color = Color { r: 0, g: 0, b: 100 };
 const COLOR_LIGHT_WALL: Color = Color {
     r: 130,
@@ -56,6 +61,7 @@ const COLOR_LIGHT_GROUND: Color = Color {
     g: 180,
     b: 50,
 };
+end::colors[]
 ----
 
 The fov map object in `tcod` is called `Map`, which conflicts with our
@@ -64,8 +70,36 @@ import:
 
 [source,rust]
 ----
-use tcod::map::{FovAlgorithm, Map as FovMap};
+tag::use_fov_map[]
+use tcod::map::{FovAlgorithm, Map as FovMap};  // <1>
+end::use_fov_map[]
+
+tag::tcod_struct[]
+struct Tcod {
+    root: Root,
+    con: Offscreen,
+    fov: FovMap,  // <2>
+}
+end::tcod_struct[]
 ----
+<1> Bring the `tcod::map::Map` type in and alias it to `FovMap`
+<2> Add `FovMap` to the `Tcod` struct
+
+We need to create the FOV map and ad it to our `tcod` variable in `main`.
+While we're at it, we'll initialise the `Offscreen` console directly too:
+
+[source]
+----
+tag::tcod_init[]
+let mut tcod = Tcod {
+    root,
+    con: Offscreen::new(MAP_WIDTH, MAP_HEIGHT),  // <1>
+    fov: FovMap::new(MAP_WIDTH, MAP_HEIGHT),  // <2>
+};
+end::tcod_init[]
+----
+<1> Initialise `con` inline
+<2> Initialise `fov`
 
 The libtcod FOV module needs to know which tiles block sight. So, we
 create a map that libtcod can understand, and fill it with
@@ -79,17 +113,19 @@ main function, before entering the main game loop.
 
 [source,rust]
 ----
-let mut fov_map = FovMap::new(MAP_WIDTH, MAP_HEIGHT);
+tag::create_fov_map[]
+// populate the FOV map, according to the generated map
 for y in 0..MAP_HEIGHT {
     for x in 0..MAP_WIDTH {
-        fov_map.set(
+        tcod.fov.set(
             x,
             y,
-            !map[x as usize][y as usize].block_sight,
-            !map[x as usize][y as usize].blocked,
+            !game.map[x as usize][y as usize].block_sight,
+            !game.map[x as usize][y as usize].blocked,
         );
     }
 }
+end::create_fov_map[]
 ----
 
 FOV needs to be recomputed -- but only if the player moves or a tile
@@ -100,7 +136,10 @@ Add this before the main game loop:
 
 [source,rust]
 ----
+tag::init_previous_player_pos[]
+// force FOV "recompute" first time through the game loop
 let mut previous_player_position = (-1, -1);
+end::init_previous_player_pos[]
 ----
 
 (we're using `(-1, -1)` to make sure FOV gets computed on the first
@@ -111,34 +150,46 @@ position could change):
 
 [source,rust]
 ----
+tag::update_previous_player_pos[]
 previous_player_position = (player.x, player.y);
+end::update_previous_player_pos[]
 ----
 
 And lastly, replace the existing call to `render_all` with these two lines:
 
 [source,rust]
 ----
+tag::call_render_all[]
+// render the screen
 let fov_recompute = previous_player_position != (objects[0].x, objects[0].y);
-render_all(
-    &mut root,
-    &mut con,
-    &objects,
-    &map,
-    &mut fov_map,
-    fov_recompute,
-);
+render_all(&mut tcod, &game, &objects, fov_recompute);
+end::call_render_all[]
 ----
 
 Now we need to change the rendering code to actually recompute FOV and
 display the result.
 
+First, update the function definition to accept `fov_map` and `fov_recompute`:
+
 [source,rust]
 ----
+tag::render_all_header[]
+fn render_all(tcod: &mut Tcod, game: &Game, objects: &[Object], fov_recompute: bool) {
+end::render_all_header[]
+----
+
+Next, recompute the FOV map if the caller asked for it:
+
+[source,rust]
+----
+tag::fov_recompute[]
 if fov_recompute {
     // recompute FOV if needed (the player moved or something)
     let player = &objects[0];
-    fov_map.compute_fov(player.x, player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALGO);
+    tcod.fov
+        .compute_fov(player.x, player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALGO);
 }
+end::fov_recompute[]
 ----
 
 As you can see, we're using all the constants we defined earlier.
@@ -147,11 +198,13 @@ they will get their `light` colours:
 
 [source,rust]
 ----
+tag::fov_set_tile_background[]
+tag::calculate_background[]
 // go through all tiles, and set their background color
 for y in 0..MAP_HEIGHT {
     for x in 0..MAP_WIDTH {
-        let visible = fov_map.is_in_fov(x, y);
-        let wall = map[x as usize][y as usize].block_sight;
+        let visible = tcod.fov.is_in_fov(x, y);
+        let wall = game.map[x as usize][y as usize].block_sight;
         let color = match (visible, wall) {
             // outside of field of view:
             (false, true) => COLOR_DARK_WALL,
@@ -160,9 +213,12 @@ for y in 0..MAP_HEIGHT {
             (true, true) => COLOR_LIGHT_WALL,
             (true, false) => COLOR_LIGHT_GROUND,
         };
-        con.set_char_background(x, y, color, BackgroundFlag::Set);
+end::calculate_background[]
+        tcod.con
+            .set_char_background(x, y, color, BackgroundFlag::Set);
     }
 }
+end::fov_set_tile_background[]
 ----
 
 We've replaced our `if` with a `match`. As we've added another
@@ -177,9 +233,14 @@ check:
 
 [source,rust]
 ----
-if fov_map.is_in_fov(object.x, object.y) {
-    object.draw(con);
+tag::render_objects[]
+// draw all objects in the list
+for object in objects {
+    if tcod.fov.is_in_fov(object.x, object.y) {
+        object.draw(&mut tcod.con);
+    }
 }
+end::render_objects[]
 ----
 
 We've shuffled a lot of code around, but we haven't changed much,
@@ -189,7 +250,7 @@ visible objects.
 
 And look how much better it looks now!
 
-link:part-4a-fov.rs.txt[The whole code for this section is here].
+link:part-4a-fov.rs[The whole code for this section is here].
 
 == Exploration
 
@@ -203,29 +264,48 @@ start unexplored. Put this in the definition of the `Tile` struct:
 
 [source,rust]
 ----
-explored: bool,
+tag::tile_struct[]
+tag::tile_struct_doc[]
+/// A tile of the map and its properties
+end::tile_struct_doc[]
+#[derive(Clone, Copy, Debug)]
+tag::tile_struct_definition[]
+struct Tile {
+    blocked: bool,
+    explored: bool,  // <1>
+    block_sight: bool,
+}
+end::tile_struct_definition[]
+end::tile_struct[]
 ----
+<1> Adde the `explored` field
 
 And you need to update the `Tile::empty` and `Tile::wall` bodies:
 
 [source,rust]
 ----
-pub fn empty() -> Self {
-    Tile {
-        blocked: false,
-        explored: false,
-        block_sight: false,
+tag::tile_impl[]
+impl Tile {
+    pub fn empty() -> Self {
+        Tile {
+            blocked: false,
+            explored: false,  // <1>
+            block_sight: false,
+        }
     }
-}
 
-pub fn wall() -> Self {
-    Tile {
-        blocked: true,
-        explored: false,
-        block_sight: true,
+    pub fn wall() -> Self {
+        Tile {
+            blocked: true,
+            explored: false,  // <2>
+            block_sight: true,
+        }
     }
 }
+end::tile_impl[]
 ----
+<1> Added the `explored` field
+<2> Added the `explored` field
 
 Now, in the `render_all` function, after the `(visible, wall)` match
 make sure the visible tiles are explored and only render those that
@@ -233,22 +313,60 @@ are:
 
 [source,rust]
 ----
-let explored = &mut map[x as usize][y as usize].explored;
+tag::exploration_visibility[]
+let explored = &mut game.map[x as usize][y as usize].explored;
 if visible {
     // since it's visible, explore it
     *explored = true;
 }
 if *explored {
     // show explored tiles only (any visible tile is explored already)
-    con.set_char_background(x, y, color, BackgroundFlag::Set);
+    tcod.con
+        .set_char_background(x, y, color, BackgroundFlag::Set);
 }
+end::exploration_visibility[]
 ----
 
 (we take a mutable reference to the `explored` field so we don't have
 to write the full `map[x as usize][y as usize].explored` bit twice)
 
 And finally, since we're now actually modifying the `map`, we'll need
-to pass a _mutable_ reference to `render_all`.
+to pass a _mutable_ reference to `render_all`. Since `map` is carried in the `Game` struct,
+we need to make the `game` variable mutable:
+
+[source,rust]
+----
+tag::game_init[]
+let mut game = Game {
+    // generate map (at this point it's not drawn to the screen)
+    map: make_map(&mut objects[0]),
+};
+end::game_init[]
+----
+
+Then, we pass a _mutable reference_ to `game` to `render_all`:
+
+[source,rust]
+----
+tag::check_fov_recompute[]
+// render the screen
+let fov_recompute = previous_player_position != (objects[0].x, objects[0].y);
+end::check_fov_recompute[]
+tag::call_render_all_mut[]
+render_all(&mut tcod, &mut game, &objects, fov_recompute);  // <1>
+end::call_render_all_mut[]
+----
+<1> `game` is now `&mut`
+
+And last, the `render_all` function definition:
+
+[source,rust]
+----
+tag::render_all_header_mut_map[]
+fn render_all(tcod: &mut Tcod, game: &mut Game, objects: &[Object], fov_recompute: bool) {  // <1>
+end::render_all_header_mut_map[]
+----
+<1> `game` is now `&mut Game`
 
 And that's that! If you run the game now, you start in mostly black
 space except for your immediate surroundings and the map fills in as
@@ -259,6 +377,6 @@ modify anything and that the FOV/exploration code belongs somewhere
 else. They wouldn't necessarily be wrong. But let's just roll with it
 for now.
 
-Here's link:part-4b-exploration.rs.txt[the complete code so far].
+Here's link:part-4b-exploration.rs[the complete code so far].
 
 Continue to <<part-5-combat#,the next part>>.

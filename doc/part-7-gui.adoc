@@ -24,10 +24,32 @@ will hold the player's health bar and a colored message log.
 It's easier to manage GUI windows and panels with an off-screen
 console for each one, created before the main loop:
 
+Let's add another `Ofscreen` console to our `Tcod` struct:
+
 [source]
 ----
-let mut panel = Offscreen::new(SCREEN_WIDTH, PANEL_HEIGHT);
+struct Tcod {
+    root: Root,
+    con: Offscreen,
+    panel: Offscreen,  // <1>
+    fov: FovMap,
+}
+
+...
+
+fn main() {
+   ...
+   let mut tcod = Tcod {
+       root,
+       con: Offscreen::new(MAP_WIDTH, MAP_HEIGHT),
+       panel: Offscreen::new(SCREEN_WIDTH, PANEL_HEIGHT),  // <2>
+       fov: FovMap::new(MAP_WIDTH, MAP_HEIGHT),
+   };
+   ...
+}
 ----
+<1> New `Tcod` field: `panel`
+<2> Initialise `panel`
 
 The constant PANEL_HEIGHT is defined later, along with others. Let's
 jump right to the "status bar" rendering code! This is fully generic
@@ -41,6 +63,7 @@ size, and a few calls to tcod's `rect` method for the rectangles.
 
 [source]
 ----
+tag::render_bar_header[]
 fn render_bar(
     panel: &mut Offscreen,
     x: i32,
@@ -52,6 +75,8 @@ fn render_bar(
     bar_color: Color,
     back_color: Color,
 ) {
+end::render_bar_header[]
+tag::render_bar_panel[]
     // render a bar (HP, experience, etc). First calculate the width of the bar
     let bar_width = (value as f32 / maximum as f32 * total_width as f32) as i32;
 
@@ -64,6 +89,7 @@ fn render_bar(
     if bar_width > 0 {
         panel.rect(x, y, bar_width, 1, false, BackgroundFlag::Screen);
     }
+end::render_bar_panel[]
 }
 ----
 
@@ -73,8 +99,9 @@ at the very end of `render_bar`:
 
 [source]
 ----
+tag::render_bar_text[]
 // finally, some centered text with the values
-panel.set_default_foreground(colors::WHITE);
+panel.set_default_foreground(WHITE);
 panel.print_ex(
     x + total_width / 2,
     y,
@@ -82,6 +109,7 @@ panel.print_ex(
     TextAlignment::Center,
     &format!("{}: {}/{}", name, value, maximum),
 );
+end::render_bar_text[]
 ----
 
 Now we'll modify the main rendering function to use this. First,
@@ -91,13 +119,25 @@ the health bar.
 
 [source]
 ----
+tag::panel_consts[]
 // sizes and coordinates relevant for the GUI
 const BAR_WIDTH: i32 = 20;
 const PANEL_HEIGHT: i32 = 7;
 const PANEL_Y: i32 = SCREEN_HEIGHT - PANEL_HEIGHT;
+end::panel_consts[]
 ----
 
-We also changed `MAP_HEIGHT` to `43` to give the panel more room.
+We also changed `MAP_HEIGHT` to `43` to give the panel more room:
+
+[source]
+----
+tag::map_size_consts[]
+// size of the map
+const MAP_WIDTH: i32 = 80;
+const MAP_HEIGHT: i32 = 43;  // <1>
+end::map_size_consts[]
+----
+<1> Changed from `45` to `43`
 
 At the end of `render_all`, replace the code that shows the player's
 stats as text with the following code. It re-initializes the panel to
@@ -106,35 +146,45 @@ then shows the panel on the root console.
 
 [source]
 ----
+tag::prepare_gui_render[]
 // prepare to render the GUI panel
-panel.set_default_background(colors::BLACK);
-panel.clear();
+tcod.panel.set_default_background(BLACK);
+tcod.panel.clear();
+end::prepare_gui_render[]
 
+tag::show_player_stats[]
+tag::calculate_hp[]
 // show the player's stats
 let hp = objects[PLAYER].fighter.map_or(0, |f| f.hp);
 let max_hp = objects[PLAYER].fighter.map_or(0, |f| f.max_hp);
+end::calculate_hp[]
+tag::render_hp_bar[]
 render_bar(
-    panel,
+    &mut tcod.panel,
     1,
     1,
     BAR_WIDTH,
     "HP",
     hp,
     max_hp,
-    colors::LIGHT_RED,
-    colors::DARKER_RED,
+    LIGHT_RED,
+    DARKER_RED,
 );
+end::render_hp_bar[]
+end::show_player_stats[]
 
+tag::blit_panel[]
 // blit the contents of `panel` to the root console
 blit(
-    panel,
+    &tcod.panel,
     (0, 0),
     (SCREEN_WIDTH, PANEL_HEIGHT),
-    root,
+    &mut tcod.root,
     (0, PANEL_Y),
     1.0,
     1.0,
 );
+end::blit_panel[]
 ----
 
 And we'll have to add `panel` to the `render_all` arguments and pass
@@ -152,9 +202,11 @@ The constants that define the message bar's position and size are:
 
 [source]
 ----
+tag::msg_consts[]
 const MSG_X: i32 = BAR_WIDTH + 2;
 const MSG_WIDTH: i32 = SCREEN_WIDTH - BAR_WIDTH - 2;
 const MSG_HEIGHT: usize = PANEL_HEIGHT as usize - 1;
+end::msg_consts[]
 ----
 
 This is so it appears to the right of the health bar, and fills up the
@@ -162,50 +214,66 @@ rest of the space. The messages will be stored in a vector so they can
 be easily manipulated. Each message is a tuple with 2 fields: the
 message string, and its color.
 
-[source]
-----
-// create the list of game messages and their colors, starts empty
-let mut messages = vec![];
-----
-
 The type of that vector will be `Vec<(String, Color)>`. We'll be
 passing it to a lot of our functions, so let's make an alias for it:
 
 [source]
 ----
-type Messages = Vec<(String, Color)>;
+tag::struct_messages[]
+struct Messages {
+    messages: Vec<(String, Color)>,
+}
+end::struct_messages[]
 ----
 
-
-Now we add a function to add messages to the list:
+We will use two operations on the struct: adding a new message and
+iterating over all the existing ones. For convenience, we will also
+add a `new` function so we can create it easily.
 
 [source]
 ----
-fn message<T: Into<String>>(messages: &mut Messages, message: T, color: Color) {
-    // if the buffer is full, remove the first message to make room for the new one
-    if messages.len() == MSG_HEIGHT {
-        messages.remove(0);
+tag::impl_messages[]
+impl Messages {
+    pub fn new() -> Self {
+        Self { messages: vec![] }
     }
-    // add the new line as a tuple, with the text and the color
-    messages.push((message.into(), color));
+
+    /// add the new message as a tuple, with the text and the color
+    pub fn add<T: Into<String>>(&mut self, message: T, color: Color) {
+        self.messages.push((message.into(), color));
+    }
+
+    /// Create a `DoubleEndedIterator` over the messages
+    pub fn iter(&self) -> impl DoubleEndedIterator<Item = &(String, Color)> {
+        self.messages.iter()
+    }
 }
+end::impl_messages[]
 ----
 
-As new messages come in, we remove the old ones to make sure we always
-fit into `MSG_HEIGHT`.
+The `<T: Into<String>>` bit makes the `add` function _generic_.
+Instead of accepting a parameter of a specified type, it can work with
+anything that implements the `Into` trait for `String`, i.e. anything
+that can be converted to `String`. This lets us pass both `&str` (and
+therefore string literals) and `String` (an output of the `format!`
+macro among other things).
 
-The `<T: Into<String>>` bit makes this function _generic_. Instead of
-accepting a parameter of a specified type, it can work with anything
-that implements the `Into` trait for `String`, i.e. anything that can
-be converted to `String`. This lets us pass both `&str` (and therefore
-string literals) and `String` (an output of the `format!` macro among
-other things).
+As we're keeping the inner `messages` field private, we need to
+provide a way for our users to access the messages. In Rust, this is
+typically done via iterators. We could try to find the exact type that
+`Vec::iter` returns (it is: `std::slice::Iter<'a, (String, Color)'`),
+but that's a bit hairy, not always desirable (you might prefer to
+treat the exact iterator type as an implementation detail subject to
+change) and for more complicated scenarios (e.g. returning an iterator
+that has `map` or `filter` called on it) completely impossible.
+Sometimes a function can return a type that you cannot write down in
+your own code.
 
-NOTE: The original tutorial uses the `textwrap` module in
-Python's standard library to split the text into multiple lines based
-on the maximum length. Rust's standard library doesn't have such a
-function, but we can use libtcod's `get_height_rect` and
-`print_rect` to do the wrapping for us.
+What we can do instead is to say: "This function returns some type
+implementing this trait" and let the compiler figure it out.
+
+To do that, you have your function return `impl Trait` and make sure
+whatever value you actually return does indeed implement that trait.
 
 To show the messages, we go through them one by one, get the height of
 each (potentially line-wrapped) and draw them onto the panel using the
@@ -213,17 +281,19 @@ each (potentially line-wrapped) and draw them onto the panel using the
 
 [source]
 ----
+tag::render_messages[]
 // print the game messages, one line at a time
 let mut y = MSG_HEIGHT as i32;
-for &(ref msg, color) in messages.iter().rev() {
-    let msg_height = panel.get_height_rect(MSG_X, y, MSG_WIDTH, 0, msg);
+for &(ref msg, color) in game.messages.iter().rev() {
+    let msg_height = tcod.panel.get_height_rect(MSG_X, y, MSG_WIDTH, 0, msg);
     y -= msg_height;
     if y < 0 {
         break;
     }
-    panel.set_default_foreground(color);
-    panel.print_rect(MSG_X, y, MSG_WIDTH, 0, msg);
+    tcod.panel.set_default_foreground(color);
+    tcod.panel.print_rect(MSG_X, y, MSG_WIDTH, 0, msg);
 }
+end::render_messages[]
 ----
 
 We're going through the messages backwards (starting with the last
@@ -236,51 +306,56 @@ When we have `y` lower than zero, it would mean we'd draw *above* the
 panel. Libtcod wouldn't let us, but since that means we've ran out of
 space, we may as well break out of the loop.
 
-Again, we need to pass the messages argument to `render_all`. Its
-signature is now:
+NOTE: The original Python tutorial uses the `textwrap` module in
+Python's standard library to split the text into multiple lines based
+on the maximum length. Rust's standard library doesn't have such a
+function, but we can use libtcod's `get_height_rect` and
+`print_rect` to do the wrapping for us.
+
+We're going to add the `Messages` type our `Game` struct rather than adding another type to
+every function that will want to print a message:
 
 [source]
 ----
-fn render_all(
-    root: &mut Root,
-    con: &mut Offscreen,
-    panel: &mut Offscreen,
-    objects: &[Object],
-    map: &mut Map,
-    messages: &Messages,
-    fov_map: &mut FovMap,
-    fov_recompute: bool,
-)
+tag::game_struct[]
+struct Game {
+    map: Map,
+    messages: Messages,  // <1>
+}
+end::game_struct[]
 ----
+<1> Added `messages`
 
-
-And in the `main` loop:
+And we'll initialise it is `main`:
 
 [source]
 ----
-render_all(
-    &mut root,
-    &mut con,
-    &mut panel,
-    &objects,
-    &mut map,
-    &messages,
-    &mut fov_map,
-    fov_recompute,
-);
+fn main() {
+    ...
+tag::game_init[]
+let mut game = Game {
+    // generate map (at this point it's not drawn to the screen)
+    map: make_map(&mut objects),
+    messages: Messages::new(),  // <1>
+};
+end::game_init[]
+    ...
+}
 ----
+<1> Initialised `messages`
 
 But now we're ready to test it! Let's print a friendly message before
 the main loop to welcome the player to our dungeon of doom:
 
 [source]
 ----
+tag::welcome_message[]
 // a warm welcoming message!
-message(
-    &mut messages,
+game.messages.add(
     "Welcome stranger! Prepare to perish in the Tombs of the Ancient Kings.",
-    colors::RED,
+    RED,
 );
+end::welcome_message[]
 ----
 
 Yay! You can now replace all the `println!` macro uses with calls to
@@ -294,6 +369,160 @@ pretty much everywhere).
 
 As usual, just replace the `println!(...)` calls with `message(...)`
 and let the compiler guide you.
+
+The end result should look something like this:
+
+[source]
+----
+tag::player_death_header[]
+fn player_death(player: &mut Object, game: &mut Game) {  // <1>
+end::player_death_header[]
+tag::player_death_message[]
+    // the game ended!
+    game.messages.add("You died!", RED);  // <2>
+end::player_death_message[]
+    ...
+}
+
+tag::monster_death_header[]
+fn monster_death(monster: &mut Object, game: &mut Game) {  // <3>
+end::monster_death_header[]
+tag::monster_death_message[]
+    // transform it into a nasty corpse! it doesn't block, can't be
+    // attacked and doesn't move
+    game.messages
+        .add(format!("{} is dead!", monster.name), ORANGE);  // <4>
+end::monster_death_message[]
+    ...
+}
+
+tag::player_move_or_attack_header[]
+fn player_move_or_attack(dx: i32, dy: i32, game: &mut Game, objects: &mut [Object]) {  // <5>
+end::player_move_or_attack_header[]
+    ...
+tag::player_attack[]
+    let (player, target) = mut_two(PLAYER, target_id, objects);
+    player.attack(target, game);  // <6>
+end::player_attack[]
+}
+
+tag::previous_player_position[]
+// handle keys and exit game if needed
+previous_player_position = objects[PLAYER].pos();
+end::previous_player_position[]
+tag::call_handle_keys[]
+let player_action = handle_keys(&mut tcod, &mut game, &mut objects);  // <7>
+end::call_handle_keys[]
+tag::handle_player_action[]
+if player_action == PlayerAction::Exit {
+    break;
+}
+end::handle_player_action[]
+
+tag::take_damage_header[]
+pub fn take_damage(&mut self, damage: i32, game: &mut Game) {
+end::take_damage_header[]
+    ...
+
+tag::execute_death_callback[]
+    // check for death, call the death function
+    if let Some(fighter) = self.fighter {
+        if fighter.hp <= 0 {
+            self.alive = false;
+            fighter.on_death.callback(self, game);
+        }
+    }
+end::execute_death_callback[]
+}
+
+tag::ai_take_turn_header[]
+fn ai_take_turn(monster_id: usize, tcod: &Tcod, game: &mut Game, objects: &mut [Object]) {  // <8>
+end::ai_take_turn_header[]
+    ...
+tag::ai_take_turn_monster_attack[]
+    // close enough, attack! (if the player is still alive.)
+    let (monster, player) = mut_two(monster_id, PLAYER, objects);
+    monster.attack(player, game);  // <9>
+end::ai_take_turn_monster_attack[]
+}
+
+tag::death_callback_impl[]
+impl DeathCallback {
+    fn callback(self, object: &mut Object, game: &mut Game) {  // <10>
+        use DeathCallback::*;
+        let callback = match self {  // <11>
+            Player => player_death,
+            Monster => monster_death,
+        };
+        callback(object, game);  // <12>
+    }
+}
+end::death_callback_impl[]
+
+tag::attack[]
+tag::attack_beginning[]
+tag::attack_header[]
+pub fn attack(&mut self, target: &mut Object, game: &mut Game) {
+end::attack_header[]
+    // a simple formula for attack damage
+    let damage = self.fighter.map_or(0, |f| f.power) - target.fighter.map_or(0, |f| f.defense);
+tag::if_damage_gt_zero[]
+    if damage > 0 {
+        // make the target take some damage
+        game.messages.add(
+            format!(
+                "{} attacks {} for {} hit points.",
+                self.name, target.name, damage
+            ),
+            WHITE,
+        );
+end::if_damage_gt_zero[]
+end::attack_beginning[]
+        target.take_damage(damage, game);
+tag::attack_ending[]
+    } else {
+        game.messages.add(
+            format!(
+                "{} attacks {} but it has no effect!",
+                self.name, target.name
+            ),
+            WHITE,
+        );
+    }
+}
+end::attack_ending[]
+end::attack[]
+
+fn main() {
+   ...
+    while !tcod.root.window_closed() {
+        ...
+tag::monsters_take_turn[]
+        // let monsters take their turn
+        if objects[PLAYER].alive && player_action != PlayerAction::DidntTakeTurn {
+            for id in 0..objects.len() {
+                if objects[id].ai.is_some() {
+                    ai_take_turn(id, &tcod, &mut game, &mut objects);
+                }
+            }
+        }
+end::monsters_take_turn[]
+    }
+}
+----
+<1> Added `game` to the function's arguments
+<2> Using `Messages` instead of `println!`
+<3> Added `game` to the function's arguments
+<4> Using `Messages` instead of `println!`
+<5> Made `game` mutable
+<6> Passing `game` to the function
+<7> Passing a mutable reference to `Game` to the function call
+<8> Made `game` mutable
+<9> Passing `messages` to the function call
+<10> Added `messages` to the function's arguments
+<11> Passing `messages` to the callback function pointer type
+<12> Passing `messages` to the function call
+
 
 :lazy_static: https://crates.io/crates/lazy_static/
 
@@ -330,16 +559,43 @@ First, let's import new types from the {input}[input module]:
 
 [source]
 ----
-use tcod::input::{self, Event, Mouse};
+tag::use_tcod_input[]
+use tcod::input::{self, Event, Key, Mouse};
+end::use_tcod_input[]
 ----
 
-Now before the `main` loop, create new variables for keeping track of
-the keyboard and mouse states.
+Next we'll add both fields to our `Tcod` struct:
 
 [source]
 ----
-let mut mouse = Default::default();
-let mut key = Default::default();
+tag::tcod_struct[]
+struct Tcod {
+    root: Root,
+    con: Offscreen,
+    panel: Offscreen,
+    fov: FovMap,
+    key: Key,  // <1>
+    mouse: Mouse,  // <2>
+}
+end::tcod_struct[]
+----
+<1> New field: `key`
+<2> New field: `mouse`
+
+Now in the `main` loop, populate the two new fields where we initialise the `Tcod` struct:
+
+[source]
+----
+tag::tcod_init[]
+let mut tcod = Tcod {
+    root,
+    con: Offscreen::new(MAP_WIDTH, MAP_HEIGHT),
+    panel: Offscreen::new(SCREEN_WIDTH, PANEL_HEIGHT),
+    fov: FovMap::new(MAP_WIDTH, MAP_HEIGHT),
+    key: Default::default(),
+    mouse: Default::default(),
+};
+end::tcod_init[]
 ----
 
 :default: http://doc.rust-lang.org/std/default/trait.Default.html
@@ -356,11 +612,13 @@ main loop, right before the call to `render_all`:
 
 [source]
 ----
+tag::check_for_event[]
 match input::check_for_event(input::MOUSE | input::KEY_PRESS) {
-    Some((_, Event::Mouse(m))) => mouse = m,
-    Some((_, Event::Key(k))) => key = k,
-    _ => key = Default::default(),
+    Some((_, Event::Mouse(m))) => tcod.mouse = m,
+    Some((_, Event::Key(k))) => tcod.key = k,
+    _ => tcod.key = Default::default(),
 }
+end::check_for_event[]
 ----
 
 We clear the `key` back to its default state when we don't get a
@@ -373,16 +631,20 @@ Now pass the key to `handle_keys` and remove the call to
 
 [source]
 ----
-fn handle_keys(
-    key: Key,
-    root: &mut Root,
-    map: &Map,
-    objects: &mut [Object],
-    messages: &mut Messages,
-) -> PlayerAction {
+tag::handle_keys_header[]
+fn handle_keys(tcod: &mut Tcod, game: &mut Game, objects: &mut Vec<Object>) -> PlayerAction {  // <1>
+end::handle_keys_header[]
     ...
+tag::match_key_header[]
+    let player_alive = objects[PLAYER].alive;  // <2>
+    match (tcod.key, player_alive) {
+end::match_key_header[]
+        ...
+    }
 }
 ----
+<1> Made `game` mutable
+<2> Removed `root.wait_for_keypress`
 
 Next we'll write a function that lists names of all objects at the
 current mouse position. We'll use the `cx` and `cy` fields of the
@@ -391,19 +653,25 @@ mouse is over.
 
 [source]
 ----
+tag::get_names_under_mouse[]
+tag::get_names_under_mouse_header[]
 /// return a string with the names of all objects under the mouse
 fn get_names_under_mouse(mouse: Mouse, objects: &[Object], fov_map: &FovMap) -> String {
+end::get_names_under_mouse_header[]
+tag::get_names_under_mouse_collect_names[]
     let (x, y) = (mouse.cx as i32, mouse.cy as i32);
 
     // create a list with the names of all objects at the mouse's coordinates and in FOV
     let names = objects
         .iter()
-        .filter(|obj| {obj.pos() == (x, y) && fov_map.is_in_fov(obj.x, obj.y)})
+        .filter(|obj| obj.pos() == (x, y) && fov_map.is_in_fov(obj.x, obj.y))
         .map(|obj| obj.name.clone())
         .collect::<Vec<_>>();
 
-    names.join(", ")  // join the names, separated by commas
+    names.join(", ") // join the names, separated by commas
+end::get_names_under_mouse_collect_names[]
 }
+end::get_names_under_mouse[]
 ----
 
 We go through objects under the mouse, gather their names into a vector and then
@@ -414,18 +682,18 @@ on the mouse's position, after rendering the health bar:
 
 [source]
 ----
+tag::hovered_objects[]
 // display names of objects under the mouse
-panel.set_default_foreground(colors::LIGHT_GREY);
-panel.print_ex(
+tcod.panel.set_default_foreground(LIGHT_GREY);
+tcod.panel.print_ex(
     1,
     0,
     BackgroundFlag::None,
     TextAlignment::Left,
-    get_names_under_mouse(mouse, objects, fov_map),
+    get_names_under_mouse(tcod.mouse, objects, &tcod.fov),
 );
+end::hovered_objects[]
 ----
-
-(we need to pass the `mouse: Mouse` argument to `render_all`)
 
 But wait! If you recall, in a turn-based game, the rendering is done
 only once per turn; the rest of the time, the game is blocked on
@@ -450,6 +718,6 @@ the player moves to make their move. Makes sense!
 
 
 
-Here's link:part-7-gui.rs.txt[the complete code so far].
+Here's link:part-7-gui.rs[the complete code so far].
 
 Continue to <<part-8-items#,the next part>>.

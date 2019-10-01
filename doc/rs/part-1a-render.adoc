@@ -1,0 +1,21 @@
+:doctype: inline
+:outfilesuffix: .rs
+
+++++
+include::../notice.adoc[]
+include::../part-1-graphics.adoc[tag=use_tcod]
+
+include::../part-1-graphics.adoc[tag=consts]
+
+include::../part-1-graphics.adoc[tag=tcod_root_struct]
+
+fn main() {
+include::../part-1-graphics.adoc[tag=set_fps,indent=4]
+
+include::../part-1-graphics.adoc[tag=init,indent=4]
+
+include::../part-1-graphics.adoc[tag=tcod_init,indent=4]
+
+include::../part-1-graphics.adoc[tag=initial_game_loop,indent=4]
+}
+++++

@@ -1,0 +1,40 @@
+:doctype: inline
+:outfilesuffix: .rs
+
+++++
+include::../notice.adoc[]
+include::../part-1-graphics.adoc[tag=use_tcod]
+
+include::../part-1-graphics.adoc[tag=consts]
+
+include::../part-1-graphics.adoc[tag=tcod_root_struct]
+
+include::../part-1-graphics.adoc[tag=handle_keys_header]
+include::../part-1-graphics.adoc[tag=use_input_key,indent=4]
+
+include::../part-1-graphics.adoc[tag=match_key_header,indent=4]
+include::../part-1-graphics.adoc[tag=match_special_keys,indent=8]
+
+include::../part-1-graphics.adoc[tag=movement_keys,indent=8]
+
+include::../part-1-graphics.adoc[tag=match_key_footer,indent=4]
+
+include::../part-1-graphics.adoc[tag=handle_keys_footer]
+
+fn main() {
+include::../part-1-graphics.adoc[tag=set_fps,indent=4]
+
+include::../part-1-graphics.adoc[tag=init,indent=4]
+
+include::../part-1-graphics.adoc[tag=tcod_init,indent=4]
+
+include::../part-1-graphics.adoc[tag=centre_player_position,indent=4]
+
+include::../part-1-graphics.adoc[tag=initial_game_loop_header,indent=4]
+include::../part-1-graphics.adoc[tag=player_at_position,indent=8]
+include::../part-1-graphics.adoc[tag=root_flush,indent=8]
+
+include::../part-1-graphics.adoc[tag=handle_exit_keys,indent=8]
+    }
+}
+++++

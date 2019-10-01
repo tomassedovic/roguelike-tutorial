@@ -21,35 +21,72 @@ place monsters, at the end of the `place_objects` function:
 
 [source]
 ----
+tag::random_item_count[]
 // choose random number of items
 let num_items = rand::thread_rng().gen_range(0, MAX_ROOM_ITEMS + 1);
+end::random_item_count[]
 
+tag::place_item_for_loop[]
 for _ in 0..num_items {
+end::place_item_for_loop[]
+tag::choose_item_random_pos[]
     // choose random spot for this item
     let x = rand::thread_rng().gen_range(room.x1 + 1, room.x2);
     let y = rand::thread_rng().gen_range(room.y1 + 1, room.y2);
+end::choose_item_random_pos[]
 
+tag::item_pos_not_blocked[]
     // only place it if the tile is not blocked
     if !is_blocked(x, y, map, objects) {
+end::item_pos_not_blocked[]
         // create a healing potion
-        let mut object = Object::new(x, y, '!', "healing potion", colors::VIOLET);
+        let mut object = Object::new(x, y, '!', "healing potion", VIOLET, false);
         objects.push(object);
     }
 }
 ----
 
-For this to work, we must define the new constant `MAX_ROOM_ITEMS =
-2`. Later we'll expand this with a few magic scrolls in addition to
-the healing potions; this is the spot to add any items you want in
-your game. The healing potions don't have any special components for
-now; we'll get to that in a second.
-
-Next, let's define the inventory! This goes before the main loop:
+For this to work, we must define the new constant `MAX_ROOM_ITEMS`.
+Later we'll expand this with a few magic scrolls in addition to the
+healing potions; this is the spot to add any items you want in your
+game. The healing potions don't have any special components for now;
+we'll get to that in a second.
 
 [source]
 ----
-let mut inventory = vec![];
+tag::max_room_items_const[]
+const MAX_ROOM_ITEMS: i32 = 2;
+end::max_room_items_const[]
 ----
+
+Next, let's define the inventory! We'll add it to our `Game` struct:
+
+[source]
+----
+tag::game_struct[]
+struct Game {
+    map: Map,
+    messages: Messages,
+    inventory: Vec<Object>,  // <1>
+}
+end::game_struct[]
+----
+<1> New field: `inventory`
+
+And we need to add it to our `main` function where we initialise the `game` variable:
+
+[source]
+----
+tag::game_init[]
+let mut game = Game {
+    // generate map (at this point it's not drawn to the screen)
+    map: make_map(&mut objects),
+    messages: Messages::new(),
+    inventory: vec![],  // <1>
+};
+end::game_init[]
+----
+<1> Initialise the new `inventory` field
 
 Simple enough: the inventory is a list of items, and it starts empty.
 Now the `Item` component -- it will hold all data that makes an object
@@ -57,10 +94,12 @@ behave like an item. For now that will be just the item type.
 
 [source]
 ----
+tag::enum_item[]
 #[derive(Clone, Copy, Debug, PartialEq)]
 enum Item {
     Heal,
 }
+end::enum_item[]
 ----
 
 To have the item find its way to player's inventory, we'll add a
@@ -68,32 +107,27 @@ To have the item find its way to player's inventory, we'll add a
 
 [source]
 ----
+tag::pick_item_up_fn[]
+tag::pick_item_up_if_branch[]
 /// add to the player's inventory and remove from the map
-fn pick_item_up(
-    object_id: usize,
-    objects: &mut Vec<Object>,
-    inventory: &mut Vec<Object>,
-    messages: &mut Messages,
-) {
-    if inventory.len() >= 26 {
-        message(
-            messages,
+fn pick_item_up(object_id: usize, game: &mut Game, objects: &mut Vec<Object>) {
+    if game.inventory.len() >= 26 {
+        game.messages.add(
             format!(
                 "Your inventory is full, cannot pick up {}.",
                 objects[object_id].name
             ),
-            colors::RED,
+            RED,
         );
     } else {
+end::pick_item_up_if_branch[]
         let item = objects.swap_remove(object_id);
-        message(
-            messages,
-            format!("You picked up a {}!", item.name),
-            colors::GREEN,
-        );
-        inventory.push(item);
+        game.messages
+            .add(format!("You picked up a {}!", item.name), GREEN);
+        game.inventory.push(item);
     }
 }
+end::pick_item_up_fn[]
 ----
 
 We limit the inventory to 26 items because later, in the inventory
@@ -139,18 +173,37 @@ We now add `Item` as another component the `Object` can have:
 ----
 struct Object {
     ...
-    item: Option<Item>,
+tag::object_components[]
+    fighter: Option<Fighter>,
+    ai: Option<Ai>,
+    item: Option<Item>,  // <1>
+end::object_components[]
 }
 ----
+<1> Added the `Item` component
 
-And add `item: None,` to `Object`'s `new` method.
+And add `item: None,` to `Object`'s `new` method:
+
+[source]
+----
+tag::object_new_components[]
+fighter: None,
+ai: None,
+item: None,
+end::object_new_components[]
+----
 
 Now that we have an `Item` component, you can add it to the healing
 potion in `place_objects`:
 
 [source]
 ----
+tag::place_healing_potion[]
+// create a healing potion
+let mut object = Object::new(x, y, '!', "healing potion", VIOLET, false);
 object.item = Some(Item::Heal);
+objects.push(object);
+end::place_healing_potion[]
 ----
 
 How does the player pick up an item? It's very easy: just test for
@@ -161,24 +214,19 @@ arrow-handling and the final `return DidntTakeTurn` line:
 
 [source]
 ----
+tag::handle_pick_up_key[]
 (Key { printable: 'g', .. }, true) => {
     // pick up an item
     let item_id = objects
         .iter()
         .position(|object| object.pos() == objects[PLAYER].pos() && object.item.is_some());
     if let Some(item_id) = item_id {
-        pick_item_up(item_id, objects, inventory, messages);
+        pick_item_up(item_id, game, objects);
     }
     DidntTakeTurn
 }
+end::handle_pick_up_key[]
 ----
-
-And we need to pass inventory to `handle_keys`. And we'll _also_ have
-to change the `&mut [Object]` argument to `&mut Vec<Object>`, because
-that's what `pick_item_up` expects. The difference is that the former
-is a mutable reference to an `array` -- we can change its items but
-not its _size_. The latter is a full vector, which means we can also
-grow or shrink it.
 
 You can test it out now! There will be a few potions scattered around,
 and you'll get a message when you pick them up by pressing `G`. The
@@ -198,7 +246,9 @@ it's supposed to do:
 
 [source]
 ----
+tag::menu_header[]
 fn menu<T: AsRef<str>>(header: &str, options: &[T], width: i32, root: &mut Root) -> Option<usize> {
+end::menu_header[]
     // body goes here ...
 }
 ----
@@ -225,10 +275,12 @@ let it slide and get harder-to-track errors down the line.
 
 [source]
 ----
+tag::menu_option_count_assert[]
 assert!(
     options.len() <= 26,
     "Cannot have a menu with more than 26 options."
 );
+end::menu_option_count_assert[]
 ----
 
 Now we calculate the height of the window -- it's implicit. The header
@@ -239,9 +291,11 @@ total height is that plus the number of options.
 
 [source]
 ----
+tag::menu_calculate_header[]
 // calculate total height for the header (after auto-wrap) and one line per option
 let header_height = root.get_height_rect(0, 0, width, SCREEN_HEIGHT, header);
 let height = options.len() as i32 + header_height;
+end::menu_calculate_header[]
 ----
 
 Given the window's size, we can create an off-screen console where the
@@ -250,11 +304,14 @@ top, using the auto-wrap functionality.
 
 [source]
 ----
+tag::menu_create_window_console[]
 // create an off-screen console that represents the menu's window
 let mut window = Offscreen::new(width, height);
+end::menu_create_window_console[]
 
+tag::menu_print_header[]
 // print the header, with auto-wrap
-window.set_default_foreground(colors::WHITE);
+window.set_default_foreground(WHITE);
 window.print_rect_ex(
     0,
     0,
@@ -264,6 +321,7 @@ window.print_rect_ex(
     TextAlignment::Left,
     header,
 );
+end::menu_print_header[]
 ----
 
 :enumerate: http://doc.rust-lang.org/std/iter/trait.Iterator.html#method.enumerate
@@ -275,6 +333,7 @@ coordinate and the option letter to display next to it.
 
 [source]
 ----
+tag::menu_print_options[]
 // print all the options
 for (index, option_text) in options.iter().enumerate() {
     let menu_letter = (b'a' + index as u8) as char;
@@ -287,6 +346,7 @@ for (index, option_text) in options.iter().enumerate() {
         text,
     );
 }
+end::menu_print_options[]
 ----
 
 We need to do a bit of type casting here. Rust does not convert
@@ -304,10 +364,12 @@ screen.
 
 [source]
 ----
+tag::menu_blit_window[]
 // blit the contents of "window" to the root console
 let x = SCREEN_WIDTH / 2 - width / 2;
 let y = SCREEN_HEIGHT / 2 - height / 2;
-tcod::console::blit(&mut window, (0, 0), (width, height), root, (x, y), 1.0, 0.7);
+blit(&window, (0, 0), (width, height), root, (x, y), 1.0, 0.7);
+end::menu_blit_window[]
 ----
 
 The last 2 parameters to `blit` hadn't been used in our game before:
@@ -329,10 +391,13 @@ waiting for input:
 
 [source]
 ----
+tag::menu_flush_root_wait_for_keypress[]
 // present the root console to the player and wait for a key-press
 root.flush();
 let key = root.wait_for_keypress(true);
+end::menu_flush_root_wait_for_keypress[]
 
+tag::menu_convert_key_to_index[]
 // convert the ASCII code to an index; if it corresponds to an option, return it
 if key.printable.is_alphabetic() {
     let index = key.printable.to_ascii_lowercase() as usize - 'a' as usize;
@@ -344,6 +409,7 @@ if key.printable.is_alphabetic() {
 } else {
     None
 }
+end::menu_convert_key_to_index[]
 ----
 
 That was one really long function! But if you base most of your
@@ -353,12 +419,16 @@ a list of the items' names, and call the `menu` function:
 
 [source]
 ----
+tag::inventory_menu_fn[]
+tag::inventory_menu_fn_one[]
 fn inventory_menu(inventory: &[Object], header: &str, root: &mut Root) -> Option<usize> {
     // how a menu with each item of the inventory as an option
     let options = if inventory.len() == 0 {
         vec!["Inventory is empty.".into()]
     } else {
-        inventory.iter().map(|item| { item.name.clone() }).collect()
+end::inventory_menu_fn_one[]
+        inventory.iter().map(|item| item.name.clone()).collect()
+tag::inventory_menu_fn_two[]
     };
 
     let inventory_index = menu(header, &options, INVENTORY_WIDTH, root);
@@ -370,13 +440,23 @@ fn inventory_menu(inventory: &[Object], header: &str, root: &mut Root) -> Option
         None
     }
 }
+end::inventory_menu_fn_two[]
+end::inventory_menu_fn[]
 ----
 
 It also tells the player if the inventory is empty; simply displaying
-an empty list would be rude! The constant `INVENTORY_WIDTH = 50` is
-defined at the top, as usual. The header text is a parameter because
-we want to call this both for using and dropping items (and maybe
-other actions).
+an empty list would be rude! The constant `INVENTORY_WIDTH` is defined
+at the top, as usual:
+
+[source]
+----
+tag::inventory_consts[]
+const INVENTORY_WIDTH: i32 = 50;
+end::inventory_consts[]
+----
+
+The header text is a parameter because we want to call this both for
+using and dropping items (and maybe other actions).
 
 Speaking of which, we can define the inventory key
 right now, in `handle_keys` (after the code to pick up items). The line
@@ -412,35 +492,45 @@ the player changes their mind.
 
 [source]
 ----
-fn use_item(
-    inventory_id: usize,
-    inventory: &mut Vec<Object>,
-    objects: &mut [Object],
-    messages: &mut Messages,
-) {
+tag::use_item_fn[]
+tag::use_item_header[]
+fn use_item(inventory_id: usize, tcod: &mut Tcod, game: &mut Game, objects: &mut [Object]) {
     use Item::*;
+end::use_item_header[]
+tag::use_item_get_function[]
     // just call the "use_function" if it is defined
-    if let Some(item) = inventory[inventory_id].item {
+    if let Some(item) = game.inventory[inventory_id].item {
+end::use_item_get_function[]
         let on_use = match item {
             Heal => cast_heal,
         };
-        match on_use(inventory_id, objects, messages) {
+tag::use_item_match_use[]
+        match on_use(inventory_id, tcod, game, objects) {
+end::use_item_match_use[]
+tag::use_item_process_result[]
+tag::use_item_process_result_used_up[]
             UseResult::UsedUp => {
                 // destroy after use, unless it was cancelled for some reason
-                inventory.remove(inventory_id);
+                game.inventory.remove(inventory_id);
             }
+end::use_item_process_result_used_up[]
+tag::use_item_process_result_cancelled[]
             UseResult::Cancelled => {
-                message(messages, "Cancelled", colors::WHITE);
+                game.messages.add("Cancelled", WHITE);
             }
+end::use_item_process_result_cancelled[]
         }
+end::use_item_process_result[]
+tag::use_item_else[]
     } else {
-        message(
-            messages,
-            format!("The {} cannot be used.", inventory[inventory_id].name),
-            colors::WHITE,
+        game.messages.add(
+            format!("The {} cannot be used.", game.inventory[inventory_id].name),
+            WHITE,
         );
     }
+end::use_item_else[]
 }
+end::use_item_fn[]
 ----
 
 If we do actually have an item, we match on its type (that's just
@@ -454,10 +544,12 @@ So all our `on_use` functions will return `UseResult`. Let's define it:
 
 [source]
 ----
+tag::use_result_enum[]
 enum UseResult {
     UsedUp,
     Cancelled,
 }
+end::use_result_enum[]
 ----
 
 An item can either be used up (so we delete it) or the action can be
@@ -467,31 +559,35 @@ Now let's add `cast_heal` for our potions to have effect!
 
 [source]
 ----
-fn cast_heal(_inventory_id: usize, objects: &mut [Object], messages: &mut Messages) -> UseResult {
+tag::cast_heal_fn[]
+fn cast_heal(
+    _inventory_id: usize,
+    _tcod: &mut Tcod,
+    game: &mut Game,
+    objects: &mut [Object],
+) -> UseResult {
     // heal the player
     if let Some(fighter) = objects[PLAYER].fighter {
         if fighter.hp == fighter.max_hp {
-            message(messages, "You are already at full health.", colors::RED);
+            game.messages.add("You are already at full health.", RED);
             return UseResult::Cancelled;
         }
-        message(
-            messages,
-            "Your wounds start to feel better!",
-            colors::LIGHT_VIOLET,
-        );
+        game.messages
+            .add("Your wounds start to feel better!", LIGHT_VIOLET);
         objects[PLAYER].heal(HEAL_AMOUNT);
         return UseResult::UsedUp;
     }
     UseResult::Cancelled
 }
+end::cast_heal_fn[]
 ----
 
 The `heal` method is very simple too; still, it's handy to keep it
-since it will probably be used multiple times. The constant
-`HEAL_AMOUNT = 4` is defined at the top. In `impl Object`:
+since it will probably be used multiple times. In `impl Object`:
 
 [source]
 ----
+tag::heal_fn[]
 /// heal by the given amount, without going over the maximum
 pub fn heal(&mut self, amount: i32) {
     if let Some(ref mut fighter) = self.fighter {
@@ -501,6 +597,16 @@ pub fn heal(&mut self, amount: i32) {
         }
     }
 }
+end::heal_fn[]
+----
+
+The constant `HEAL_AMOUNT = 4` is defined at the top:
+
+[source]
+----
+tag::heal_consts[]
+const HEAL_AMOUNT: i32 = 4;
+end::heal_consts[]
 ----
 
 That's it for creating usable items! You can make other items easily
@@ -513,18 +619,20 @@ item:
 
 [source]
 ----
+tag::handle_inventory_key[]
 (Key { printable: 'i', .. }, true) => {
     // show the inventory: if an item is selected, use it
     let inventory_index = inventory_menu(
-        inventory,
+        &game.inventory,
         "Press the key next to an item to use it, or any other to cancel.\n",
-        root,
+        &mut tcod.root,
     );
     if let Some(inventory_index) = inventory_index {
-        use_item(inventory_index, inventory, objects, messages);
+        use_item(inventory_index, tcod, game, objects);
     }
     DidntTakeTurn
 }
+end::handle_inventory_key[]
 ----
 
 There you go, the inventory code is complete! Well, minus dropping
@@ -532,6 +640,6 @@ items. That's fairly easy with the `inventory_menu`, but to keep this
 from getting long we'll leave it to the next part: magic scrolls! That
 will really make the most of this inventory system.
 
-Here's link:part-8-items.rs.txt[the complete code so far].
+Here's link:part-8-items.rs[the complete code so far].
 
 Continue to <<part-9-spells#,the next part>>.

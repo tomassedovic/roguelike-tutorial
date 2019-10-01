@@ -25,6 +25,89 @@ then you run this command:
 
 `cargo run --bin part-1b-movement`
 
+== Contributing
+
+The Rust source files in `src/bin/*.rs` are all auto-generated from the tutorial pages themselves.
+The single source of truth for both the code and the final pages is in `doc/*.adoc`.
+If you want to make changes to the Rust files, you need to edit the corresponding pages in `doc/`.
+Note that since the code can be laid out in a different order than the tutorial, this involves a little bit of digging.
+
+You can check the `doc/rs/*.adoc` files for how is each final Rust file constructed from the tutorial snippets.
+
+=== Building the Rust files
+
+First, you need to have link:https://asciidoctor.org/[Asciidoctor] installed.
+
+Next, after making some changes to the files under the `doc` directory, run the following:
+
+....
+make clean docs
+....
+
+This will generate the HTML tutorial as well as the corresponding Rust files in the `target/tutorial/` directory.
+You can preview them there and verify that everything looks correct.
+
+=== Updating the generated files in `src/bin/`
+
+Run the following command:
+
+....
+make update-cargo-bin
+....
+
+It will regenerate the documents and copy the Rust files into `src/bin`
+
+=== Validating that `src/bin` matches the source documents
+
+Run:
+
+....
+make diff-rust
+....
+
+This will build the documents and diff them against the versions in `src/bin/`.
+They should match.
+
+=== Contributing changes
+
+Make sure you build build the documents, with no leftovers files and update the `src/bin/` files:
+
+....
+make clean docs update-cargo-bin
+....
+
+Before opening a pull request, make sure that `make diff-rust` ends up empty.
+
+
+== Project Status
+
+The tutorial is more or less finished: all the chapters have been written.
+You can follow them and build your own roguelike.
+You can also check out this repository and run for example `cargo run --example part-13-adventure-gear` to play the final version (or any of the previous ones).
+
+There are of course things that could use updating, such as the language and general flow of the text.
+The structure of the tutorial itself could use some cleaning up too and some e.g. the `rand` crate we use is wildly out of date.
+Finally, there are improvements and fixes that could be done in the `tcod-rs` crate this tutorial is based on.
+For more suggestions, check out the link:https://github.com/tomassedovic/roguelike-tutorial/issues[Issues] section.
+
+However, the original author has moved on to other things and no one else has volunteered to take over the maintenance of this repository.
+
+Issues and pull requests will not be ignored, but it can take weeks before you get a reply.
+And anything involving more than a minimal time investment will likely take even longer.
+
+Sorry!
+
+If you do wish to help out with the maintenance, please open an issue or send en email to <tomas@sedovic.cz>.
+
+== Other Rougelike tutorials for Rust
+
+link:http://bfnightly.bracketproductions.com/rustbook/[The RLTK Tutorial by TheBracket]
+- It uses the link:https://github.com/thebracket/rltk_rs[RLTK] project developed by the same person
+- Unlike libtcod, RLTK is written in pure Rust which makes building and distributing your game easier
+
+(feel free to suggest other tutorials!)
+
+
 == Thanks!
 
 This tutorial has been put together by the following people:

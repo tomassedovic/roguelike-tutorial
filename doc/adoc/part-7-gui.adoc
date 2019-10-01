@@ -1,0 +1,1 @@
+include::../part-7-gui.adoc[tag=**]

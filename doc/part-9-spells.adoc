@@ -15,141 +15,6 @@ get the ball rolling, we'll start with some magic scrolls the player
 can use to cast spells. We'll sample a few different spell types; I'm
 sure you can then create tons of variants from these little examples.
 
-== Compression Interlude
-
-Before we begin, however, we'll do something that will make our lives
-a little easier: we pull all the libtcod bits (the root, con and panel
-consoles, the field-of-view map and the mouse position) into a single
-struct that we can pass around at once.
-
-As you've noticed before, some of our function arguments are getting a
-bit tedious as we pass in 9 different things and the same would be
-true for our item cast functions. One spell will want to select a
-monster in the FOV, another needs mouse targeting, etc.
-
-So let's put it all into a `Tcod` struct we can pass around:
-
-[source]
-----
-struct Tcod {
-    root: Root,
-    con: Offscreen,
-    panel: Offscreen,
-    fov: FovMap,
-    mouse: Mouse,
-}
-----
-
-Next, we'll initialise it in our `main` function. Right after the
-`set_fps` call, replace:
-
-[source]
-----
-let mut con = Offscreen::new(MAP_WIDTH, MAP_HEIGHT);
-let mut panel = Offscreen::new(SCREEN_WIDTH, PANEL_HEIGHT);
-----
-
-With:
-
-[source]
-----
-let mut tcod = Tcod {
-    root: root,
-    con: Offscreen::new(MAP_WIDTH, MAP_HEIGHT),
-    panel: Offscreen::new(SCREEN_WIDTH, PANEL_HEIGHT),
-    fov: FovMap::new(MAP_WIDTH, MAP_HEIGHT),
-    mouse: Default::default(),
-};
-----
-
-(and remove the `fov_map` and `mouse` initialisation code, too, since
-it's in here)
-
-And next, let the compiler guide us.
-
-We have to replace a bunch of stuff in the main function: `mouse` with
-`tcod.mouse`, `root` with `tcod.root`, `fov_map` with `tcod.fov`, etc.
-
-That gets us to a compiling state, but it doesn't seem like much of a
-win yet. Let's make proper use of it, then!
-
-First, calling `render_all` from `main` can now be just:
-
-[source]
-----
-render_all(&mut tcod, &objects, &mut map, &messages, fov_recompute);
-----
-
-The new `render_all` function header is:
-
-[source]
-----
-fn render_all(
-    tcod: &mut Tcod,
-    objects: &[Object],
-    map: &mut Map,
-    messages: &Messages,
-    fov_recompute: bool,
-) {
-    // ...
-}
-----
-
-And we do the same set of transformations inside.
-
-Next, we'll do the same to `handle_keys`. That one only takes `root`
-now, but it calls the `use_item` and we'll want to pass the whole
-shebang there, soon.
-
-Main loop:
-
-[source]
-----
-let player_action = handle_keys(
-    key,
-    &mut tcod,
-    &mut map,
-    &mut objects,
-    &mut inventory,
-    &mut messages,
-);
-----
-
-Function definition:
-
-[source]
-----
-fn handle_keys(
-    key: Key,
-    tcod: &mut Tcod,
-    map: &mut Map,
-    objects: &mut Vec<Object>,
-    inventory: &mut Vec<Object>,
-    messages: &mut Messages,
-) -> PlayerAction {
-    // ...
-}
-----
-
-And finally, pass `&mut Tcod` to `use_item` and `cast_heal` even
-though it's of little use there yet.
-
-Make sure that it compiles and we can move on adding more spells!
-
-TIP: There's much more we can do here, such as moving the `menu`,
-`inventory_menu`, `render_bar`, etc. as methods of `Tcod` or passing
-`Tcod` everywhere we've been passing *any* of it's members now. That
-largely depends on your style and how tightly you want things to be
-coupled. In general, there's a ton of code that just need one or two
-bits of `Tcod` but some code that basically wants all of it. The good
-thing is that this struct lets us support both cases and anything in
-between.
-
-NOTE: Later on, we'll do a similar packing of the game-related stuff
-such as the message log, the level map, the inventory, etc. But this
-has been enough refactoring for one section!
-
-
 == Magic scrolls: the Lightning Bolt
 
 The first spell is a lightning bolt that damages the nearest enemy.
@@ -164,12 +29,14 @@ it's done with monsters:
 [source]
 ----
 if !is_blocked(x, y, map, objects) {
+tag::place_healing_potion[]
     let dice = rand::random::<f32>();
     let item = if dice < 0.7 {
         // create a healing potion (70% chance)
-        let mut object = Object::new(x, y, '!', "healing potion", colors::VIOLET, false);
+        let mut object = Object::new(x, y, '!', "healing potion", VIOLET, false);
         object.item = Some(Item::Heal);
         object
+end::place_healing_potion[]
     } else {
         // create a lightning bolt scroll (30% chance)
         let mut object = Object::new(
@@ -177,13 +44,15 @@ if !is_blocked(x, y, map, objects) {
             y,
             '#',
             "scroll of lightning bolt",
-            colors::LIGHT_YELLOW,
+            LIGHT_YELLOW,
             false,
         );
         object.item = Some(Item::Lightning);
         object
     };
+tag::objects_push_item[]
     objects.push(item);
+end::objects_push_item[]
 }
 ----
 
@@ -203,48 +72,61 @@ Now we need to write the `cast_lightning` function!
 
 [source]
 ----
+tag::cast_lightning_fn[]
+tag::cast_lightning_fn_beginning[]
 fn cast_lightning(
     _inventory_id: usize,
-    objects: &mut [Object],
-    messages: &mut Messages,
-    _map: &mut Map,
     tcod: &mut Tcod,
+    game: &mut Game,
+    objects: &mut [Object],
 ) -> UseResult {
     // find closest enemy (inside a maximum range and damage it)
-    let monster_id = closest_monster(LIGHTNING_RANGE, objects, tcod);
+    let monster_id = closest_monster(tcod, objects, LIGHTNING_RANGE);
     if let Some(monster_id) = monster_id {
         // zap it!
-        message(
-            messages,
+        game.messages.add(
             format!(
                 "A lightning bolt strikes the {} with a loud thunder! \
                  The damage is {} hit points.",
                 objects[monster_id].name, LIGHTNING_DAMAGE
             ),
-            colors::LIGHT_BLUE,
+            LIGHT_BLUE,
         );
-        objects[monster_id].take_damage(LIGHTNING_DAMAGE, messages);
+end::cast_lightning_fn_beginning[]
+        objects[monster_id].take_damage(LIGHTNING_DAMAGE, game);
+tag::cast_lightning_fn_ending[]
         UseResult::UsedUp
     } else {
         // no enemy found within maximum range
-        message(messages, "No enemy is close enough to strike.", colors::RED);
+        game.messages
+            .add("No enemy is close enough to strike.", RED);
         UseResult::Cancelled
     }
 }
+end::cast_lightning_fn_ending[]
+end::cast_lightning_fn[]
 ----
 
 It's a plain spell but an imaginative message can always give it some
 flavor! It returns uses the `UseResult::Cancelled` if cancelled to prevent the item
 from being destroyed in that case, like the healing potion. There are
 also a couple of new constants that have to be defined:
-`LIGHTNING_DAMAGE = 20` and `LIGHTNING_RANGE = 5`.
+
+[source]
+----
+tag::lightning_consts[]
+const LIGHTNING_DAMAGE: i32 = 40;
+const LIGHTNING_RANGE: i32 = 5;
+end::lightning_consts[]
+----
 
 Now let's write `closest_monster`:
 
 [source]
 ----
+tag::closest_monster_fn[]
 /// find closest enemy, up to a maximum range, and in the player's FOV
-fn closest_monster(max_range: i32, objects: &mut [Object], tcod: &Tcod) -> Option<usize> {
+fn closest_monster(tcod: &Tcod, objects: &[Object], max_range: i32) -> Option<usize> {
     let mut closest_enemy = None;
     let mut closest_dist = (max_range + 1) as f32; // start with (slightly more than) maximum range
 
@@ -265,6 +147,7 @@ fn closest_monster(max_range: i32, objects: &mut [Object], tcod: &Tcod) -> Optio
     }
     closest_enemy
 }
+end::closest_monster_fn[]
 ----
 
 We just need to loop through all the monsters, and keep track of the
@@ -292,6 +175,9 @@ empty `Ai` struct into an enum with two variants:
 
 [source]
 ----
+tag::enum_ai[]
+#[derive(Clone, Debug, PartialEq)]
+tag::enum_ai_definition[]
 enum Ai {
     Basic,
     Confused {
@@ -299,6 +185,8 @@ enum Ai {
         num_turns: i32,
     },
 }
+end::enum_ai_definition[]
+end::enum_ai[]
 ----
 
 The `Basic` option is the AI we've used until now -- a monster moves
@@ -323,52 +211,44 @@ orc.ai = Some(Ai::Basic);
 troll.ai = Some(Ai::Basic);
 ----
 
-Next, let's move the code from `ai_take_turn` its own function:
+Next, let's move the code from `ai_take_turn` to its own function:
 
 [source]
 ----
-fn ai_take_turn(
-    monster_id: usize,
-    map: &Map,
-    objects: &mut [Object],
-    fov_map: &FovMap,
-    messages: &mut Messages,
-) {
+tag::ai_take_turn_fn[]
+fn ai_take_turn(monster_id: usize, tcod: &Tcod, game: &mut Game, objects: &mut [Object]) {
     use Ai::*;
     if let Some(ai) = objects[monster_id].ai.take() {
         let new_ai = match ai {
-            Basic => ai_basic(monster_id, map, objects, fov_map, messages),
+            Basic => ai_basic(monster_id, tcod, game, objects),
             Confused {
                 previous_ai,
                 num_turns,
-            } => ai_confused(monster_id, map, objects, messages, previous_ai, num_turns),
+            } => ai_confused(monster_id, tcod, game, objects, previous_ai, num_turns),
         };
         objects[monster_id].ai = Some(new_ai);
     }
 }
+end::ai_take_turn_fn[]
 
-fn ai_basic(
-    monster_id: usize,
-    map: &Map,
-    objects: &mut [Object],
-    fov_map: &FovMap,
-    messages: &mut Messages,
-) -> Ai {
+tag::ai_basic_fn[]
+fn ai_basic(monster_id: usize, tcod: &Tcod, game: &mut Game, objects: &mut [Object]) -> Ai {
     // a basic monster takes its turn. If you can see it, it can see you
     let (monster_x, monster_y) = objects[monster_id].pos();
-    if fov_map.is_in_fov(monster_x, monster_y) {
+    if tcod.fov.is_in_fov(monster_x, monster_y) {
         if objects[monster_id].distance_to(&objects[PLAYER]) >= 2.0 {
             // move towards player if far away
             let (player_x, player_y) = objects[PLAYER].pos();
-            move_towards(monster_id, player_x, player_y, map, objects);
+            move_towards(monster_id, player_x, player_y, &game.map, objects);
         } else if objects[PLAYER].fighter.map_or(false, |f| f.hp > 0) {
             // close enough, attack! (if the player is still alive.)
             let (monster, player) = mut_two(monster_id, PLAYER, objects);
-            monster.attack(player, messages);
+            monster.attack(player, game);
         }
     }
     Ai::Basic
 }
+end::ai_basic_fn[]
 ----
 
 The function now does a dispatch similar to the one in `use_item`.
@@ -405,11 +285,12 @@ So after that mouthful, the rather anti-climactic implementation of
 
 [source]
 ----
+tag::ai_confused_fn[]
 fn ai_confused(
     monster_id: usize,
-    map: &Map,
+    _tcod: &Tcod,
+    game: &mut Game,
     objects: &mut [Object],
-    messages: &mut Messages,
     previous_ai: Box<Ai>,
     num_turns: i32,
 ) -> Ai {
@@ -420,7 +301,7 @@ fn ai_confused(
             monster_id,
             rand::thread_rng().gen_range(-1, 2),
             rand::thread_rng().gen_range(-1, 2),
-            map,
+            &game.map,
             objects,
         );
         Ai::Confused {
@@ -429,14 +310,14 @@ fn ai_confused(
         }
     } else {
         // restore the previous AI (this one will be deleted)
-        message(
-            messages,
+        game.messages.add(
             format!("The {} is no longer confused!", objects[monster_id].name),
-            colors::RED,
+            RED,
         );
         *previous_ai
     }
 }
+end::ai_confused_fn[]
 ----
 
 It takes pretty much the same parameters as `ai_basic`, but it moves
@@ -461,31 +342,22 @@ getting a lightning bolt scroll must change:
 [source]
 ----
 ...
-} else if dice < 0.7 + 0.15 {
+tag::place_lightning_bolt[]
+} else if dice < 0.7 + 0.1 {
     // create a lightning bolt scroll (10% chance)
-    let mut object = Object::new(
-        x,
-        y,
-        '#',
-        "scroll of lightning bolt",
-        colors::LIGHT_YELLOW,
-        false,
-    );
+    let mut object =
+        Object::new(x, y, '#', "scroll of lightning bolt", LIGHT_YELLOW, false);
     object.item = Some(Item::Lightning);
     object
-}else {
+end::place_lightning_bolt[]
+tag::place_confusion[]
+} else {
     // create a confuse scroll (10% chance)
-    let mut object = Object::new(
-        x,
-        y,
-        '#',
-        "scroll of confusion",
-        colors::LIGHT_YELLOW,
-        false,
-    );
+    let mut object = Object::new(x, y, '#', "scroll of confusion", LIGHT_YELLOW, false);
     object.item = Some(Item::Confuse);
     object
 };
+end::place_confusion[]
 ----
 
 We're making all scrolls look the same here, but in your game that's up
@@ -493,17 +365,22 @@ to you. The `cast_confuse` function can now be defined. It hits the
 closest monster for now, like the lightning bolt; later we'll allow
 targeting.
 
+NOTE: The percentages in the comments aren't quite correct right now, but they will be
+once we've added all the items here.
+
 [source]
 ----
+tag::cast_confuse_header[]
 fn cast_confuse(
     _inventory_id: usize,
-    objects: &mut [Object],
-    messages: &mut Messages,
-    map: &mut Map,
     tcod: &mut Tcod,
+    game: &mut Game,
+    objects: &mut [Object],
 ) -> UseResult {
-    // ask the player for a target to confuse
-    let monster_id = target_monster(tcod, objects, map, messages, Some(CONFUSE_RANGE as f32));
+end::cast_confuse_header[]
+    // find closest enemy in-range and confuse it
+    let monster_id = target_monster(CONFUSE_RANGE, objects, tcod);
+tag::cast_confuse_action[]
     if let Some(monster_id) = monster_id {
         let old_ai = objects[monster_id].ai.take().unwrap_or(Ai::Basic);
         // replace the monster's AI with a "confused" one; after
@@ -512,20 +389,21 @@ fn cast_confuse(
             previous_ai: Box::new(old_ai),
             num_turns: CONFUSE_NUM_TURNS,
         });
-        message(
-            messages,
+        game.messages.add(
             format!(
                 "The eyes of {} look vacant, as he starts to stumble around!",
                 objects[monster_id].name
             ),
-            colors::LIGHT_GREEN,
+            LIGHT_GREEN,
         );
         UseResult::UsedUp
     } else {
         // no enemy fonud within maximum range
-        message(messages, "No enemy is close enough to strike.", colors::RED);
+        game.messages
+            .add("No enemy is close enough to strike.", RED);
         UseResult::Cancelled
     }
+end::cast_confuse_action[]
 }
 ----
 
@@ -549,8 +427,15 @@ You may choose to panic with unwrap/expect instead (to find the bug
 early and hunt it down) or log the error and keep going or even allow
 monsters without AI and just handle that case properly!
 
-We've also introduced two new constants: `CONFUSE_RANGE = 8` and
-`CONFUSE_NUM_TURNS = 10`.
+We've also introduced two new constants:
+
+[source]
+----
+tag::confuse_consts[]
+const CONFUSE_RANGE: i32 = 8;
+const CONFUSE_NUM_TURNS: i32 = 10;
+end::confuse_consts[]
+----
 
 
 Finally, to tie it all together, we need to add a new item type:
@@ -558,6 +443,7 @@ Finally, to tie it all together, we need to add a new item type:
 
 [source]
 ----
+#[derive(Clone, Copy, Debug, PartialEq)]
 enum Item {
     Heal,
     Lightning,
@@ -602,30 +488,32 @@ would still be visible).
 
 [source]
 ----
+tag::target_tile_header[]
 /// return the position of a tile left-clicked in player's FOV (optionally in a
 /// range), or (None,None) if right-clicked.
 fn target_tile(
     tcod: &mut Tcod,
+    game: &mut Game,
     objects: &[Object],
-    map: &mut Map,
-    messages: &Messages,
     max_range: Option<f32>,
 ) -> Option<(i32, i32)> {
+end::target_tile_header[]
+tag::target_tile_loop_flush_and_process_events[]
     use tcod::input::KeyCode::Escape;
     loop {
         // render the screen. this erases the inventory and shows the names of
         // objects under the mouse.
         tcod.root.flush();
         let event = input::check_for_event(input::KEY_PRESS | input::MOUSE).map(|e| e.1);
-        let mut key = None;
         match event {
             Some(Event::Mouse(m)) => tcod.mouse = m,
-            Some(Event::Key(k)) => key = Some(k),
-            None => {}
+            Some(Event::Key(k)) => tcod.key = k,
+            None => tcod.key = Default::default(),
         }
-        render_all(tcod, objects, map, messages, false);
+        render_all(tcod, game, objects, false);
 
         let (x, y) = (tcod.mouse.cx as i32, tcod.mouse.cy as i32);
+end::target_tile_loop_flush_and_process_events[]
 
         // ...
     }
@@ -638,13 +526,15 @@ Now we return the clicked position if it's in range and visible:
 
 [source]
 ----
-    // accept the target if the player clicked in FOV, and in case a range
-    // is specified, if it's in that range
-    let in_fov = (x < MAP_WIDTH) && (y < MAP_HEIGHT) && tcod.fov.is_in_fov(x, y);
-    let in_range = max_range.map_or(true, |range| objects[PLAYER].distance(x, y) <= range);
-    if tcod.mouse.lbutton_pressed && in_fov && in_range {
-        return Some((x, y))
-    }
+tag::target_tile_accept_in_fov[]
+// accept the target if the player clicked in FOV, and in case a range
+// is specified, if it's in that range
+let in_fov = (x < MAP_WIDTH) && (y < MAP_HEIGHT) && tcod.fov.is_in_fov(x, y);
+let in_range = max_range.map_or(true, |range| objects[PLAYER].distance(x, y) <= range);
+if tcod.mouse.lbutton_pressed && in_fov && in_range {
+    return Some((x, y));
+}
+end::target_tile_accept_in_fov[]
 ----
 
 The `is_in_fov` method expects that `x` and `y` are within the map's
@@ -661,10 +551,11 @@ Finally, we need a way to cancel the targeting UI:
 
 [source]
 ----
-    let escape = key.map_or(false, |k| k.code == Escape);
-    if tcod.mouse.rbutton_pressed || escape {
-        return None  // cancel if the player right-clicked or pressed Escape
-    }
+tag::target_tile_handle_cancel[]
+if tcod.mouse.rbutton_pressed || tcod.key.code == Escape {
+    return None; // cancel if the player right-clicked or pressed Escape
+}
+end::target_tile_handle_cancel[]
 ----
 
 This returns `None` if the player pressed `Esc` or clicked the right
@@ -676,10 +567,12 @@ objects).
 
 [source]
 ----
+tag::object_distance_method[]
 /// return the distance to some coordinates
 pub fn distance(&self, x: i32, y: i32) -> f32 {
     (((x - self.x).pow(2) + (y - self.y).pow(2)) as f32).sqrt()
 }
+end::object_distance_method[]
 ----
 
 That's all for targeting a tile! We can now create a simple fireball
@@ -687,65 +580,77 @@ spell:
 
 [source]
 ----
+tag::cast_fireball_fn[]
+tag::cast_fireball_fn_beginning[]
 fn cast_fireball(
     _inventory_id: usize,
-    objects: &mut [Object],
-    messages: &mut Messages,
-    map: &mut Map,
     tcod: &mut Tcod,
+    game: &mut Game,
+    objects: &mut [Object],
 ) -> UseResult {
     // ask the player for a target tile to throw a fireball at
-    message(
-        messages,
+    game.messages.add(
         "Left-click a target tile for the fireball, or right-click to cancel.",
-        colors::LIGHT_CYAN,
+        LIGHT_CYAN,
     );
-    let (x, y) = match target_tile(tcod, objects, map, messages, None) {
+    let (x, y) = match target_tile(tcod, game, objects, None) {
         Some(tile_pos) => tile_pos,
         None => return UseResult::Cancelled,
     };
-    message(
-        messages,
+    game.messages.add(
         format!(
             "The fireball explodes, burning everything within {} tiles!",
             FIREBALL_RADIUS
         ),
-        colors::ORANGE,
+        ORANGE,
     );
 
+end::cast_fireball_fn_beginning[]
     for obj in objects {
         if obj.distance(x, y) <= FIREBALL_RADIUS as f32 && obj.fighter.is_some() {
-            message(
-                messages,
+            game.messages.add(
                 format!(
                     "The {} gets burned for {} hit points.",
                     obj.name, FIREBALL_DAMAGE
                 ),
-                colors::ORANGE,
+                ORANGE,
             );
-            obj.take_damage(FIREBALL_DAMAGE, messages);
+            obj.take_damage(FIREBALL_DAMAGE, game);
         }
     }
+tag::cast_fireball_fn_ending[]
 
     UseResult::UsedUp
 }
+end::cast_fireball_fn_ending[]
+end::cast_fireball_fn[]
 ----
 
-With some new constants `FIREBALL_RADIUS = 3` and `FIREBALL_DAMAGE =
-12`. This also uses the new distance method. A scroll that casts the
+With some new constants:
+
+[source]
+----
+tag::fireball_consts[]
+const FIREBALL_RADIUS: i32 = 3;
+const FIREBALL_DAMAGE: i32 = 12;
+end::fireball_consts[]
+----
+
+This also uses the new distance method. A scroll that casts the
 Fireball spell must be added to place_objects, before the Confuse
 scroll:
 
 [source]
 ----
+tag::place_fireball[]
 } else if dice < 0.7 + 0.1 + 0.1 {
     // create a fireball scroll (10% chance)
-    let mut object =
-        Object::new(x, y, '#', "scroll of fireball", colors::LIGHT_YELLOW, false);
+    let mut object = Object::new(x, y, '#', "scroll of fireball", LIGHT_YELLOW, false);
     object.item = Some(Item::Fireball);
     object
+end::place_fireball[]
 }  else {
-    // create a confuse scroll (15% chance)
+    // create a confuse scroll (10% chance)
     // ...
 }
 ----
@@ -758,12 +663,17 @@ If we try to compile it now, Rust will complain that there is no
 
 [source]
 ----
+tag::enum_item[]
+#[derive(Clone, Copy, Debug, PartialEq)]
+tag::enum_item_definition[]
 enum Item {
     Heal,
     Lightning,
     Confuse,
     Fireball,
 }
+end::enum_item_definition[]
+end::enum_item[]
 ----
 
 Next, the item is missing from the `match` inside `use_item`, so let's
@@ -789,13 +699,17 @@ Here's what the `on_use` bit looks like now:
 
 [source]
 ----
+tag::use_item_get_on_use[]
 let on_use = match item {
     Heal => cast_heal,
     Lightning => cast_lightning,
     Confuse => cast_confuse,
     Fireball => cast_fireball,
 };
-match on_use(inventory_id, objects, messages, map, tcod) {
+end::use_item_get_on_use[]
+tag::use_item_match_use[]
+match on_use(inventory_id, tcod, game, objects) {
+end::use_item_match_use[]
     // ...
 }
 ----
@@ -831,16 +745,16 @@ only when a monster is selected.
 
 [source]
 ----
+tag::target_monster_fn[]
 /// returns a clicked monster inside FOV up to a range, or None if right-clicked
 fn target_monster(
     tcod: &mut Tcod,
+    game: &mut Game,
     objects: &[Object],
-    map: &mut Map,
-    messages: &Messages,
     max_range: Option<f32>,
 ) -> Option<usize> {
     loop {
-        match target_tile(tcod, objects, map, messages, max_range) {
+        match target_tile(tcod, game, objects, max_range) {
             Some((x, y)) => {
                 // return the first clicked monster, otherwise continue looping
                 for (id, obj) in objects.iter().enumerate() {
@@ -853,6 +767,7 @@ fn target_monster(
         }
     }
 }
+end::target_monster_fn[]
 ----
 
 The Confuse spell is a bit weak, since monsters that move randomly can
@@ -863,13 +778,14 @@ function with:
 
 [source]
 ----
+tag::cast_confuse_target[]
 // ask the player for a target to confuse
-message(
-    messages,
+game.messages.add(
     "Left-click an enemy to confuse it, or right-click to cancel.",
-    colors::LIGHT_CYAN,
+    LIGHT_CYAN,
 );
-let monster_id = target_monster(tcod, objects, map, messages, Some(CONFUSE_RANGE as f32));
+let monster_id = target_monster(tcod, game, objects, Some(CONFUSE_RANGE as f32));
+end::cast_confuse_target[]
 ----
 
 
@@ -884,21 +800,19 @@ player's, so it appears below the player:
 
 [source]
 ----
-fn drop_item(
-    inventory_id: usize,
-    inventory: &mut Vec<Object>,
-    objects: &mut Vec<Object>,
-    messages: &mut Messages,
-) {
-    let mut item = inventory.remove(inventory_id);
+tag::drop_item_fn[]
+tag::drop_item_fn_one[]
+fn drop_item(inventory_id: usize, game: &mut Game, objects: &mut Vec<Object>) {
+    let mut item = game.inventory.remove(inventory_id);
+end::drop_item_fn_one[]
+tag::drop_item_fn_two[]
     item.set_pos(objects[PLAYER].x, objects[PLAYER].y);
-    message(
-        messages,
-        format!("You dropped a {}.", item.name),
-        colors::YELLOW,
-    );
+    game.messages
+        .add(format!("You dropped a {}.", item.name), YELLOW);
     objects.push(item);
 }
+end::drop_item_fn_two[]
+end::drop_item_fn[]
 ----
 
 To let the player choose an item to drop, we'll call the
@@ -908,23 +822,25 @@ the chosen item. Add this to `handle_keys`, after the inventory key:
 
 [source]
 ----
+tag::handle_drop_key[]
 (Key { printable: 'd', .. }, true) => {
     // show the inventory; if an item is selected, drop it
     let inventory_index = inventory_menu(
-        inventory,
+        &game.inventory,
         "Press the key next to an item to drop it, or any other to cancel.\n'",
         &mut tcod.root,
     );
     if let Some(inventory_index) = inventory_index {
-        drop_item(inventory_index, inventory, objects, messages);
+        drop_item(inventory_index, game, objects);
     }
     DidntTakeTurn
 }
+end::handle_drop_key[]
 ----
 Some new spells, targeting, dropping items -- that's enough for now!
 See how the spells affect your strategy, they'll surely make things
 much more interesting!
 
-Here's link:part-9-spells.rs.txt[the complete code so far].
+Here's link:part-9-spells.rs[the complete code so far].
 
 Continue to <<part-10-menu-saving#,the next part>>.

@@ -1,3 +1,5 @@
+// This file is generated automatically. Do not edit it directly.
+// See the Contributing section in README on how to make changes to it.
 use tcod::colors::*;
 use tcod::console::*;
 
@@ -7,21 +9,27 @@ const SCREEN_HEIGHT: i32 = 50;
 
 const LIMIT_FPS: i32 = 20; // 20 frames-per-second maximum
 
+struct Tcod {
+    root: Root,
+}
+
 fn main() {
-    let mut root = Root::initializer()
+    tcod::system::set_fps(LIMIT_FPS);
+
+    let root = Root::initializer()
         .font("arial10x10.png", FontLayout::Tcod)
         .font_type(FontType::Greyscale)
         .size(SCREEN_WIDTH, SCREEN_HEIGHT)
         .title("Rust/libtcod tutorial")
         .init();
 
-    tcod::system::set_fps(LIMIT_FPS);
+    let mut tcod = Tcod { root };
 
-    while !root.window_closed() {
-        root.set_default_foreground(WHITE);
-        root.clear();
-        root.put_char(1, 1, '@', BackgroundFlag::None);
-        root.flush();
-        root.wait_for_keypress(true);
+    while !tcod.root.window_closed() {
+        tcod.root.set_default_foreground(WHITE);
+        tcod.root.clear();
+        tcod.root.put_char(1, 1, '@', BackgroundFlag::None);
+        tcod.root.flush();
+        tcod.root.wait_for_keypress(true);
     }
 }

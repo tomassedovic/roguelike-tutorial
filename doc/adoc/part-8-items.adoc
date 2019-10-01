@@ -1,0 +1,1 @@
+include::../part-8-items.adoc[tag=**]
