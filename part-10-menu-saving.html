@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="generator" content="Asciidoctor 2.0.9">
+<meta name="generator" content="Asciidoctor 2.0.10">
 <title>Main menu and saving</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
 <style>
@@ -240,7 +240,7 @@ table.linenotable td.linenos{border-right:1px solid currentColor;opacity:.35;pad
 pre.pygments .lineno{border-right:1px solid currentColor;opacity:.35;display:inline-block;margin-right:.75em}
 pre.pygments .lineno::before{content:"";margin-right:-.125em}
 .quoteblock{margin:0 1em 1.25em 1.5em;display:table}
-.quoteblock>.title{margin-left:-1.5em;margin-bottom:.75em}
+.quoteblock:not(.excerpt)>.title{margin-left:-1.5em;margin-bottom:.75em}
 .quoteblock blockquote,.quoteblock p{color:rgba(0,0,0,.85);font-size:1.15rem;line-height:1.75;word-spacing:.1em;letter-spacing:0;font-style:italic;text-align:justify}
 .quoteblock blockquote{margin:0;padding:0;border:0}
 .quoteblock blockquote::before{content:"\201c";float:left;font-size:2.75em;font-weight:bold;line-height:.6em;margin-left:-.6em;color:#7a2518;text-shadow:0 1px 2px rgba(0,0,0,.1)}
@@ -257,7 +257,8 @@ pre.pygments .lineno::before{content:"";margin-right:-.125em}
 .quoteblock.abstract blockquote,.quoteblock.abstract p,.quoteblock.excerpt blockquote,.quoteblock.excerpt p,.quoteblock .quoteblock blockquote,.quoteblock .quoteblock p{line-height:1.6;word-spacing:0}
 .quoteblock.abstract{margin:0 1em 1.25em;display:block}
 .quoteblock.abstract>.title{margin:0 0 .375em;font-size:1.15em;text-align:center}
-.quoteblock.excerpt,.quoteblock .quoteblock{margin:0 0 1.25em;padding:0 0 .25em 1em;border-left:.25em solid #dddddf}
+.quoteblock.excerpt>blockquote,.quoteblock .quoteblock{padding:0 0 .25em 1em;border-left:.25em solid #dddddf}
+.quoteblock.excerpt,.quoteblock .quoteblock{margin-left:0}
 .quoteblock.excerpt blockquote,.quoteblock.excerpt p,.quoteblock .quoteblock blockquote,.quoteblock .quoteblock p{color:inherit;font-size:1.0625rem}
 .quoteblock.excerpt .attribution,.quoteblock .quoteblock .attribution{color:inherit;text-align:left;margin-right:0}
 table.tableblock{max-width:100%;border-collapse:separate}
@@ -456,299 +457,6 @@ your scary monsters between play sessions.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_the_game_struct">The Game struct</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Before we get to the meat of this, we&#8217;ll do something that will make
-our lives a bit easier&#8201;&#8212;&#8201;we&#8217;ll put some more items into a common
-<code>struct</code> that we&#8217;ll pass around! We&#8217;ve already done that for the
-libtcod-related stuff and now let&#8217;s add the rest!</p>
-</div>
-<div class="paragraph">
-<p>Create this struct:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">struct</span> <span class="tok-nc">Game</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">map</span>: <span class="tok-nc">Map</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">log</span>: <span class="tok-nc">Messages</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">inventory</span>: <span class="tok-nb">Vec</span><span class="tok-o">&lt;</span><span class="tok-n">Object</span><span class="tok-o">&gt;</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-p">}</span><span class="tok-w"></span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>So right now it&#8217;ll just hold the map, the message log and the inventory.
-We&#8217;ll add more things later on, but let&#8217;s start small.</p>
-</div>
-<div class="paragraph">
-<p>Now let&#8217;s move our initialisation code under this struct. In <code>main</code>:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">Game</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-c1">// generate map (at this point it&#39;s not drawn to the screen)</span>
-<span class="tok-w">    </span><span class="tok-n">map</span>: <span class="tok-nc">make_map</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">),</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-c1">// create the list of game messages and their colors, starts empty</span>
-<span class="tok-w">    </span><span class="tok-n">log</span>: <span class="tok-nc">vec</span><span class="tok-o">!</span><span class="tok-p">[],</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">inventory</span>: <span class="tok-nc">vec</span><span class="tok-o">!</span><span class="tok-p">[],</span><span class="tok-w"></span>
-<span class="tok-p">};</span><span class="tok-w"></span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>You can now remove the individual variables for <code>map</code>, <code>messages</code> and
-<code>inventory</code> and try to compile. This will of course show errors where
-we refer to the removed variables so let&#8217;s use those to fix the <code>main</code>
-function.</p>
-</div>
-<div class="paragraph">
-<p>Basically, we&#8217;ll replace all mentions of <code>map</code> with <code>game.map</code>, <code>messages</code>
-with <code>&amp;mut game.log</code> and so on.</p>
-</div>
-<div class="paragraph">
-<p>For example the FoV map code now looks like this:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">for</span><span class="tok-w"> </span><span class="tok-n">y</span><span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span><span class="tok-mi">0</span><span class="tok-p">..</span><span class="tok-n">MAP_HEIGHT</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-k">for</span><span class="tok-w"> </span><span class="tok-n">x</span><span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span><span class="tok-mi">0</span><span class="tok-p">..</span><span class="tok-n">MAP_WIDTH</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">fov</span><span class="tok-p">.</span><span class="tok-n">set</span><span class="tok-p">(</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-n">x</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-n">y</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-o">!</span><span class="tok-n">map</span><span class="tok-p">[</span><span class="tok-n">x</span><span class="tok-w"> </span><span class="tok-k">as</span><span class="tok-w"> </span><span class="tok-kt">usize</span><span class="tok-p">][</span><span class="tok-n">y</span><span class="tok-w"> </span><span class="tok-k">as</span><span class="tok-w"> </span><span class="tok-kt">usize</span><span class="tok-p">].</span><span class="tok-n">block_sight</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-o">!</span><span class="tok-n">map</span><span class="tok-p">[</span><span class="tok-n">x</span><span class="tok-w"> </span><span class="tok-k">as</span><span class="tok-w"> </span><span class="tok-kt">usize</span><span class="tok-p">][</span><span class="tok-n">y</span><span class="tok-w"> </span><span class="tok-k">as</span><span class="tok-w"> </span><span class="tok-kt">usize</span><span class="tok-p">].</span><span class="tok-n">blocked</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-p">);</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"></span>
-<span class="tok-p">}</span><span class="tok-w"></span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>And the "welcoming" message:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-n">message</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">log</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-s">&quot;Welcome stranger! Prepare to perish in the Tombs of the Ancient Kings.&quot;</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-n">colors</span>::<span class="tok-n">RED</span><span class="tok-p">);</span><span class="tok-w"></span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>There&#8217;s about 8 more things to fix. After that we should be compiling
-again, but it doesn&#8217;t seem like really helped anything.</p>
-</div>
-<div class="paragraph">
-<p>So let&#8217;s update the rest of the code to take advantage of our
-newfangled <code>Game</code> struct!</p>
-</div>
-<div class="paragraph">
-<p>For example, let&#8217;s update our <code>render_all</code> call to just pass <code>Game</code> once:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-n">render_all</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-n">objects</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">fov_recompute</span><span class="tok-p">);</span><span class="tok-w"></span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>And then change the function signature:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span> <span class="tok-nf">render_all</span><span class="tok-p">(</span><span class="tok-n">tcod</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Tcod</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span>: <span class="tok-kp">&amp;</span><span class="tok-p">[</span><span class="tok-n">Object</span><span class="tok-p">],</span><span class="tok-w"> </span><span class="tok-n">game</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">fov_recompute</span>: <span class="tok-kt">bool</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-c1">// ...</span>
-<span class="tok-p">}</span><span class="tok-w"></span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>And (you guessed it!) <strong>let the compiler guide you</strong>.</p>
-</div>
-<div class="paragraph">
-<p>As you&#8217;ll notice, this will actually requires to change a lot more
-than just the <code>render_all</code> function. That is because some of the
-spells call <code>target_tile</code> which has it&#8217;s own separate game loop. While
-that&#8217;s OK in this tutorial, you can see how coupled it makes the rest
-of the code.</p>
-</div>
-<div class="paragraph">
-<p>Think about ways of solving this with a single game loop running in
-<code>main</code>, but we won&#8217;t bother here because it would make the tutorial
-even longer.</p>
-</div>
-<div class="paragraph">
-<p>Since this touches a lot of it&#8217;ll take a while to fix although the
-changes are mostly mechanical&#8201;&#8212;&#8201;just pass <code>&amp;mut Game</code> to functions
-that take e.g. inventory and the message log and fix the same whenever
-they&#8217;re being called.</p>
-</div>
-<div class="paragraph">
-<p>For example this is what <code>use_item</code> looks like now:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span> <span class="tok-nf">use_item</span><span class="tok-p">(</span><span class="tok-n">inventory_id</span>: <span class="tok-kt">usize</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-p">[</span><span class="tok-n">Object</span><span class="tok-p">],</span><span class="tok-w"> </span><span class="tok-n">game</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">tcod</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Tcod</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w">  </span><i class="conum" data-value="1"></i><b>(1)</b>
-<span class="tok-w">    </span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">Item</span>::<span class="tok-o">*</span><span class="tok-p">;</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-c1">// just call the &quot;use_function&quot; if it is defined</span>
-<span class="tok-w">    </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">item</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">inventory</span><span class="tok-p">[</span><span class="tok-n">inventory_id</span><span class="tok-p">].</span><span class="tok-n">item</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w">  </span><i class="conum" data-value="2"></i><b>(2)</b>
-<span class="tok-w">        </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">on_use</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-n">item</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w">  </span><i class="conum" data-value="3"></i><b>(3)</b>
-<span class="tok-w">            </span><span class="tok-n">Heal</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">cast_heal</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-n">Lightning</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">cast_lightning</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-n">Confuse</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">cast_confuse</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-n">Fireball</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">cast_fireball</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-p">};</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-n">on_use</span><span class="tok-p">(</span><span class="tok-n">inventory_id</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w">  </span><i class="conum" data-value="4"></i><b>(4)</b>
-<span class="tok-w">            </span><span class="tok-n">UseResult</span>::<span class="tok-n">UsedUp</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">                </span><span class="tok-c1">// destroy after use, unless it was cancelled for some reason</span>
-<span class="tok-w">                </span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">inventory</span><span class="tok-p">.</span><span class="tok-n">remove</span><span class="tok-p">(</span><span class="tok-n">inventory_id</span><span class="tok-p">);</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-p">}</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-n">UseResult</span>::<span class="tok-n">Cancelled</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">                </span><span class="tok-n">message</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">log</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-s">&quot;Cancelled&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">colors</span>::<span class="tok-n">WHITE</span><span class="tok-p">);</span><span class="tok-w">  </span><i class="conum" data-value="5"></i><b>(5)</b>
-<span class="tok-w">            </span><span class="tok-p">}</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-p">}</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"> </span><span class="tok-k">else</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-n">message</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">log</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">                </span><span class="tok-n">format</span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-s">&quot;The {} cannot be used.&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">inventory</span><span class="tok-p">[</span><span class="tok-n">inventory_id</span><span class="tok-p">].</span><span class="tok-n">name</span><span class="tok-p">),</span><span class="tok-w"></span>
-<span class="tok-w">                </span><span class="tok-n">colors</span>::<span class="tok-n">WHITE</span><span class="tok-p">);</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"></span>
-<span class="tok-p">}</span><span class="tok-w"></span></code></pre>
-</div>
-</div>
-<div class="colist arabic">
-<table>
-<tr>
-<td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>Replace <code>inventory</code> and <code>messages</code> with <code>game</code></td>
-</tr>
-<tr>
-<td><i class="conum" data-value="2"></i><b>2</b></td>
-<td><code>inventory</code> is now <code>game.inventory</code></td>
-</tr>
-<tr>
-<td><i class="conum" data-value="3"></i><b>3</b></td>
-<td>Replace the inventory and messages types with <code>&amp;mut Game</code></td>
-</tr>
-<tr>
-<td><i class="conum" data-value="4"></i><b>4</b></td>
-<td>Pass just <code>game</code> to on_use</td>
-</tr>
-<tr>
-<td><i class="conum" data-value="5"></i><b>5</b></td>
-<td><code>messages</code> is now <code>&amp;mut game.log</code></td>
-</tr>
-</table>
-</div>
-<div class="paragraph">
-<p>And <code>handle_keys</code> calls it like so:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-n">use_item</span><span class="tok-p">(</span><span class="tok-n">inventory_index</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">);</span><span class="tok-w"></span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Once you get things compiling, everything should work again. If you&#8217;re
-struggling, take a look at <a href="part-10-menu-saving.rs.txt">the
-complete code for this section</a>.</p>
-</div>
-<div class="paragraph">
-<p>After this, you can either stop or keep going as there are a few more
-functions that could take <code>Game</code> instead: the <code>ai_take_turn</code>,
-<code>ak_basic</code> and <code>ai_confused</code> are good examples, but we might as well
-go all the way: <code>take_damage</code>, <code>attack</code>, etc.</p>
-</div>
-<div class="paragraph">
-<p>And once you&#8217;ve done all that, let&#8217;s simplify the way we log our
-messages. Right now, you have to write:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-n">message</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">log</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-s">&quot;You died!&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">colors</span>::<span class="tok-n">RED</span><span class="tok-p">);</span><span class="tok-w"></span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>We can simplify that to:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">log</span><span class="tok-p">.</span><span class="tok-n">add</span><span class="tok-p">(</span><span class="tok-s">&quot;You died!&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">colors</span>::<span class="tok-n">RED</span><span class="tok-p">);</span><span class="tok-w"></span></code></pre>
-</div>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-We could just have <code>game.log("message", colour)</code> by adding a
-<code>log</code> method on the <code>Game</code> struct, but that would
-conflict with Rust&#8217;s mutability rules. Consider what would happen if
-you wanted to e.g. iterate over all items in the inventory and call
-<code>game.log()</code> while in the loop. We didn&#8217;t include the <code>objects</code> vec
-in <code>Game</code> for the same reason.
-</td>
-</tr>
-</table>
-</div>
-<div class="paragraph">
-<p>So, to do that, we have two options: either create a new type that
-wraps the underlying <code>Vec&lt;(String, Color)&gt;</code> and has the <code>add()</code> method
-(<em>BORING</em>) or <strong>we put the method the vec type directly</strong>. I know,
-right?</p>
-</div>
-<div class="paragraph">
-<p>Rust lets you implement traits to types you don&#8217;t control (e.g.
-because they come from the standard library like our <code>Vec</code>) assuming
-you control the trait.</p>
-</div>
-<div class="paragraph">
-<p>So we create a <code>MessageLog</code> trait with the <code>add</code> method:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">trait</span><span class="tok-w"> </span><span class="tok-n">MessageLog</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-k">fn</span> <span class="tok-nf">add</span><span class="tok-o">&lt;</span><span class="tok-n">T</span>: <span class="tok-nb">Into</span><span class="tok-o">&lt;</span><span class="tok-nb">String</span><span class="tok-o">&gt;&gt;</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-bp">self</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">message</span>: <span class="tok-nc">T</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">color</span>: <span class="tok-nc">Color</span><span class="tok-p">);</span><span class="tok-w"></span>
-<span class="tok-p">}</span><span class="tok-w"></span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Traits are like interfaces in Java and other languages: they describe
-a group of method signatures that a type implementing the trait needs
-to have.</p>
-</div>
-<div class="paragraph">
-<p>If we implement the trait for a concrete type, it will be able to call
-those methods and we can pass it to functions that expect that trait.</p>
-</div>
-<div class="paragraph">
-<p>So:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">impl</span><span class="tok-w"> </span><span class="tok-n">MessageLog</span><span class="tok-w"> </span><span class="tok-k">for</span><span class="tok-w"> </span><span class="tok-nb">Vec</span><span class="tok-o">&lt;</span><span class="tok-p">(</span><span class="tok-nb">String</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">Color</span><span class="tok-p">)</span><span class="tok-o">&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-k">fn</span> <span class="tok-nf">add</span><span class="tok-o">&lt;</span><span class="tok-n">T</span>: <span class="tok-nb">Into</span><span class="tok-o">&lt;</span><span class="tok-nb">String</span><span class="tok-o">&gt;&gt;</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-bp">self</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">message</span>: <span class="tok-nc">T</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">color</span>: <span class="tok-nc">Color</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">push</span><span class="tok-p">((</span><span class="tok-n">message</span><span class="tok-p">.</span><span class="tok-n">into</span><span class="tok-p">(),</span><span class="tok-w"> </span><span class="tok-n">color</span><span class="tok-p">));</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"></span>
-<span class="tok-p">}</span><span class="tok-w"></span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>This is basically the same thing as our <code>message</code> function does,
-except it&#8217;s a method (so it takes an explicit <code>&amp;mut self</code>) and we
-don&#8217;t bother with the message count check.</p>
-</div>
-<div class="paragraph">
-<p>And now, we can just add messages to the log by calling:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">log</span><span class="tok-p">.</span><span class="tok-n">add</span><span class="tok-p">(</span><span class="tok-s">&quot;some message&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">color</span>::<span class="tok-n">WHITE</span><span class="tok-p">);</span><span class="tok-w"></span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>This will mean changing all the message-printing code. You know what&#8217;s
-a great way to do this? Remove the <code>message</code> function and <em>let the
-compiler guide you</em>.</p>
-</div>
-</div>
-</div>
-<div class="sect1">
 <h2 id="_tidy_initialization">Tidy initialization</h2>
 <div class="sectionbody">
 <div class="paragraph">
@@ -808,16 +516,16 @@ and the main loop into a <code>new_game</code> function:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span> <span class="tok-nf">new_game</span><span class="tok-p">(</span><span class="tok-n">tcod</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Tcod</span><span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-p">(</span><span class="tok-nb">Vec</span><span class="tok-o">&lt;</span><span class="tok-n">Object</span><span class="tok-o">&gt;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">Game</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span> <span class="tok-nf">new_game</span><span class="tok-p">(</span><span class="tok-n">tcod</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Tcod</span><span class="tok-p">)</span><span class="tok-w"> </span>&#8594; <span class="tok-p">(</span><span class="tok-n">Game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-nb">Vec</span><span class="tok-o">&lt;</span><span class="tok-n">Object</span><span class="tok-o">&gt;</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-c1">// create object representing the player</span>
-<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">player</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">Object</span>::<span class="tok-n">new</span><span class="tok-p">(</span><span class="tok-mi">0</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-mi">0</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-sc">&#39;@&#39;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-s">&quot;player&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">colors</span>::<span class="tok-n">WHITE</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-kc">true</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">player</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">Object</span>::<span class="tok-n">new</span><span class="tok-p">(</span><span class="tok-mi">0</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-mi">0</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-sc">&#39;@&#39;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-s">&quot;player&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">WHITE</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-kc">true</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">player</span><span class="tok-p">.</span><span class="tok-n">alive</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-kc">true</span><span class="tok-p">;</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">player</span><span class="tok-p">.</span><span class="tok-n">fighter</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">Fighter</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-n">max_hp</span>: <span class="tok-mi">30</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-n">hp</span>: <span class="tok-mi">30</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-n">defense</span>: <span class="tok-mi">2</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-n">power</span>: <span class="tok-mi">5</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-n">on_death</span>: <span class="tok-nc">DeathCallback</span>::<span class="tok-n">Player</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-n">on_death</span>: <span class="tok-nc">DeathCallback</span>::<span class="tok-n">Player</span><span class="tok-p">,</span><span class="tok-w">  </span><span class="tok-c1">// &lt;1&gt;</span>
 <span class="tok-w">    </span><span class="tok-p">});</span><span class="tok-w"></span>
 
 <span class="tok-w">    </span><span class="tok-c1">// the list of objects with just the player</span>
@@ -826,20 +534,19 @@ and the main loop into a <code>new_game</code> function:</p>
 <span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">Game</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-c1">// generate map (at this point it&#39;s not drawn to the screen)</span>
 <span class="tok-w">        </span><span class="tok-n">map</span>: <span class="tok-nc">make_map</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">),</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-c1">// create the list of game messages and their colors, starts empty</span>
-<span class="tok-w">        </span><span class="tok-n">log</span>: <span class="tok-nc">vec</span><span class="tok-o">!</span><span class="tok-p">[],</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-n">inventory</span>: <span class="tok-nc">vec</span><span class="tok-o">!</span><span class="tok-p">[],</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-n">messages</span>: <span class="tok-nc">Messages</span>::<span class="tok-n">new</span><span class="tok-p">(),</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-n">inventory</span>: <span class="tok-nc">vec</span><span class="tok-o">!</span><span class="tok-p">[],</span><span class="tok-w">  </span><span class="tok-c1">// &lt;1&gt;</span>
 <span class="tok-w">    </span><span class="tok-p">};</span><span class="tok-w"></span>
 
-<span class="tok-w">    </span><span class="tok-n">initialise_fov</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">map</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">initialise_fov</span><span class="tok-p">(</span><span class="tok-n">tcod</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">map</span><span class="tok-p">);</span><span class="tok-w"></span>
 
 <span class="tok-w">    </span><span class="tok-c1">// a warm welcoming message!</span>
-<span class="tok-w">    </span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">log</span><span class="tok-p">.</span><span class="tok-n">add</span><span class="tok-p">(</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">messages</span><span class="tok-p">.</span><span class="tok-n">add</span><span class="tok-p">(</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-s">&quot;Welcome stranger! Prepare to perish in the Tombs of the Ancient Kings.&quot;</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-n">colors</span>::<span class="tok-n">RED</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-n">RED</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">);</span><span class="tok-w"></span>
 
-<span class="tok-w">    </span><span class="tok-p">(</span><span class="tok-n">objects</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">)</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-p">(</span><span class="tok-n">game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">)</span><span class="tok-w"></span>
 <span class="tok-p">}</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
@@ -853,7 +560,7 @@ the FOV-related code to it:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span> <span class="tok-nf">initialise_fov</span><span class="tok-p">(</span><span class="tok-n">map</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">Map</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">tcod</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Tcod</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span> <span class="tok-nf">initialise_fov</span><span class="tok-p">(</span><span class="tok-n">tcod</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Tcod</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">map</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">Map</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-c1">// create the FOV map, according to the generated map</span>
 <span class="tok-w">    </span><span class="tok-k">for</span><span class="tok-w"> </span><span class="tok-n">y</span><span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span><span class="tok-mi">0</span><span class="tok-p">..</span><span class="tok-n">MAP_HEIGHT</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-k">for</span><span class="tok-w"> </span><span class="tok-n">x</span><span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span><span class="tok-mi">0</span><span class="tok-p">..</span><span class="tok-n">MAP_WIDTH</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
@@ -874,40 +581,38 @@ function as well:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span> <span class="tok-nf">play_game</span><span class="tok-p">(</span><span class="tok-n">objects</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-nb">Vec</span><span class="tok-o">&lt;</span><span class="tok-n">Object</span><span class="tok-o">&gt;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">game</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">tcod</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Tcod</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span> <span class="tok-nf">play_game</span><span class="tok-p">(</span><span class="tok-n">tcod</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Tcod</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">game</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-nb">Vec</span><span class="tok-o">&lt;</span><span class="tok-n">Object</span><span class="tok-o">&gt;</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-c1">// force FOV &quot;recompute&quot; first time through the game loop</span>
 <span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">previous_player_position</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-o">-</span><span class="tok-mi">1</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">-</span><span class="tok-mi">1</span><span class="tok-p">);</span><span class="tok-w"></span>
-
-<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">key</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nb">Default</span>::<span class="tok-n">default</span><span class="tok-p">();</span><span class="tok-w"></span>
 
 <span class="tok-w">    </span><span class="tok-k">while</span><span class="tok-w"> </span><span class="tok-o">!</span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">window_closed</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-c1">// clear the screen of the previous frame</span>
 <span class="tok-w">        </span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">con</span><span class="tok-p">.</span><span class="tok-n">clear</span><span class="tok-p">();</span><span class="tok-w"></span>
 
 <span class="tok-w">        </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-n">input</span>::<span class="tok-n">check_for_event</span><span class="tok-p">(</span><span class="tok-n">input</span>::<span class="tok-n">MOUSE</span><span class="tok-w"> </span><span class="tok-o">|</span><span class="tok-w"> </span><span class="tok-n">input</span>::<span class="tok-n">KEY_PRESS</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-nb">Some</span><span class="tok-p">((</span><span class="tok-n">_</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">Event</span>::<span class="tok-n">Mouse</span><span class="tok-p">(</span><span class="tok-n">m</span><span class="tok-p">)))</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">mouse</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">m</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-nb">Some</span><span class="tok-p">((</span><span class="tok-n">_</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">Event</span>::<span class="tok-n">Key</span><span class="tok-p">(</span><span class="tok-n">k</span><span class="tok-p">)))</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">key</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">k</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-n">_</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">key</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nb">Default</span>::<span class="tok-n">default</span><span class="tok-p">(),</span><span class="tok-w"></span>
+<span class="tok-w">            </span><span class="tok-nb">Some</span><span class="tok-p"></span><span class="tok-n"><em></span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">Event</span>::<span class="tok-n">Mouse</span><span class="tok-p">(</span><span class="tok-n">m</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">&#8658;</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">mouse</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">m</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">            </span><span class="tok-nb">Some</span><span class="tok-p"></span><span class="tok-n"></em></span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">Event</span>::<span class="tok-n">Key</span><span class="tok-p">(</span><span class="tok-n">k</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">&#8658;</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">key</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">k</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">            </span><span class="tok-n">_</span><span class="tok-w"> </span><span class="tok-o">&#8658;</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">key</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nb">Default</span>::<span class="tok-n">default</span><span class="tok-p">(),</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-p">}</span><span class="tok-w"></span>
 
 <span class="tok-w">        </span><span class="tok-c1">// render the screen</span>
-<span class="tok-w">        </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">fov_recompute</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">previous_player_position</span><span class="tok-w"> </span><span class="tok-o">!=</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-n">PLAYER</span><span class="tok-p">].</span><span class="tok-n">pos</span><span class="tok-p">());</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-n">render_all</span><span class="tok-p">(</span><span class="tok-n">tcod</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-n">objects</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">fov_recompute</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">fov_recompute</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">previous_player_position</span><span class="tok-w"> </span><span class="tok-o">!=</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-n">PLAYER</span><span class="tok-p">].</span><span class="tok-n">pos</span><span class="tok-p">());</span><span class="tok-w">  </span><span class="tok-c1">// &lt;1&gt;</span>
+<span class="tok-w">        </span><span class="tok-n">render_all</span><span class="tok-p">(</span><span class="tok-n">tcod</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-n">objects</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">fov_recompute</span><span class="tok-p">);</span><span class="tok-w"></span>
 
 <span class="tok-w">        </span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">flush</span><span class="tok-p">();</span><span class="tok-w"></span>
 
 <span class="tok-w">        </span><span class="tok-c1">// handle keys and exit game if needed</span>
 <span class="tok-w">        </span><span class="tok-n">previous_player_position</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-n">PLAYER</span><span class="tok-p">].</span><span class="tok-n">pos</span><span class="tok-p">();</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">player_action</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">handle_keys</span><span class="tok-p">(</span><span class="tok-n">key</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">player_action</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">handle_keys</span><span class="tok-p">(</span><span class="tok-n">tcod</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-n">player_action</span><span class="tok-w"> </span><span class="tok-o">==</span><span class="tok-w"> </span><span class="tok-n">PlayerAction</span>::<span class="tok-n">Exit</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-k">break</span><span class="tok-w"></span>
+<span class="tok-w">            </span><span class="tok-k">break</span><span class="tok-p">;</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-p">}</span><span class="tok-w"></span>
 
 <span class="tok-w">        </span><span class="tok-c1">// let monsters take their turn</span>
 <span class="tok-w">        </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-n">PLAYER</span><span class="tok-p">].</span><span class="tok-n">alive</span><span class="tok-w"> </span><span class="tok-o">&amp;&amp;</span><span class="tok-w"> </span><span class="tok-n">player_action</span><span class="tok-w"> </span><span class="tok-o">!=</span><span class="tok-w"> </span><span class="tok-n">PlayerAction</span>::<span class="tok-n">DidntTakeTurn</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">            </span><span class="tok-k">for</span><span class="tok-w"> </span><span class="tok-n">id</span><span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span><span class="tok-mi">0</span><span class="tok-p">..</span><span class="tok-n">objects</span><span class="tok-p">.</span><span class="tok-n">len</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">                </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-n">id</span><span class="tok-p">].</span><span class="tok-n">ai</span><span class="tok-p">.</span><span class="tok-n">is_some</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">                    </span><span class="tok-n">ai_take_turn</span><span class="tok-p">(</span><span class="tok-n">id</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">fov</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">                    </span><span class="tok-n">ai_take_turn</span><span class="tok-p">(</span><span class="tok-n">id</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">                </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-w">            </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-p">}</span><span class="tok-w"></span>
@@ -922,24 +627,26 @@ function as well:</p>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span> <span class="tok-nf">main</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">tcod</span>::<span class="tok-n">system</span>::<span class="tok-n">set_fps</span><span class="tok-p">(</span><span class="tok-n">LIMIT_FPS</span><span class="tok-p">);</span><span class="tok-w"></span>
+
 <span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">root</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">Root</span>::<span class="tok-n">initializer</span><span class="tok-p">()</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-p">.</span><span class="tok-n">font</span><span class="tok-p">(</span><span class="tok-s">&quot;arial10x10.png&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">FontLayout</span>::<span class="tok-n">Tcod</span><span class="tok-p">)</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-p">.</span><span class="tok-n">font_type</span><span class="tok-p">(</span><span class="tok-n">FontType</span>::<span class="tok-n">Greyscale</span><span class="tok-p">)</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-p">.</span><span class="tok-n">size</span><span class="tok-p">(</span><span class="tok-n">SCREEN_WIDTH</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">SCREEN_HEIGHT</span><span class="tok-p">)</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-p">.</span><span class="tok-n">title</span><span class="tok-p">(</span><span class="tok-s">&quot;Rust/libtcod tutorial&quot;</span><span class="tok-p">)</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-p">.</span><span class="tok-n">init</span><span class="tok-p">();</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">tcod</span>::<span class="tok-n">system</span>::<span class="tok-n">set_fps</span><span class="tok-p">(</span><span class="tok-n">LIMIT_FPS</span><span class="tok-p">);</span><span class="tok-w"></span>
 
 <span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">Tcod</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-n">root</span>: <span class="tok-nc">root</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-n">root</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-n">con</span>: <span class="tok-nc">Offscreen</span>::<span class="tok-n">new</span><span class="tok-p">(</span><span class="tok-n">MAP_WIDTH</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">MAP_HEIGHT</span><span class="tok-p">),</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-n">panel</span>: <span class="tok-nc">Offscreen</span>::<span class="tok-n">new</span><span class="tok-p">(</span><span class="tok-n">SCREEN_WIDTH</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">PANEL_HEIGHT</span><span class="tok-p">),</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-n">fov</span>: <span class="tok-nc">FovMap</span>::<span class="tok-n">new</span><span class="tok-p">(</span><span class="tok-n">MAP_WIDTH</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">MAP_HEIGHT</span><span class="tok-p">),</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-n">key</span>: <span class="tok-nb">Default</span>::<span class="tok-n">default</span><span class="tok-p">(),</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-n">mouse</span>: <span class="tok-nb">Default</span>::<span class="tok-n">default</span><span class="tok-p">(),</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">};</span><span class="tok-w"></span>
 
-<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">new_game</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">);</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">play_game</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">new_game</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">play_game</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-p">}</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
@@ -990,7 +697,7 @@ tutorial</a>.</p>
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span> <span class="tok-nf">main_menu</span><span class="tok-p">(</span><span class="tok-n">tcod</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Tcod</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">img</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">tcod</span>::<span class="tok-n">image</span>::<span class="tok-n">Image</span>::<span class="tok-n">from_file</span><span class="tok-p">(</span><span class="tok-s">&quot;menu_background.png&quot;</span><span class="tok-p">)</span><span class="tok-w"> </span><i class="conum" data-value="1"></i><b>(1)</b>
 <span class="tok-w">        </span><span class="tok-p">.</span><span class="tok-n">ok</span><span class="tok-p">()</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-p">.</span><span class="tok-n">expect</span><span class="tok-p">(</span><span class="tok-s">&quot;Background image not found&quot;</span><span class="tok-p">);</span><span class="tok-w"> </span><i class="conum" data-value="2"></i><b>(2)</b>
+<span class="tok-w">        </span><span class="tok-p">.</span><span class="tok-n">expect</span><span class="tok-p">(</span><span class="tok-s">&quot;Background image not found&quot;</span><span class="tok-p">);</span><span class="tok-w">  </span><i class="conum" data-value="2"></i><b>(2)</b>
 
 <span class="tok-w">    </span><span class="tok-k">while</span><span class="tok-w"> </span><span class="tok-o">!</span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">window_closed</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w">  </span><i class="conum" data-value="3"></i><b>(3)</b>
 <span class="tok-w">        </span><span class="tok-c1">// show the background image, at twice the regular console resolution</span>
@@ -1001,11 +708,13 @@ tutorial</a>.</p>
 <span class="tok-w">        </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">choice</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">menu</span><span class="tok-p">(</span><span class="tok-s">&quot;&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">choices</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-mi">24</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">root</span><span class="tok-p">);</span><span class="tok-w"></span>
 
 <span class="tok-w">        </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-n">choice</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w">  </span><i class="conum" data-value="4"></i><b>(4)</b>
-<span class="tok-w">            </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-mi">0</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w">  </span><span class="tok-c1">// new game</span>
-<span class="tok-w">                </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">new_game</span><span class="tok-p">(</span><span class="tok-n">tcod</span><span class="tok-p">);</span><span class="tok-w"></span>
-<span class="tok-w">                </span><span class="tok-n">play_game</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">            </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-mi">0</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">                </span><span class="tok-c1">// new game</span>
+<span class="tok-w">                </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">new_game</span><span class="tok-p">(</span><span class="tok-n">tcod</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">                </span><span class="tok-n">play_game</span><span class="tok-p">(</span><span class="tok-n">tcod</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">            </span><span class="tok-p">}</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-mi">2</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w">  </span><span class="tok-c1">// quit</span>
+<span class="tok-w">            </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-mi">2</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">                </span><span class="tok-c1">// quit</span>
 <span class="tok-w">                </span><span class="tok-k">break</span><span class="tok-p">;</span><span class="tok-w"></span>
 <span class="tok-w">            </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-w">            </span><span class="tok-n">_</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{}</span><span class="tok-w">  </span><i class="conum" data-value="5"></i><b>(5)</b>
@@ -1058,7 +767,7 @@ to modify the values. Put this in the <code>main_menu</code> before calling the
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">set_default_foreground</span><span class="tok-p">(</span><span class="tok-n">colors</span>::<span class="tok-n">LIGHT_YELLOW</span><span class="tok-p">);</span><span class="tok-w"></span>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">set_default_foreground</span><span class="tok-p">(</span><span class="tok-n">LIGHT_YELLOW</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">print_ex</span><span class="tok-p">(</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">SCREEN_WIDTH</span><span class="tok-w"> </span><span class="tok-o">/</span><span class="tok-w"> </span><span class="tok-mi">2</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">SCREEN_HEIGHT</span><span class="tok-w"> </span><span class="tok-o">/</span><span class="tok-w"> </span><span class="tok-mi">2</span><span class="tok-w"> </span><span class="tok-o">-</span><span class="tok-w"> </span><span class="tok-mi">4</span><span class="tok-p">,</span><span class="tok-w"></span>
@@ -1091,7 +800,8 @@ reports its height as <code>1</code> by default.</p>
 <span class="tok-w">    </span><span class="tok-mi">0</span><span class="tok-w"></span>
 <span class="tok-p">}</span><span class="tok-w"> </span><span class="tok-k">else</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">get_height_rect</span><span class="tok-p">(</span><span class="tok-mi">0</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-mi">0</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">width</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">SCREEN_HEIGHT</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">header</span><span class="tok-p">)</span><span class="tok-w"></span>
-<span class="tok-p">};</span><span class="tok-w"></span></code></pre>
+<span class="tok-p">};</span><span class="tok-w"></span>
+<span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">height</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">options</span><span class="tok-p">.</span><span class="tok-n">len</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-k">as</span><span class="tok-w"> </span><span class="tok-kt">i32</span><span class="tok-w"> </span><span class="tok-o">+</span><span class="tok-w"> </span><span class="tok-n">header_height</span><span class="tok-p">;</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1105,7 +815,8 @@ console.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">con</span><span class="tok-p">.</span><span class="tok-n">clear</span><span class="tok-p">();</span><span class="tok-w">  </span><span class="tok-c1">// unexplored areas start black (which is the default background color)</span></code></pre>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-c1">// unexplored areas start black (which is the default background color)</span>
+<span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">con</span><span class="tok-p">.</span><span class="tok-n">clear</span><span class="tok-p">();</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1133,11 +844,11 @@ and loading quite painless. Here&#8217;s the teaser:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span> <span class="tok-nf">save_game</span><span class="tok-p">(</span><span class="tok-n">objects</span>: <span class="tok-kp">&amp;</span><span class="tok-p">[</span><span class="tok-n">Object</span><span class="tok-p">],</span><span class="tok-w"> </span><span class="tok-n">game</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">Game</span><span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-nb">Result</span><span class="tok-o">&lt;</span><span class="tok-p">(),</span><span class="tok-w"> </span><span class="tok-nb">Box</span><span class="tok-o">&lt;</span><span class="tok-n">Error</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w">  </span><i class="conum" data-value="1"></i><b>(1)</b> <i class="conum" data-value="2"></i><b>(2)</b>
-<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">save_data</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">serde_json</span>::<span class="tok-n">to_string</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-p">(</span><span class="tok-n">objects</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">))</span><span class="tok-o">?</span><span class="tok-p">;</span><span class="tok-w">  </span><i class="conum" data-value="3"></i><b>(3)</b>
-<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">file</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">File</span>::<span class="tok-n">create</span><span class="tok-p">(</span><span class="tok-s">&quot;savegame&quot;</span><span class="tok-p">)</span><span class="tok-o">?</span><span class="tok-p">;</span><span class="tok-w">  </span><i class="conum" data-value="4"></i><b>(4)</b>
-<span class="tok-w">    </span><span class="tok-n">file</span><span class="tok-p">.</span><span class="tok-n">write_all</span><span class="tok-p">(</span><span class="tok-n">save_data</span><span class="tok-p">.</span><span class="tok-n">as_bytes</span><span class="tok-p">())</span><span class="tok-o">?</span><span class="tok-p">;</span><span class="tok-w">  </span><i class="conum" data-value="5"></i><b>(5)</b>
-<span class="tok-w">    </span><span class="tok-nb">Ok</span><span class="tok-p">(())</span><span class="tok-w">  </span><i class="conum" data-value="6"></i><b>(6)</b>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span> <span class="tok-nf">save_game</span><span class="tok-p">(</span><span class="tok-n">game</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">Game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span>: <span class="tok-kp">&amp;</span><span class="tok-p">[</span><span class="tok-n">Object</span><span class="tok-p">])</span><span class="tok-w"> </span>-&gt; <span class="tok-nb">Result</span><span class="tok-o">&lt;</span><span class="tok-p">(),</span><span class="tok-w"> </span><span class="tok-nb">Box</span><span class="tok-o">&lt;</span><span class="tok-n">dyn</span><span class="tok-w"> </span><span class="tok-n">Error</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w">  </span><i class="conum" data-value="1"></i><b>(1)</b>
+<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">save_data</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">serde_json</span>::<span class="tok-n">to_string</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-p">(</span><span class="tok-n">game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">))</span><span class="tok-o">?</span><span class="tok-p">;</span><span class="tok-w">  </span><i class="conum" data-value="2"></i><b>(2)</b>
+<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">file</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">File</span>::<span class="tok-n">create</span><span class="tok-p">(</span><span class="tok-s">&quot;savegame&quot;</span><span class="tok-p">)</span><span class="tok-o">?</span><span class="tok-p">;</span><span class="tok-w">  </span><i class="conum" data-value="3"></i><b>(3)</b>
+<span class="tok-w">    </span><span class="tok-n">file</span><span class="tok-p">.</span><span class="tok-n">write_all</span><span class="tok-p">(</span><span class="tok-n">save_data</span><span class="tok-p">.</span><span class="tok-n">as_bytes</span><span class="tok-p">())</span><span class="tok-o">?</span><span class="tok-p">;</span><span class="tok-w">  </span><i class="conum" data-value="4"></i><b>(4)</b>
+<span class="tok-w">    </span><span class="tok-nb">Ok</span><span class="tok-p">(())</span><span class="tok-w">  </span><i class="conum" data-value="5"></i><b>(5)</b>
 <span class="tok-p">}</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
@@ -1145,27 +856,23 @@ and loading quite painless. Here&#8217;s the teaser:</p>
 <table>
 <tr>
 <td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>save <code>objects</code> and <code>game</code>&#8201;&#8212;&#8201;they contain all our game state</td>
+<td>save <code>game</code> and <code>objects</code>&#8201;&#8212;&#8201;they contain all our game state. The saving can fail so return a <code>Result</code> which could be <code>Ok</code> or <code>Err</code></td>
 </tr>
 <tr>
 <td><i class="conum" data-value="2"></i><b>2</b></td>
-<td>the saving could fail so return a <code>Result</code> which could be <code>Ok</code> or <code>Err</code></td>
-</tr>
-<tr>
-<td><i class="conum" data-value="3"></i><b>3</b></td>
 <td>convert both <code>objects</code> and <code>game</code> into json</td>
 </tr>
 <tr>
-<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
 <td>create a file called "savegame"&#8201;&#8212;&#8201;that&#8217;s where we&#8217;ll write the
 game state</td>
 </tr>
 <tr>
-<td><i class="conum" data-value="5"></i><b>5</b></td>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
 <td>write the json-ified game state to the file</td>
 </tr>
 <tr>
-<td><i class="conum" data-value="6"></i><b>6</b></td>
+<td><i class="conum" data-value="5"></i><b>5</b></td>
 <td>if nothing went wrong return <code>Ok</code>, indicating success</td>
 </tr>
 </table>
@@ -1187,10 +894,9 @@ and we&#8217;ll also enable the "serialization" feature in the <em>tcod</em> cra
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="toml"><span></span><span class="tok-p">[</span><span class="tok-n">dependencies</span><span class="tok-p">]</span>
-<span class="tok-n">tcod</span> <span class="tok-o">=</span> <span class="tok-p">{</span> <span class="tok-n">version</span> <span class="tok-o">=</span> <span class="tok-s">&quot;0.12&quot;</span><span class="tok-p">,</span> <span class="tok-n">features</span> <span class="tok-o">=</span> <span class="tok-p">[</span><span class="tok-s">&quot;serialization&quot;</span><span class="tok-p">]</span> <span class="tok-p">}</span>
+<span class="tok-n">tcod</span> <span class="tok-o">=</span> <span class="tok-p">{</span> <span class="tok-n">version</span> <span class="tok-o">=</span> <span class="tok-s">&quot;0.15&quot;</span><span class="tok-p">,</span> <span class="tok-n">features</span> <span class="tok-o">=</span> <span class="tok-p">[</span><span class="tok-s">&quot;serialization&quot;</span><span class="tok-p">]</span> <span class="tok-p">}</span>
 <span class="tok-n">rand</span> <span class="tok-o">=</span> <span class="tok-s">&quot;0.3&quot;</span>
-<span class="tok-n">serde</span> <span class="tok-o">=</span> <span class="tok-s">&quot;1.0&quot;</span>
-<span class="tok-n">serde_derive</span> <span class="tok-o">=</span> <span class="tok-s">&quot;1.0&quot;</span>
+<span class="tok-n">serde</span> <span class="tok-o">=</span> <span class="tok-p">{</span> <span class="tok-n">version</span> <span class="tok-o">=</span> <span class="tok-s">&quot;1.0&quot;</span><span class="tok-p">,</span> <span class="tok-n">features</span> <span class="tok-o">=</span> <span class="tok-p">[</span><span class="tok-s">&quot;derive&quot;</span><span class="tok-p">]</span> <span class="tok-p">}</span>
 <span class="tok-n">serde_json</span> <span class="tok-o">=</span> <span class="tok-s">&quot;1.0&quot;</span></code></pre>
 </div>
 </div>
@@ -1198,48 +904,40 @@ and we&#8217;ll also enable the "serialization" feature in the <em>tcod</em> cra
 <p>The <code>serde</code> crate provides the main functionality for serializing and
 deserializing of Rust data. This includes the <code>Serialize</code> and
 <code>Deserialize</code> traits which describe what to do for a given
-struct/enum/whatever. <code>serde_derive</code> provides a way to <strong>derive</strong> those
+struct/enum/whatever. The optional <code>derive</code> feature provides a way to <strong>derive</strong> those
 traits so we don&#8217;t need to implement them ourselves and finally
 <code>serde_json</code> converts any serializable struct to and from JSON. If we
 wanted to use a different format (YAML, TOML or anything else, we&#8217;d
 replace this crate with another one that supports what you want).</p>
 </div>
 <div class="paragraph">
-<p>Now let&#8217;s add the crate to our source code, including the <code>save_game</code>
+<p>Now let&#8217;s add those traits our source code, including the <code>save_game</code>
 function and try to compile:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-cp">#[macro_use]</span><span class="tok-w"></span>
-<span class="tok-k">extern</span><span class="tok-w"> </span><span class="tok-k">crate</span><span class="tok-w"> </span><span class="tok-n">serde_derive</span><span class="tok-p">;</span><span class="tok-w"></span>
-
-<span class="tok-c1">// the existing imports</span>
-<span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">std</span>::<span class="tok-n">io</span>::<span class="tok-p">{</span><span class="tok-n">Read</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">Write</span><span class="tok-p">};</span><span class="tok-w"></span>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">std</span>::<span class="tok-n">error</span>::<span class="tok-n">Error</span><span class="tok-p">;</span><span class="tok-w"></span>
 <span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">std</span>::<span class="tok-n">fs</span>::<span class="tok-n">File</span><span class="tok-p">;</span><span class="tok-w"></span>
-<span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">std</span>::<span class="tok-n">error</span>::<span class="tok-n">Error</span><span class="tok-p">;</span><span class="tok-w"></span></code></pre>
+<span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">std</span>::<span class="tok-n">io</span>::<span class="tok-p">{</span><span class="tok-n">Read</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">Write</span><span class="tok-p">};</span><span class="tok-w"></span>
+
+<span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">serde</span>::<span class="tok-p">{</span><span class="tok-n">Deserialize</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">Serialize</span><span class="tok-p">};</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Note the <code>macro_use</code> attribute in front of the <code>serde_derive</code>. The
-functionality provided by the crate is in form of macros. And if we
-want to use macros provided by another crate, we need to say so in the
-<code>extern</code> statement.</p>
+<p>Unfortunately, the compilation will fail:</p>
 </div>
-<div class="paragraph">
-<p>Unfortunately, it will fail:</p>
-</div>
-<div class="listingblock">
+<div class="literalblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-w">   </span><span class="tok-n">Compiling</span><span class="tok-w"> </span><span class="tok-n">roguelike</span><span class="tok-o">-</span><span class="tok-n">tutorial</span><span class="tok-w"> </span><span class="tok-n">v0</span><span class="tok-p">.</span><span class="tok-mf">1.0</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">file</span>:<span class="tok-sd">///home/thomas/personal/code/roguelike-tutorial)</span>
-<span class="tok-n">error</span><span class="tok-p">[</span><span class="tok-n">E0277</span><span class="tok-p">]</span>: <span class="tok-nc">the</span><span class="tok-w"> </span><span class="tok-k">trait</span><span class="tok-w"> </span><span class="tok-n">bound</span><span class="tok-w"> </span><span class="tok-err">`</span><span class="tok-n">Game</span>: <span class="tok-nc">serde</span>::<span class="tok-n">Serialize</span><span class="tok-err">`</span><span class="tok-w"> </span><span class="tok-n">is</span><span class="tok-w"> </span><span class="tok-n">not</span><span class="tok-w"> </span><span class="tok-n">satisfied</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-o">-</span>-&gt; <span class="tok-nc">src</span><span class="tok-o">/</span><span class="tok-n">bin</span><span class="tok-o">/</span><span class="tok-n">part</span><span class="tok-o">-</span><span class="tok-mi">10</span><span class="tok-o">-</span><span class="tok-n">menu</span><span class="tok-o">-</span><span class="tok-n">saving</span><span class="tok-p">.</span><span class="tok-n">rs</span>:<span class="tok-mi">1140</span>:<span class="tok-mi">28</span><span class="tok-w"></span>
-<span class="tok-w">     </span><span class="tok-o">|</span><span class="tok-w"></span>
-<span class="tok-mi">1140</span><span class="tok-w"> </span><span class="tok-o">|</span><span class="tok-w">     </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">save_data</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">serde_json</span>::<span class="tok-n">to_string</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-p">(</span><span class="tok-n">objects</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">))</span><span class="tok-o">?</span><span class="tok-p">;</span><span class="tok-w"></span>
-<span class="tok-w">     </span><span class="tok-o">|</span><span class="tok-w">                     </span><span class="tok-o">^^^^^^^^^^^^^^^^^^^^^</span><span class="tok-w"> </span><span class="tok-n">the</span><span class="tok-w"> </span><span class="tok-k">trait</span><span class="tok-w"> </span><span class="tok-err">`</span><span class="tok-n">serde</span>::<span class="tok-n">Serialize</span><span class="tok-err">`</span><span class="tok-w"> </span><span class="tok-n">is</span><span class="tok-w"> </span><span class="tok-n">not</span><span class="tok-w"> </span><span class="tok-n">implemented</span><span class="tok-w"> </span><span class="tok-k">for</span><span class="tok-w"> </span><span class="tok-err">`</span><span class="tok-n">Game</span><span class="tok-err">`</span><span class="tok-w"></span>
-<span class="tok-w">     </span><span class="tok-o">|</span><span class="tok-w"></span>
-<span class="tok-w">     </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">note</span>: <span class="tok-nc">required</span><span class="tok-w"> </span><span class="tok-n">because</span><span class="tok-w"> </span><span class="tok-n">of</span><span class="tok-w"> </span><span class="tok-n">the</span><span class="tok-w"> </span><span class="tok-n">requirements</span><span class="tok-w"> </span><span class="tok-n">on</span><span class="tok-w"> </span><span class="tok-n">the</span><span class="tok-w"> </span><span class="tok-k">impl</span><span class="tok-w"> </span><span class="tok-n">of</span><span class="tok-w"> </span><span class="tok-err">`</span><span class="tok-n">serde</span>::<span class="tok-n">Serialize</span><span class="tok-err">`</span><span class="tok-w"> </span><span class="tok-k">for</span><span class="tok-w"> </span><span class="tok-err">`</span><span class="tok-o">&amp;</span><span class="tok-n">Game</span><span class="tok-err">`</span><span class="tok-w"></span>
-<span class="tok-w">     </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">note</span>: <span class="tok-nc">required</span><span class="tok-w"> </span><span class="tok-n">because</span><span class="tok-w"> </span><span class="tok-n">of</span><span class="tok-w"> </span><span class="tok-n">the</span><span class="tok-w"> </span><span class="tok-n">requirements</span><span class="tok-w"> </span><span class="tok-n">on</span><span class="tok-w"> </span><span class="tok-n">the</span><span class="tok-w"> </span><span class="tok-k">impl</span><span class="tok-w"> </span><span class="tok-n">of</span><span class="tok-w"> </span><span class="tok-err">`</span><span class="tok-n">serde</span>::<span class="tok-n">Serialize</span><span class="tok-err">`</span><span class="tok-w"> </span><span class="tok-k">for</span><span class="tok-w"> </span><span class="tok-err">`</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-p">[</span><span class="tok-n">Object</span><span class="tok-p">],</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-n">Game</span><span class="tok-p">)</span><span class="tok-err">`</span><span class="tok-w"></span>
-<span class="tok-w">     </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">note</span>: <span class="tok-nc">required</span><span class="tok-w"> </span><span class="tok-n">by</span><span class="tok-w"> </span><span class="tok-err">`</span><span class="tok-n">serde_json</span>::<span class="tok-n">to_string</span><span class="tok-err">`</span><span class="tok-w"></span></code></pre>
+<pre>   Compiling roguelike-tutorial v0.1.0 (file:///home/thomas/personal/code/roguelike-tutorial)
+error[E0277]: the trait bound `Game: serde::Serialize` is not satisfied
+    --&gt; src/bin/part-10-menu-saving.rs:1140:28
+     |
+1140 |     let save_data = serde_json::to_string(&amp;(game, objects))?;
+     |                     ^^^^^^^^^^^^^^^^^^^^^ the trait `serde::Serialize` is not implemented for `Game`
+     |
+     = note: required because of the requirements on the impl of `serde::Serialize` for `&amp;Game`
+     = note: required because of the requirements on the impl of `serde::Serialize` for `(&amp;[Object], &amp;Game)`
+     = note: required by `serde_json::to_string`</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1254,7 +952,7 @@ for us!</p>
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-cp">#[derive(Serialize)]</span><span class="tok-w">  </span><i class="conum" data-value="1"></i><b>(1)</b>
 <span class="tok-k">struct</span> <span class="tok-nc">Game</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">map</span>: <span class="tok-nc">Map</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">log</span>: <span class="tok-nc">Messages</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">messages</span>: <span class="tok-nc">Messages</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">inventory</span>: <span class="tok-nb">Vec</span><span class="tok-o">&lt;</span><span class="tok-n">Object</span><span class="tok-o">&gt;</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-p">}</span><span class="tok-w"></span></code></pre>
 </div>
@@ -1270,32 +968,61 @@ for us!</p>
 <div class="paragraph">
 <p>If you try to compile it now, you&#8217;ll see that the complaint has
 shifted from <code>Game</code> to <code>Object</code>. We&#8217;ll need to derive <code>Serialize</code>
-for every struct and enum we&#8217;ll be saving:</p>
+for every struct and enum we&#8217;ll be saving.</p>
 </div>
-<div class="ulist">
-<ul>
-<li>
-<p>Game</p>
-</li>
-<li>
-<p>Object</p>
-</li>
-<li>
-<p>Tile</p>
-</li>
-<li>
-<p>Fighter</p>
-</li>
-<li>
-<p>DeathCallback</p>
-</li>
-<li>
-<p>Ai</p>
-</li>
-<li>
-<p>Item</p>
-</li>
-</ul>
+<div class="paragraph">
+<p>There is a complementary trait called <code>Deserialize</code> which goes the other way:
+from a serialised representation to a struct.</p>
+</div>
+<div class="paragraph">
+<p>So let&#8217;s add them all at once:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-cp">#[derive(Serialize, Deserialize)]</span><span class="tok-w"></span>
+<span class="tok-k">struct</span> <span class="tok-nc">Messages</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-p">...</span><span class="tok-w"></span>
+<span class="tok-p">}</span><span class="tok-w"></span>
+
+<span class="tok-cp">#[derive(Serialize, Deserialize)]</span><span class="tok-w"></span>
+<span class="tok-k">struct</span> <span class="tok-nc">Game</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-p">...</span><span class="tok-w"></span>
+<span class="tok-p">}</span><span class="tok-w"></span>
+
+<span class="tok-sd">/// A tile of the map and its properties</span>
+<span class="tok-cp">#[derive(Clone, Copy, Debug, Serialize, Deserialize)]</span><span class="tok-w"></span>
+<span class="tok-k">struct</span> <span class="tok-nc">Tile</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-p">...</span><span class="tok-w"></span>
+<span class="tok-p">}</span><span class="tok-w"></span>
+
+<span class="tok-sd">/// This is a generic object: the player, a monster, an item, the stairs...</span>
+<span class="tok-sd">/// It&#39;s always represented by a character on screen.</span>
+<span class="tok-cp">#[derive(Debug, Serialize, Deserialize)]</span><span class="tok-w"></span>
+<span class="tok-k">struct</span> <span class="tok-nc">Object</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-p">...</span><span class="tok-w"></span>
+<span class="tok-p">}</span><span class="tok-w"></span>
+
+<span class="tok-c1">// combat-related properties and methods (monster, player, NPC).</span>
+<span class="tok-cp">#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]</span><span class="tok-w"></span>
+<span class="tok-k">struct</span> <span class="tok-nc">Fighter</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-p">...</span><span class="tok-w"></span>
+<span class="tok-p">}</span><span class="tok-w"></span>
+
+<span class="tok-cp">#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]</span><span class="tok-w"></span>
+<span class="tok-k">enum</span> <span class="tok-nc">DeathCallback</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-p">...</span><span class="tok-w"></span>
+<span class="tok-p">}</span><span class="tok-w"></span>
+
+<span class="tok-cp">#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]</span><span class="tok-w"></span>
+<span class="tok-k">enum</span> <span class="tok-nc">Ai</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-p">...</span><span class="tok-w"></span>
+<span class="tok-p">}</span><span class="tok-w"></span>
+
+<span class="tok-cp">#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]</span><span class="tok-w"></span>
+<span class="tok-k">enum</span> <span class="tok-nc">Item</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-p">...</span><span class="tok-w"></span>
+<span class="tok-p">}</span><span class="tok-w"></span></code></pre>
+</div>
 </div>
 <div class="paragraph">
 <p>It&#8217;s a bit of a bother but not the end of the world. After that, our
@@ -1310,8 +1037,8 @@ game, so we&#8217;ll call <code>save_game</code> in <code>play_game</code> right
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-n">player_action</span><span class="tok-w"> </span><span class="tok-o">==</span><span class="tok-w"> </span><span class="tok-n">PlayerAction</span>::<span class="tok-n">Exit</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">save_game</span><span class="tok-p">(</span><span class="tok-n">objects</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">);</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-k">break</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">save_game</span><span class="tok-p">(</span><span class="tok-n">game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">).</span><span class="tok-n">unwrap</span><span class="tok-p">();</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-k">break</span><span class="tok-p">;</span><span class="tok-w"></span>
 <span class="tok-p">}</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
@@ -1327,11 +1054,11 @@ it have? We need to add a <code>load_game</code> function, too:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span> <span class="tok-nf">load_game</span><span class="tok-p">()</span><span class="tok-w"> </span>-&gt; <span class="tok-nb">Result</span><span class="tok-o">&lt;</span><span class="tok-p">(</span><span class="tok-nb">Vec</span><span class="tok-o">&lt;</span><span class="tok-n">Object</span><span class="tok-o">&gt;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">Game</span><span class="tok-p">),</span><span class="tok-w"> </span><span class="tok-nb">Box</span><span class="tok-o">&lt;</span><span class="tok-n">Error</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span> <span class="tok-nf">load_game</span><span class="tok-p">()</span><span class="tok-w"> </span>-&gt; <span class="tok-nb">Result</span><span class="tok-o">&lt;</span><span class="tok-p">(</span><span class="tok-n">Game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-nb">Vec</span><span class="tok-o">&lt;</span><span class="tok-n">Object</span><span class="tok-o">&gt;</span><span class="tok-p">),</span><span class="tok-w"> </span><span class="tok-nb">Box</span><span class="tok-o">&lt;</span><span class="tok-n">dyn</span><span class="tok-w"> </span><span class="tok-n">Error</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">json_save_state</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nb">String</span>::<span class="tok-n">new</span><span class="tok-p">();</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">file</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">File</span>::<span class="tok-n">open</span><span class="tok-p">(</span><span class="tok-s">&quot;savegame&quot;</span><span class="tok-p">)</span><span class="tok-o">?</span><span class="tok-p">;</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">file</span><span class="tok-p">.</span><span class="tok-n">read_to_string</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">json_save_state</span><span class="tok-p">)</span><span class="tok-o">?</span><span class="tok-p">;</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">result</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">serde_json</span>::<span class="tok-n">from_str</span>::<span class="tok-o">&lt;</span><span class="tok-p">(</span><span class="tok-nb">Vec</span><span class="tok-o">&lt;</span><span class="tok-n">Object</span><span class="tok-o">&gt;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">Game</span><span class="tok-p">)</span><span class="tok-o">&gt;</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-n">json_save_state</span><span class="tok-p">)</span><span class="tok-o">?</span><span class="tok-p">;</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">result</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">serde_json</span>::<span class="tok-n">from_str</span>::<span class="tok-o">&lt;</span><span class="tok-p">(</span><span class="tok-n">Game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-nb">Vec</span><span class="tok-o">&lt;</span><span class="tok-n">Object</span><span class="tok-o">&gt;</span><span class="tok-p">)</span><span class="tok-o">&gt;</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-n">json_save_state</span><span class="tok-p">)</span><span class="tok-o">?</span><span class="tok-p">;</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-nb">Ok</span><span class="tok-p">(</span><span class="tok-n">result</span><span class="tok-p">)</span><span class="tok-w"></span>
 <span class="tok-p">}</span><span class="tok-w"></span></code></pre>
 </div>
@@ -1348,7 +1075,8 @@ contents to a String, then we decode it into our <code>objects</code> Vec and
 <div class="content">
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-n">choice</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-mi">0</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w">  </span><span class="tok-c1">// new game ... }</span>
-<span class="tok-w">    </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-mi">1</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w">  </span><span class="tok-c1">// load game</span>
+<span class="tok-w">    </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-mi">1</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-c1">// load game</span>
 <span class="tok-w">        </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">load_game</span><span class="tok-p">().</span><span class="tok-n">unwrap</span><span class="tok-p">();</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-n">initialise_fov</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">map</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">fov</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-n">play_game</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">);</span><span class="tok-w"></span>
@@ -1414,7 +1142,7 @@ to</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span> <span class="tok-nf">save_game</span><span class="tok-p">(</span><span class="tok-n">objects</span>: <span class="tok-kp">&amp;</span><span class="tok-p">[</span><span class="tok-n">Object</span><span class="tok-p">],</span><span class="tok-w"> </span><span class="tok-n">game</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">Game</span><span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-nb">Result</span><span class="tok-o">&lt;</span><span class="tok-p">(),</span><span class="tok-w"> </span><span class="tok-nb">Box</span><span class="tok-o">&lt;</span><span class="tok-n">Error</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span> <span class="tok-nf">save_game</span><span class="tok-p">(</span><span class="tok-n">game</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">Game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span>: <span class="tok-kp">&amp;</span><span class="tok-p">[</span><span class="tok-n">Object</span><span class="tok-p">])</span><span class="tok-w"> </span>-&gt; <span class="tok-nb">Result</span><span class="tok-o">&lt;</span><span class="tok-p">(),</span><span class="tok-w"> </span><span class="tok-nb">Box</span><span class="tok-o">&lt;</span><span class="tok-n">dyn</span><span class="tok-w"> </span><span class="tok-n">Error</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-p">...</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">file</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-n">File</span>::<span class="tok-n">create</span><span class="tok-p">(</span><span class="tok-s">&quot;savegame&quot;</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">      </span><span class="tok-nb">Ok</span><span class="tok-p">(</span><span class="tok-n">f</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">f</span><span class="tok-p">,</span><span class="tok-w"></span>
@@ -1436,13 +1164,13 @@ their results?</p>
 <div class="paragraph">
 <p>If you tried to compile the game, you&#8217;ve seen this warning:</p>
 </div>
-<div class="listingblock">
+<div class="literalblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-n">cargo</span><span class="tok-w"> </span><span class="tok-n">build</span><span class="tok-w"></span>
-<span class="tok-w">   </span><span class="tok-n">Compiling</span><span class="tok-w"> </span><span class="tok-n">roguelike</span><span class="tok-o">-</span><span class="tok-n">tutorial</span><span class="tok-w"> </span><span class="tok-n">v0</span><span class="tok-p">.</span><span class="tok-mf">1.0</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">file</span>:<span class="tok-sd">///home/thomas/code/roguelike-tutorial)</span>
-<span class="tok-n">src</span><span class="tok-o">/</span><span class="tok-n">bin</span><span class="tok-o">/</span><span class="tok-n">part</span><span class="tok-o">-</span><span class="tok-mi">10</span><span class="tok-o">-</span><span class="tok-n">menu</span><span class="tok-o">-</span><span class="tok-n">saving</span><span class="tok-p">.</span><span class="tok-n">rs</span>:<span class="tok-mi">1123</span>:<span class="tok-mi">13</span>: <span class="tok-mi">1123</span>:<span class="tok-mi">38</span><span class="tok-w"> </span><span class="tok-n">warning</span>: <span class="tok-nc">unused</span><span class="tok-w"> </span><span class="tok-n">result</span><span class="tok-w"> </span><span class="tok-n">which</span><span class="tok-w"> </span><span class="tok-n">must</span><span class="tok-w"> </span><span class="tok-n">be</span><span class="tok-w"> </span><span class="tok-n">used</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-cp">#[warn(unused_must_use)]</span><span class="tok-w"> </span><span class="tok-n">on</span><span class="tok-w"> </span><span class="tok-n">by</span><span class="tok-w"> </span><span class="tok-n">default</span><span class="tok-w"></span>
-<span class="tok-n">src</span><span class="tok-o">/</span><span class="tok-n">bin</span><span class="tok-o">/</span><span class="tok-n">part</span><span class="tok-o">-</span><span class="tok-mi">10</span><span class="tok-o">-</span><span class="tok-n">menu</span><span class="tok-o">-</span><span class="tok-n">saving</span><span class="tok-p">.</span><span class="tok-n">rs</span>:<span class="tok-mi">1123</span><span class="tok-w">             </span><span class="tok-n">save_game</span><span class="tok-p">(</span><span class="tok-n">objects</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">);</span><span class="tok-w"></span>
-<span class="tok-w">                                                </span><span class="tok-o">^~~~~~~~~~~~~~~~~~~~~~~~~</span><span class="tok-w"></span></code></pre>
+<pre>cargo build
+   Compiling roguelike-tutorial v0.1.0 (file:///home/thomas/code/roguelike-tutorial)
+src/bin/part-10-menu-saving.rs:1123:13: 1123:38 warning: unused result which must be used, #[warn(unused_must_use)] on by default
+src/bin/part-10-menu-saving.rs:1123             save_game(objects, game);
+                                                ^~~~~~~~~~~~~~~~~~~~~~~~~</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1477,11 +1205,12 @@ similar, we&#8217;ll just quit the game.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-mi">1</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w">  </span><span class="tok-c1">// load game</span>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-mi">1</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-c1">// load game</span>
 <span class="tok-w">    </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-n">load_game</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-nb">Ok</span><span class="tok-p">((</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">))</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-n">initialise_fov</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">map</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">fov</span><span class="tok-p">);</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-n">play_game</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-nb">Ok</span><span class="tok-p">((</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">))</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">            </span><span class="tok-n">initialise_fov</span><span class="tok-p">(</span><span class="tok-n">tcod</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">map</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">            </span><span class="tok-n">play_game</span><span class="tok-p">(</span><span class="tok-n">tcod</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-nb">Err</span><span class="tok-p">(</span><span class="tok-n">_e</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">            </span><span class="tok-n">msgbox</span><span class="tok-p">(</span><span class="tok-s">&quot;</span><span class="tok-se">\n</span><span class="tok-s">No saved game to load.</span><span class="tok-se">\n</span><span class="tok-s">&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-mi">24</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">root</span><span class="tok-p">);</span><span class="tok-w"></span>
@@ -1518,7 +1247,7 @@ we had to learn a ton of new stuff to understand it.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-05-11 11:17:23 UTC
+Last updated 2019-06-09 21:52:44 UTC
 </div>
 </div>
 <style>

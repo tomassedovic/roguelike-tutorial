@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="generator" content="Asciidoctor 2.0.9">
+<meta name="generator" content="Asciidoctor 2.0.10">
 <title>Items and inventory</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
 <style>
@@ -240,7 +240,7 @@ table.linenotable td.linenos{border-right:1px solid currentColor;opacity:.35;pad
 pre.pygments .lineno{border-right:1px solid currentColor;opacity:.35;display:inline-block;margin-right:.75em}
 pre.pygments .lineno::before{content:"";margin-right:-.125em}
 .quoteblock{margin:0 1em 1.25em 1.5em;display:table}
-.quoteblock>.title{margin-left:-1.5em;margin-bottom:.75em}
+.quoteblock:not(.excerpt)>.title{margin-left:-1.5em;margin-bottom:.75em}
 .quoteblock blockquote,.quoteblock p{color:rgba(0,0,0,.85);font-size:1.15rem;line-height:1.75;word-spacing:.1em;letter-spacing:0;font-style:italic;text-align:justify}
 .quoteblock blockquote{margin:0;padding:0;border:0}
 .quoteblock blockquote::before{content:"\201c";float:left;font-size:2.75em;font-weight:bold;line-height:.6em;margin-left:-.6em;color:#7a2518;text-shadow:0 1px 2px rgba(0,0,0,.1)}
@@ -257,7 +257,8 @@ pre.pygments .lineno::before{content:"";margin-right:-.125em}
 .quoteblock.abstract blockquote,.quoteblock.abstract p,.quoteblock.excerpt blockquote,.quoteblock.excerpt p,.quoteblock .quoteblock blockquote,.quoteblock .quoteblock p{line-height:1.6;word-spacing:0}
 .quoteblock.abstract{margin:0 1em 1.25em;display:block}
 .quoteblock.abstract>.title{margin:0 0 .375em;font-size:1.15em;text-align:center}
-.quoteblock.excerpt,.quoteblock .quoteblock{margin:0 0 1.25em;padding:0 0 .25em 1em;border-left:.25em solid #dddddf}
+.quoteblock.excerpt>blockquote,.quoteblock .quoteblock{padding:0 0 .25em 1em;border-left:.25em solid #dddddf}
+.quoteblock.excerpt,.quoteblock .quoteblock{margin-left:0}
 .quoteblock.excerpt blockquote,.quoteblock.excerpt p,.quoteblock .quoteblock blockquote,.quoteblock .quoteblock p{color:inherit;font-size:1.0625rem}
 .quoteblock.excerpt .attribution,.quoteblock .quoteblock .attribution{color:inherit;text-align:left;margin-right:0}
 table.tableblock{max-width:100%;border-collapse:separate}
@@ -476,26 +477,64 @@ place monsters, at the end of the <code>place_objects</code> function:</p>
 <span class="tok-w">    </span><span class="tok-c1">// only place it if the tile is not blocked</span>
 <span class="tok-w">    </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-o">!</span><span class="tok-n">is_blocked</span><span class="tok-p">(</span><span class="tok-n">x</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">y</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">map</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-c1">// create a healing potion</span>
-<span class="tok-w">        </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">object</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">Object</span>::<span class="tok-n">new</span><span class="tok-p">(</span><span class="tok-n">x</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">y</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-sc">&#39;!&#39;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-s">&quot;healing potion&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">colors</span>::<span class="tok-n">VIOLET</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">object</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">Object</span>::<span class="tok-n">new</span><span class="tok-p">(</span><span class="tok-n">x</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">y</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-sc">&#39;!&#39;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-s">&quot;healing potion&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">VIOLET</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-kc">false</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-n">objects</span><span class="tok-p">.</span><span class="tok-n">push</span><span class="tok-p">(</span><span class="tok-n">object</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-p">}</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>For this to work, we must define the new constant <code>MAX_ROOM_ITEMS =
-2</code>. Later we&#8217;ll expand this with a few magic scrolls in addition to
-the healing potions; this is the spot to add any items you want in
-your game. The healing potions don&#8217;t have any special components for
-now; we&#8217;ll get to that in a second.</p>
-</div>
-<div class="paragraph">
-<p>Next, let&#8217;s define the inventory! This goes before the main loop:</p>
+<p>For this to work, we must define the new constant <code>MAX_ROOM_ITEMS</code>.
+Later we&#8217;ll expand this with a few magic scrolls in addition to the
+healing potions; this is the spot to add any items you want in your
+game. The healing potions don&#8217;t have any special components for now;
+we&#8217;ll get to that in a second.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">inventory</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">vec</span><span class="tok-o">!</span><span class="tok-p">[];</span><span class="tok-w"></span></code></pre>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">const</span><span class="tok-w"> </span><span class="tok-n">MAX_ROOM_ITEMS</span>: <span class="tok-kt">i32</span> <span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-mi">2</span><span class="tok-p">;</span><span class="tok-w"></span></code></pre>
 </div>
+</div>
+<div class="paragraph">
+<p>Next, let&#8217;s define the inventory! We&#8217;ll add it to our <code>Game</code> struct:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">struct</span> <span class="tok-nc">Game</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">map</span>: <span class="tok-nc">Map</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">messages</span>: <span class="tok-nc">Messages</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">inventory</span>: <span class="tok-nb">Vec</span><span class="tok-o">&lt;</span><span class="tok-n">Object</span><span class="tok-o">&gt;</span><span class="tok-p">,</span><span class="tok-w">  </span><i class="conum" data-value="1"></i><b>(1)</b>
+<span class="tok-p">}</span><span class="tok-w"></span></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>New field: <code>inventory</code></td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>And we need to add it to our <code>main</code> function where we initialise the <code>game</code> variable:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">Game</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-c1">// generate map (at this point it&#39;s not drawn to the screen)</span>
+<span class="tok-w">    </span><span class="tok-n">map</span>: <span class="tok-nc">make_map</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">),</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">messages</span>: <span class="tok-nc">Messages</span>::<span class="tok-n">new</span><span class="tok-p">(),</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">inventory</span>: <span class="tok-nc">vec</span><span class="tok-o">!</span><span class="tok-p">[],</span><span class="tok-w">  </span><i class="conum" data-value="1"></i><b>(1)</b>
+<span class="tok-p">};</span><span class="tok-w"></span></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Initialise the new <code>inventory</code> field</td>
+</tr>
+</table>
 </div>
 <div class="paragraph">
 <p>Simple enough: the inventory is a list of items, and it starts empty.
@@ -517,29 +556,20 @@ behave like an item. For now that will be just the item type.</p>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-sd">/// add to the player&#39;s inventory and remove from the map</span>
-<span class="tok-k">fn</span> <span class="tok-nf">pick_item_up</span><span class="tok-p">(</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">object_id</span>: <span class="tok-kt">usize</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">objects</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-nb">Vec</span><span class="tok-o">&lt;</span><span class="tok-n">Object</span><span class="tok-o">&gt;</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">inventory</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-nb">Vec</span><span class="tok-o">&lt;</span><span class="tok-n">Object</span><span class="tok-o">&gt;</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">messages</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Messages</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-n">inventory</span><span class="tok-p">.</span><span class="tok-n">len</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-o">&gt;=</span><span class="tok-w"> </span><span class="tok-mi">26</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-n">message</span><span class="tok-p">(</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-n">messages</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-k">fn</span> <span class="tok-nf">pick_item_up</span><span class="tok-p">(</span><span class="tok-n">object_id</span>: <span class="tok-kt">usize</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">game</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-nb">Vec</span><span class="tok-o">&lt;</span><span class="tok-n">Object</span><span class="tok-o">&gt;</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">inventory</span><span class="tok-p">.</span><span class="tok-n">len</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-o">&gt;=</span><span class="tok-w"> </span><span class="tok-mi">26</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">messages</span><span class="tok-p">.</span><span class="tok-n">add</span><span class="tok-p">(</span><span class="tok-w"></span>
 <span class="tok-w">            </span><span class="tok-n">format</span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-w"></span>
 <span class="tok-w">                </span><span class="tok-s">&quot;Your inventory is full, cannot pick up {}.&quot;</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">                </span><span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-n">object_id</span><span class="tok-p">].</span><span class="tok-n">name</span><span class="tok-w"></span>
 <span class="tok-w">            </span><span class="tok-p">),</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-n">colors</span>::<span class="tok-n">RED</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">            </span><span class="tok-n">RED</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"> </span><span class="tok-k">else</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">item</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">.</span><span class="tok-n">swap_remove</span><span class="tok-p">(</span><span class="tok-n">object_id</span><span class="tok-p">);</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-n">message</span><span class="tok-p">(</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-n">messages</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-n">format</span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-s">&quot;You picked up a {}!&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">item</span><span class="tok-p">.</span><span class="tok-n">name</span><span class="tok-p">),</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-n">colors</span>::<span class="tok-n">GREEN</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-p">);</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-n">inventory</span><span class="tok-p">.</span><span class="tok-n">push</span><span class="tok-p">(</span><span class="tok-n">item</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">messages</span><span class="tok-w"></span>
+<span class="tok-w">            </span><span class="tok-p">.</span><span class="tok-n">add</span><span class="tok-p">(</span><span class="tok-n">format</span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-s">&quot;You picked up a {}!&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">item</span><span class="tok-p">.</span><span class="tok-n">name</span><span class="tok-p">),</span><span class="tok-w"> </span><span class="tok-n">GREEN</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">inventory</span><span class="tok-p">.</span><span class="tok-n">push</span><span class="tok-p">(</span><span class="tok-n">item</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-p">}</span><span class="tok-w"></span></code></pre>
 </div>
@@ -626,12 +656,29 @@ you do remove objects, you can still look them up by their IDs.
 <div class="content">
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">struct</span> <span class="tok-nc">Object</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">...</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">item</span>: <span class="tok-nb">Option</span><span class="tok-o">&lt;</span><span class="tok-n">Item</span><span class="tok-o">&gt;</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">fighter</span>: <span class="tok-nb">Option</span><span class="tok-o">&lt;</span><span class="tok-n">Fighter</span><span class="tok-o">&gt;</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">ai</span>: <span class="tok-nb">Option</span><span class="tok-o">&lt;</span><span class="tok-n">Ai</span><span class="tok-o">&gt;</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">item</span>: <span class="tok-nb">Option</span><span class="tok-o">&lt;</span><span class="tok-n">Item</span><span class="tok-o">&gt;</span><span class="tok-p">,</span><span class="tok-w">  </span><i class="conum" data-value="1"></i><b>(1)</b>
 <span class="tok-p">}</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Added the <code>Item</code> component</td>
+</tr>
+</table>
+</div>
 <div class="paragraph">
-<p>And add <code>item: None,</code> to <code>Object&#8217;s `new</code> method.</p>
+<p>And add <code>item: None,</code> to <code>Object&#8217;s `new</code> method:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-n">fighter</span>: <span class="tok-nb">None</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-n">ai</span>: <span class="tok-nb">None</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-n">item</span>: <span class="tok-nb">None</span><span class="tok-p">,</span><span class="tok-w"></span></code></pre>
+</div>
 </div>
 <div class="paragraph">
 <p>Now that we have an <code>Item</code> component, you can add it to the healing
@@ -639,7 +686,10 @@ potion in <code>place_objects</code>:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-n">object</span><span class="tok-p">.</span><span class="tok-n">item</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">Item</span>::<span class="tok-n">Heal</span><span class="tok-p">);</span><span class="tok-w"></span></code></pre>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-c1">// create a healing potion</span>
+<span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">object</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">Object</span>::<span class="tok-n">new</span><span class="tok-p">(</span><span class="tok-n">x</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">y</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-sc">&#39;!&#39;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-s">&quot;healing potion&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">VIOLET</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-kc">false</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-n">object</span><span class="tok-p">.</span><span class="tok-n">item</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">Item</span>::<span class="tok-n">Heal</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-n">objects</span><span class="tok-p">.</span><span class="tok-n">push</span><span class="tok-p">(</span><span class="tok-n">object</span><span class="tok-p">);</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -656,19 +706,11 @@ arrow-handling and the final <code>return DidntTakeTurn</code> line:</p>
 <span class="tok-w">        </span><span class="tok-p">.</span><span class="tok-n">iter</span><span class="tok-p">()</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-p">.</span><span class="tok-n">position</span><span class="tok-p">(</span><span class="tok-o">|</span><span class="tok-n">object</span><span class="tok-o">|</span><span class="tok-w"> </span><span class="tok-n">object</span><span class="tok-p">.</span><span class="tok-n">pos</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-o">==</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-n">PLAYER</span><span class="tok-p">].</span><span class="tok-n">pos</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-o">&amp;&amp;</span><span class="tok-w"> </span><span class="tok-n">object</span><span class="tok-p">.</span><span class="tok-n">item</span><span class="tok-p">.</span><span class="tok-n">is_some</span><span class="tok-p">());</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">item_id</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">item_id</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-n">pick_item_up</span><span class="tok-p">(</span><span class="tok-n">item_id</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">inventory</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">messages</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-n">pick_item_up</span><span class="tok-p">(</span><span class="tok-n">item_id</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">DidntTakeTurn</span><span class="tok-w"></span>
 <span class="tok-p">}</span><span class="tok-w"></span></code></pre>
 </div>
-</div>
-<div class="paragraph">
-<p>And we need to pass inventory to <code>handle_keys</code>. And we&#8217;ll <em>also</em> have
-to change the <code>&amp;mut [Object]</code> argument to <code>&amp;mut Vec&lt;Object&gt;</code>, because
-that&#8217;s what <code>pick_item_up</code> expects. The difference is that the former
-is a mutable reference to an <code>array</code>&#8201;&#8212;&#8201;we can change its items but
-not its <em>size</em>. The latter is a full vector, which means we can also
-grow or shrink it.</p>
 </div>
 <div class="paragraph">
 <p>You can test it out now! There will be a few potions scattered around,
@@ -754,7 +796,7 @@ top, using the auto-wrap functionality.</p>
 <span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">window</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">Offscreen</span>::<span class="tok-n">new</span><span class="tok-p">(</span><span class="tok-n">width</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">height</span><span class="tok-p">);</span><span class="tok-w"></span>
 
 <span class="tok-c1">// print the header, with auto-wrap</span>
-<span class="tok-n">window</span><span class="tok-p">.</span><span class="tok-n">set_default_foreground</span><span class="tok-p">(</span><span class="tok-n">colors</span>::<span class="tok-n">WHITE</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-n">window</span><span class="tok-p">.</span><span class="tok-n">set_default_foreground</span><span class="tok-p">(</span><span class="tok-n">WHITE</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-n">window</span><span class="tok-p">.</span><span class="tok-n">print_rect_ex</span><span class="tok-p">(</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-mi">0</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-mi">0</span><span class="tok-p">,</span><span class="tok-w"></span>
@@ -807,7 +849,7 @@ screen.</p>
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-c1">// blit the contents of &quot;window&quot; to the root console</span>
 <span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">x</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">SCREEN_WIDTH</span><span class="tok-w"> </span><span class="tok-o">/</span><span class="tok-w"> </span><span class="tok-mi">2</span><span class="tok-w"> </span><span class="tok-o">-</span><span class="tok-w"> </span><span class="tok-n">width</span><span class="tok-w"> </span><span class="tok-o">/</span><span class="tok-w"> </span><span class="tok-mi">2</span><span class="tok-p">;</span><span class="tok-w"></span>
 <span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">y</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">SCREEN_HEIGHT</span><span class="tok-w"> </span><span class="tok-o">/</span><span class="tok-w"> </span><span class="tok-mi">2</span><span class="tok-w"> </span><span class="tok-o">-</span><span class="tok-w"> </span><span class="tok-n">height</span><span class="tok-w"> </span><span class="tok-o">/</span><span class="tok-w"> </span><span class="tok-mi">2</span><span class="tok-p">;</span><span class="tok-w"></span>
-<span class="tok-n">tcod</span>::<span class="tok-n">console</span>::<span class="tok-n">blit</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">window</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-mi">0</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-mi">0</span><span class="tok-p">),</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">width</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">height</span><span class="tok-p">),</span><span class="tok-w"> </span><span class="tok-n">root</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">x</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">y</span><span class="tok-p">),</span><span class="tok-w"> </span><span class="tok-mf">1.0</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-mf">0.7</span><span class="tok-p">);</span><span class="tok-w"></span></code></pre>
+<span class="tok-n">blit</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-n">window</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-mi">0</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-mi">0</span><span class="tok-p">),</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">width</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">height</span><span class="tok-p">),</span><span class="tok-w"> </span><span class="tok-n">root</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">x</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">y</span><span class="tok-p">),</span><span class="tok-w"> </span><span class="tok-mf">1.0</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-mf">0.7</span><span class="tok-p">);</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -861,7 +903,7 @@ a list of the items' names, and call the <code>menu</code> function:</p>
 <span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">options</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-n">inventory</span><span class="tok-p">.</span><span class="tok-n">len</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-o">==</span><span class="tok-w"> </span><span class="tok-mi">0</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-n">vec</span><span class="tok-o">!</span><span class="tok-p">[</span><span class="tok-s">&quot;Inventory is empty.&quot;</span><span class="tok-p">.</span><span class="tok-n">into</span><span class="tok-p">()]</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"> </span><span class="tok-k">else</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-n">inventory</span><span class="tok-p">.</span><span class="tok-n">iter</span><span class="tok-p">().</span><span class="tok-n">map</span><span class="tok-p">(</span><span class="tok-o">|</span><span class="tok-n">item</span><span class="tok-o">|</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"> </span><span class="tok-n">item</span><span class="tok-p">.</span><span class="tok-n">name</span><span class="tok-p">.</span><span class="tok-n">clone</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">}).</span><span class="tok-n">collect</span><span class="tok-p">()</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-n">inventory</span><span class="tok-p">.</span><span class="tok-n">iter</span><span class="tok-p">().</span><span class="tok-n">map</span><span class="tok-p">(</span><span class="tok-o">|</span><span class="tok-n">item</span><span class="tok-o">|</span><span class="tok-w"> </span><span class="tok-n">item</span><span class="tok-p">.</span><span class="tok-n">name</span><span class="tok-p">.</span><span class="tok-n">clone</span><span class="tok-p">()).</span><span class="tok-n">collect</span><span class="tok-p">()</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">};</span><span class="tok-w"></span>
 
 <span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">inventory_index</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">menu</span><span class="tok-p">(</span><span class="tok-n">header</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-n">options</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">INVENTORY_WIDTH</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">root</span><span class="tok-p">);</span><span class="tok-w"></span>
@@ -877,10 +919,17 @@ a list of the items' names, and call the <code>menu</code> function:</p>
 </div>
 <div class="paragraph">
 <p>It also tells the player if the inventory is empty; simply displaying
-an empty list would be rude! The constant <code>INVENTORY_WIDTH = 50</code> is
-defined at the top, as usual. The header text is a parameter because
-we want to call this both for using and dropping items (and maybe
-other actions).</p>
+an empty list would be rude! The constant <code>INVENTORY_WIDTH</code> is defined
+at the top, as usual:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">const</span><span class="tok-w"> </span><span class="tok-n">INVENTORY_WIDTH</span>: <span class="tok-kt">i32</span> <span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-mi">50</span><span class="tok-p">;</span><span class="tok-w"></span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The header text is a parameter because we want to call this both for
+using and dropping items (and maybe other actions).</p>
 </div>
 <div class="paragraph">
 <p>Speaking of which, we can define the inventory key
@@ -922,32 +971,26 @@ the player changes their mind.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span> <span class="tok-nf">use_item</span><span class="tok-p">(</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">inventory_id</span>: <span class="tok-kt">usize</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">inventory</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-nb">Vec</span><span class="tok-o">&lt;</span><span class="tok-n">Object</span><span class="tok-o">&gt;</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">objects</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-p">[</span><span class="tok-n">Object</span><span class="tok-p">],</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">messages</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Messages</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span> <span class="tok-nf">use_item</span><span class="tok-p">(</span><span class="tok-n">inventory_id</span>: <span class="tok-kt">usize</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">tcod</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Tcod</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">game</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-p">[</span><span class="tok-n">Object</span><span class="tok-p">])</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">Item</span>::<span class="tok-o">*</span><span class="tok-p">;</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-c1">// just call the &quot;use_function&quot; if it is defined</span>
-<span class="tok-w">    </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">item</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">inventory</span><span class="tok-p">[</span><span class="tok-n">inventory_id</span><span class="tok-p">].</span><span class="tok-n">item</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">item</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">inventory</span><span class="tok-p">[</span><span class="tok-n">inventory_id</span><span class="tok-p">].</span><span class="tok-n">item</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">on_use</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-n">item</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">            </span><span class="tok-n">Heal</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">cast_heal</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-p">};</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-n">on_use</span><span class="tok-p">(</span><span class="tok-n">inventory_id</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">messages</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-n">on_use</span><span class="tok-p">(</span><span class="tok-n">inventory_id</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">            </span><span class="tok-n">UseResult</span>::<span class="tok-n">UsedUp</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">                </span><span class="tok-c1">// destroy after use, unless it was cancelled for some reason</span>
-<span class="tok-w">                </span><span class="tok-n">inventory</span><span class="tok-p">.</span><span class="tok-n">remove</span><span class="tok-p">(</span><span class="tok-n">inventory_id</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">                </span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">inventory</span><span class="tok-p">.</span><span class="tok-n">remove</span><span class="tok-p">(</span><span class="tok-n">inventory_id</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">            </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-w">            </span><span class="tok-n">UseResult</span>::<span class="tok-n">Cancelled</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">                </span><span class="tok-n">message</span><span class="tok-p">(</span><span class="tok-n">messages</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-s">&quot;Cancelled&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">colors</span>::<span class="tok-n">WHITE</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">                </span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">messages</span><span class="tok-p">.</span><span class="tok-n">add</span><span class="tok-p">(</span><span class="tok-s">&quot;Cancelled&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">WHITE</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">            </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"> </span><span class="tok-k">else</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-n">message</span><span class="tok-p">(</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-n">messages</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-n">format</span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-s">&quot;The {} cannot be used.&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">inventory</span><span class="tok-p">[</span><span class="tok-n">inventory_id</span><span class="tok-p">].</span><span class="tok-n">name</span><span class="tok-p">),</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-n">colors</span>::<span class="tok-n">WHITE</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">messages</span><span class="tok-p">.</span><span class="tok-n">add</span><span class="tok-p">(</span><span class="tok-w"></span>
+<span class="tok-w">            </span><span class="tok-n">format</span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-s">&quot;The {} cannot be used.&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">inventory</span><span class="tok-p">[</span><span class="tok-n">inventory_id</span><span class="tok-p">].</span><span class="tok-n">name</span><span class="tok-p">),</span><span class="tok-w"></span>
+<span class="tok-w">            </span><span class="tok-n">WHITE</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-p">}</span><span class="tok-w"></span></code></pre>
@@ -982,18 +1025,20 @@ canceled. We&#8217;ll add a third variant, soon.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span> <span class="tok-nf">cast_heal</span><span class="tok-p">(</span><span class="tok-n">_inventory_id</span>: <span class="tok-kt">usize</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-p">[</span><span class="tok-n">Object</span><span class="tok-p">],</span><span class="tok-w"> </span><span class="tok-n">messages</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Messages</span><span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-nc">UseResult</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span> <span class="tok-nf">cast_heal</span><span class="tok-p">(</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">_inventory_id</span>: <span class="tok-kt">usize</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">_tcod</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Tcod</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">game</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Game</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">objects</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-p">[</span><span class="tok-n">Object</span><span class="tok-p">],</span><span class="tok-w"></span>
+<span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-nc">UseResult</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-c1">// heal the player</span>
 <span class="tok-w">    </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">fighter</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-n">PLAYER</span><span class="tok-p">].</span><span class="tok-n">fighter</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-n">fighter</span><span class="tok-p">.</span><span class="tok-n">hp</span><span class="tok-w"> </span><span class="tok-o">==</span><span class="tok-w"> </span><span class="tok-n">fighter</span><span class="tok-p">.</span><span class="tok-n">max_hp</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-n">message</span><span class="tok-p">(</span><span class="tok-n">messages</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-s">&quot;You are already at full health.&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">colors</span>::<span class="tok-n">RED</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">            </span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">messages</span><span class="tok-p">.</span><span class="tok-n">add</span><span class="tok-p">(</span><span class="tok-s">&quot;You are already at full health.&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">RED</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">            </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-n">UseResult</span>::<span class="tok-n">Cancelled</span><span class="tok-p">;</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-p">}</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-n">message</span><span class="tok-p">(</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-n">messages</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-s">&quot;Your wounds start to feel better!&quot;</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-n">colors</span>::<span class="tok-n">LIGHT_VIOLET</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">messages</span><span class="tok-w"></span>
+<span class="tok-w">            </span><span class="tok-p">.</span><span class="tok-n">add</span><span class="tok-p">(</span><span class="tok-s">&quot;Your wounds start to feel better!&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">LIGHT_VIOLET</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-n">PLAYER</span><span class="tok-p">].</span><span class="tok-n">heal</span><span class="tok-p">(</span><span class="tok-n">HEAL_AMOUNT</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-n">UseResult</span>::<span class="tok-n">UsedUp</span><span class="tok-p">;</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"></span>
@@ -1003,8 +1048,7 @@ canceled. We&#8217;ll add a third variant, soon.</p>
 </div>
 <div class="paragraph">
 <p>The <code>heal</code> method is very simple too; still, it&#8217;s handy to keep it
-since it will probably be used multiple times. The constant
-<code>HEAL_AMOUNT = 4</code> is defined at the top. In <code>impl Object</code>:</p>
+since it will probably be used multiple times. In <code>impl Object</code>:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -1017,6 +1061,14 @@ since it will probably be used multiple times. The constant
 <span class="tok-w">        </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-p">}</span><span class="tok-w"></span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The constant <code>HEAL_AMOUNT = 4</code> is defined at the top:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">const</span><span class="tok-w"> </span><span class="tok-n">HEAL_AMOUNT</span>: <span class="tok-kt">i32</span> <span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-mi">4</span><span class="tok-p">;</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1034,12 +1086,12 @@ item:</p>
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-p">(</span><span class="tok-n">Key</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"> </span><span class="tok-n">printable</span>: <span class="tok-sc">&#39;i&#39;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-p">..</span><span class="tok-w"> </span><span class="tok-p">},</span><span class="tok-w"> </span><span class="tok-kc">true</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-c1">// show the inventory: if an item is selected, use it</span>
 <span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">inventory_index</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">inventory_menu</span><span class="tok-p">(</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-n">inventory</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-o">&amp;</span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">inventory</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-s">&quot;Press the key next to an item to use it, or any other to cancel.</span><span class="tok-se">\n</span><span class="tok-s">&quot;</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-n">root</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">root</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">inventory_index</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">inventory_index</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-n">use_item</span><span class="tok-p">(</span><span class="tok-n">inventory_index</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">inventory</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">messages</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-n">use_item</span><span class="tok-p">(</span><span class="tok-n">inventory_index</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">DidntTakeTurn</span><span class="tok-w"></span>
 <span class="tok-p">}</span><span class="tok-w"></span></code></pre>
@@ -1052,7 +1104,7 @@ from getting long we&#8217;ll leave it to the next part: magic scrolls! That
 will really make the most of this inventory system.</p>
 </div>
 <div class="paragraph">
-<p>Here&#8217;s <a href="part-8-items.rs.txt">the complete code so far</a>.</p>
+<p>Here&#8217;s <a href="part-8-items.rs">the complete code so far</a>.</p>
 </div>
 <div class="paragraph">
 <p>Continue to <a href="part-9-spells.html">the next part</a>.</p>
@@ -1062,7 +1114,7 @@ will really make the most of this inventory system.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-05-11 11:17:23 UTC
+Last updated 2019-06-09 21:52:44 UTC
 </div>
 </div>
 <style>

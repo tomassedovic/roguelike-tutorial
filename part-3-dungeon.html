@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="generator" content="Asciidoctor 2.0.9">
+<meta name="generator" content="Asciidoctor 2.0.10">
 <title>The Dungeon</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
 <style>
@@ -240,7 +240,7 @@ table.linenotable td.linenos{border-right:1px solid currentColor;opacity:.35;pad
 pre.pygments .lineno{border-right:1px solid currentColor;opacity:.35;display:inline-block;margin-right:.75em}
 pre.pygments .lineno::before{content:"";margin-right:-.125em}
 .quoteblock{margin:0 1em 1.25em 1.5em;display:table}
-.quoteblock>.title{margin-left:-1.5em;margin-bottom:.75em}
+.quoteblock:not(.excerpt)>.title{margin-left:-1.5em;margin-bottom:.75em}
 .quoteblock blockquote,.quoteblock p{color:rgba(0,0,0,.85);font-size:1.15rem;line-height:1.75;word-spacing:.1em;letter-spacing:0;font-style:italic;text-align:justify}
 .quoteblock blockquote{margin:0;padding:0;border:0}
 .quoteblock blockquote::before{content:"\201c";float:left;font-size:2.75em;font-weight:bold;line-height:.6em;margin-left:-.6em;color:#7a2518;text-shadow:0 1px 2px rgba(0,0,0,.1)}
@@ -257,7 +257,8 @@ pre.pygments .lineno::before{content:"";margin-right:-.125em}
 .quoteblock.abstract blockquote,.quoteblock.abstract p,.quoteblock.excerpt blockquote,.quoteblock.excerpt p,.quoteblock .quoteblock blockquote,.quoteblock .quoteblock p{line-height:1.6;word-spacing:0}
 .quoteblock.abstract{margin:0 1em 1.25em;display:block}
 .quoteblock.abstract>.title{margin:0 0 .375em;font-size:1.15em;text-align:center}
-.quoteblock.excerpt,.quoteblock .quoteblock{margin:0 0 1.25em;padding:0 0 .25em 1em;border-left:.25em solid #dddddf}
+.quoteblock.excerpt>blockquote,.quoteblock .quoteblock{padding:0 0 .25em 1em;border-left:.25em solid #dddddf}
+.quoteblock.excerpt,.quoteblock .quoteblock{margin-left:0}
 .quoteblock.excerpt blockquote,.quoteblock.excerpt p,.quoteblock .quoteblock blockquote,.quoteblock .quoteblock p{color:inherit;font-size:1.0625rem}
 .quoteblock.excerpt .attribution,.quoteblock .quoteblock .attribution{color:inherit;text-align:left;margin-right:0}
 table.tableblock{max-width:100%;border-collapse:separate}
@@ -434,6 +435,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 #footer-text{color:rgba(0,0,0,.6);font-size:.9em}}
 @media amzn-kf8{#header,#content,#footnotes,#footer{padding:0}}
 </style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 </head>
 <body class="article">
 <div id="header">
@@ -465,7 +467,8 @@ generate the whole dungeon.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-cp">#[derive(Clone, Copy, Debug)]</span><span class="tok-w"></span>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-sd">/// A rectangle on the map, used to characterise a room.</span>
+<span class="tok-cp">#[derive(Clone, Copy, Debug)]</span><span class="tok-w"></span>
 <span class="tok-k">struct</span> <span class="tok-nc">Rect</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">x1</span>: <span class="tok-kt">i32</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">y1</span>: <span class="tok-kt">i32</span><span class="tok-p">,</span><span class="tok-w"></span>
@@ -496,6 +499,7 @@ all the tiles are empty.</p>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span> <span class="tok-nf">create_room</span><span class="tok-p">(</span><span class="tok-n">room</span>: <span class="tok-nc">Rect</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">map</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Map</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-c1">// go through the tiles in the rectangle and make them passable</span>
 <span class="tok-w">    </span><span class="tok-k">for</span><span class="tok-w"> </span><span class="tok-n">x</span><span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">room</span><span class="tok-p">.</span><span class="tok-n">x1</span><span class="tok-w"> </span><span class="tok-o">+</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">)..</span><span class="tok-n">room</span><span class="tok-p">.</span><span class="tok-n">x2</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-k">for</span><span class="tok-w"> </span><span class="tok-n">y</span><span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">room</span><span class="tok-p">.</span><span class="tok-n">y1</span><span class="tok-w"> </span><span class="tok-o">+</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">)..</span><span class="tok-n">room</span><span class="tok-p">.</span><span class="tok-n">y2</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">            </span><span class="tok-n">map</span><span class="tok-p">[</span><span class="tok-n">x</span><span class="tok-w"> </span><span class="tok-k">as</span><span class="tok-w"> </span><span class="tok-kt">usize</span><span class="tok-p">][</span><span class="tok-n">y</span><span class="tok-w"> </span><span class="tok-k">as</span><span class="tok-w"> </span><span class="tok-kt">usize</span><span class="tok-p">]</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">Tile</span>::<span class="tok-n">empty</span><span class="tok-p">();</span><span class="tok-w"></span>
@@ -543,7 +547,8 @@ first room:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">player</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">Object</span>::<span class="tok-n">new</span><span class="tok-p">(</span><span class="tok-mi">25</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-mi">23</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-sc">&#39;@&#39;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">colors</span>::<span class="tok-n">WHITE</span><span class="tok-p">);</span><span class="tok-w"></span></code></pre>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-c1">// place the player inside the first room</span>
+<span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">player</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">Object</span>::<span class="tok-n">new</span><span class="tok-p">(</span><span class="tok-mi">25</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-mi">23</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-sc">&#39;@&#39;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">WHITE</span><span class="tok-p">);</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -553,6 +558,7 @@ add a function to carve a horizontal tunnel:</p>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span> <span class="tok-nf">create_h_tunnel</span><span class="tok-p">(</span><span class="tok-n">x1</span>: <span class="tok-kt">i32</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">x2</span>: <span class="tok-kt">i32</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">y</span>: <span class="tok-kt">i32</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">map</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Map</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-c1">// horizontal tunnel. `min()` and `max()` are used in case `x1 &gt; x2`</span>
 <span class="tok-w">    </span><span class="tok-k">for</span><span class="tok-w"> </span><span class="tok-n">x</span><span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span><span class="tok-n">cmp</span>::<span class="tok-n">min</span><span class="tok-p">(</span><span class="tok-n">x1</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">x2</span><span class="tok-p">)..(</span><span class="tok-n">cmp</span>::<span class="tok-n">max</span><span class="tok-p">(</span><span class="tok-n">x1</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">x2</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">+</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-n">map</span><span class="tok-p">[</span><span class="tok-n">x</span><span class="tok-w"> </span><span class="tok-k">as</span><span class="tok-w"> </span><span class="tok-kt">usize</span><span class="tok-p">][</span><span class="tok-n">y</span><span class="tok-w"> </span><span class="tok-k">as</span><span class="tok-w"> </span><span class="tok-kt">usize</span><span class="tok-p">]</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">Tile</span>::<span class="tok-n">empty</span><span class="tok-p">();</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"></span>
@@ -566,11 +572,21 @@ otherwise. What it all means that calling <code>create_h_tunnel(1, 5, &#8230;&#8
 is equal to <code>create_h_tunnel(5, 1, &#8230;&#8203;)</code>.</p>
 </div>
 <div class="paragraph">
+<p>The <code>min</code> and <code>max</code> functions come from the <code>std::cmp</code> module, so put
+it with our other use blocks:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">std</span>::<span class="tok-n">cmp</span><span class="tok-p">;</span><span class="tok-w"></span></code></pre>
+</div>
+</div>
+<div class="paragraph">
 <p>And similarly for the vertical tunnels:</p>
 </div>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span> <span class="tok-nf">create_v_tunnel</span><span class="tok-p">(</span><span class="tok-n">y1</span>: <span class="tok-kt">i32</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">y2</span>: <span class="tok-kt">i32</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">x</span>: <span class="tok-kt">i32</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">map</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Map</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-c1">// vertical tunnel</span>
 <span class="tok-w">    </span><span class="tok-k">for</span><span class="tok-w"> </span><span class="tok-n">y</span><span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span><span class="tok-n">cmp</span>::<span class="tok-n">min</span><span class="tok-p">(</span><span class="tok-n">y1</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">y2</span><span class="tok-p">)..(</span><span class="tok-n">cmp</span>::<span class="tok-n">max</span><span class="tok-p">(</span><span class="tok-n">y1</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">y2</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">+</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-n">map</span><span class="tok-p">[</span><span class="tok-n">x</span><span class="tok-w"> </span><span class="tok-k">as</span><span class="tok-w"> </span><span class="tok-kt">usize</span><span class="tok-p">][</span><span class="tok-n">y</span><span class="tok-w"> </span><span class="tok-k">as</span><span class="tok-w"> </span><span class="tok-kt">usize</span><span class="tok-p">]</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">Tile</span>::<span class="tok-n">empty</span><span class="tok-p">();</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"></span>
@@ -581,7 +597,7 @@ is equal to <code>create_h_tunnel(5, 1, &#8230;&#8203;)</code>.</p>
 <table>
 <tr>
 <td class="icon">
-<div class="title">Caution</div>
+<i class="fa icon-caution" title="Caution"></i>
 </td>
 <td class="content">
 We are using <code>Tile::empty</code> to "carve out" the empty tiles in
@@ -604,7 +620,7 @@ properties you&#8217;d like to keep.
 </div>
 </div>
 <div class="paragraph">
-<p>Here&#8217;s <a href="part-3a-building-blocks.rs.txt">the code for this part</a>.</p>
+<p>Here&#8217;s <a href="part-3a-building-blocks.rs">the code for this part</a>.</p>
 </div>
 </div>
 </div>
@@ -643,6 +659,7 @@ will start from.</p>
 <span class="tok-p">}</span><span class="tok-w"></span>
 
 <span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">fn</span> <span class="tok-nf">intersects_with</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-bp">self</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">other</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">Rect</span><span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-kt">bool</span> <span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-c1">// returns true if this rectangle intersects with another one</span>
 <span class="tok-w">    </span><span class="tok-p">(</span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">x1</span><span class="tok-w"> </span><span class="tok-o">&lt;=</span><span class="tok-w"> </span><span class="tok-n">other</span><span class="tok-p">.</span><span class="tok-n">x2</span><span class="tok-p">)</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-o">&amp;&amp;</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">x2</span><span class="tok-w"> </span><span class="tok-o">&gt;=</span><span class="tok-w"> </span><span class="tok-n">other</span><span class="tok-p">.</span><span class="tok-n">x1</span><span class="tok-p">)</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-o">&amp;&amp;</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">y1</span><span class="tok-w"> </span><span class="tok-o">&lt;=</span><span class="tok-w"> </span><span class="tok-n">other</span><span class="tok-p">.</span><span class="tok-n">y2</span><span class="tok-p">)</span><span class="tok-w"></span>
@@ -656,7 +673,8 @@ number of rooms:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">const</span><span class="tok-w"> </span><span class="tok-n">ROOM_MAX_SIZE</span>: <span class="tok-kt">i32</span> <span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-mi">10</span><span class="tok-p">;</span><span class="tok-w"></span>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-c1">//parameters for dungeon generator</span>
+<span class="tok-k">const</span><span class="tok-w"> </span><span class="tok-n">ROOM_MAX_SIZE</span>: <span class="tok-kt">i32</span> <span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-mi">10</span><span class="tok-p">;</span><span class="tok-w"></span>
 <span class="tok-k">const</span><span class="tok-w"> </span><span class="tok-n">ROOM_MIN_SIZE</span>: <span class="tok-kt">i32</span> <span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-mi">6</span><span class="tok-p">;</span><span class="tok-w"></span>
 <span class="tok-k">const</span><span class="tok-w"> </span><span class="tok-n">MAX_ROOMS</span>: <span class="tok-kt">i32</span> <span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-mi">30</span><span class="tok-p">;</span><span class="tok-w"></span></code></pre>
 </div>
@@ -734,17 +752,12 @@ it will abort.</p>
 at the centre of the first room.</p>
 </div>
 <div class="paragraph">
-<p>We could just pass the player into <code>make_map</code> and set its position
-there, but functions that have one clear purpose are easier to read
-and think about. Let&#8217;s just return the starting position along with
-the map:</p>
+<p>We will pass the player into <code>make_map</code> and set its position there.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span> <span class="tok-nf">make_map</span><span class="tok-p">()</span><span class="tok-w"> </span>-&gt; <span class="tok-p">(</span><span class="tok-n">Map</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-kt">i32</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-kt">i32</span><span class="tok-p">))</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span> <span class="tok-nf">make_map</span><span class="tok-p">(</span><span class="tok-n">player</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Object</span><span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-nc">Map</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-c1">// ...</span>
-
-<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">starting_position</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-mi">0</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-mi">0</span><span class="tok-p">);</span><span class="tok-w"></span>
 
 <span class="tok-w">    </span><span class="tok-k">for</span><span class="tok-w"> </span><span class="tok-n">_</span><span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span><span class="tok-mi">0</span><span class="tok-p">..</span><span class="tok-n">MAX_ROOMS</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-c1">// ...</span>
@@ -760,12 +773,13 @@ the map:</p>
 
 <span class="tok-w">            </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-n">rooms</span><span class="tok-p">.</span><span class="tok-n">is_empty</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">                </span><span class="tok-c1">// this is the first room, where the player starts at</span>
-<span class="tok-w">                </span><span class="tok-n">starting_position</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">new_x</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">new_y</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">                </span><span class="tok-n">player</span><span class="tok-p">.</span><span class="tok-n">x</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">new_x</span><span class="tok-p">;</span><span class="tok-w"></span>
+<span class="tok-w">                </span><span class="tok-n">player</span><span class="tok-p">.</span><span class="tok-n">y</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">new_y</span><span class="tok-p">;</span><span class="tok-w"></span>
 <span class="tok-w">            </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"></span>
 
-<span class="tok-w">    </span><span class="tok-p">(</span><span class="tok-n">map</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">starting_position</span><span class="tok-p">)</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">map</span><span class="tok-w"></span>
 <span class="tok-p">}</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
@@ -775,12 +789,13 @@ set player&#8217;s initial coordinates:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-c1">// generate map (at this point it&#39;s not drawn to the screen)</span>
-<span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">map</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">player_x</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">player_y</span><span class="tok-p">))</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">make_map</span><span class="tok-p">();</span><span class="tok-w"></span>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-c1">// create object representing the player</span>
+<span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">player</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">Object</span>::<span class="tok-n">new</span><span class="tok-p">(</span><span class="tok-mi">0</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-mi">0</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-sc">&#39;@&#39;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">WHITE</span><span class="tok-p">);</span><span class="tok-w"></span>
 
-<span class="tok-c1">// create object representing the player</span>
-<span class="tok-c1">// place the player inside the first room</span>
-<span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">player</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">Object</span>::<span class="tok-n">new</span><span class="tok-p">(</span><span class="tok-n">player_x</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">player_y</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-sc">&#39;@&#39;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">colors</span>::<span class="tok-n">WHITE</span><span class="tok-p">);</span><span class="tok-w"></span></code></pre>
+<span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">Game</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-c1">// generate map (at this point it&#39;s not drawn to the screen)</span>
+<span class="tok-w">    </span><span class="tok-n">map</span>: <span class="tok-nc">make_map</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-mi">0</span><span class="tok-p">]),</span><span class="tok-w"></span>
+<span class="tok-p">};</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -813,7 +828,7 @@ horizontal one.</p>
 <span class="tok-w">    </span><span class="tok-c1">// center coordinates of the previous room</span>
 <span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">prev_x</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">prev_y</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">rooms</span><span class="tok-p">[</span><span class="tok-n">rooms</span><span class="tok-p">.</span><span class="tok-n">len</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-o">-</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">].</span><span class="tok-n">center</span><span class="tok-p">();</span><span class="tok-w"></span>
 
-<span class="tok-w">    </span><span class="tok-c1">// draw a coin (random bool value -- either true or false)</span>
+<span class="tok-w">    </span><span class="tok-c1">// toss a coin (random bool value -- either true or false)</span>
 <span class="tok-w">    </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-n">rand</span>::<span class="tok-n">random</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-c1">// first move horizontally, then vertically</span>
 <span class="tok-w">        </span><span class="tok-n">create_h_tunnel</span><span class="tok-p">(</span><span class="tok-n">prev_x</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">new_x</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">prev_y</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">map</span><span class="tok-p">);</span><span class="tok-w"></span>
@@ -833,7 +848,7 @@ horizontal one.</p>
 <p>And there we have it! A procedural dungeon generator!</p>
 </div>
 <div class="paragraph">
-<p>Here&#8217;s <a href="part-3b-dungeon-generator.rs.txt">the complete code so far</a>.</p>
+<p>Here&#8217;s <a href="part-3b-dungeon-generator.rs">the complete code so far</a>.</p>
 </div>
 <div class="paragraph">
 <p>Continue to <a href="part-4-fov-exploration.html">the next part</a>.</p>
@@ -843,7 +858,7 @@ horizontal one.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-05-11 11:17:23 UTC
+Last updated 2019-06-09 21:52:44 UTC
 </div>
 </div>
 <style>

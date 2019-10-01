@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="generator" content="Asciidoctor 2.0.9">
+<meta name="generator" content="Asciidoctor 2.0.10">
 <title>Graphics</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
 <style>
@@ -240,7 +240,7 @@ table.linenotable td.linenos{border-right:1px solid currentColor;opacity:.35;pad
 pre.pygments .lineno{border-right:1px solid currentColor;opacity:.35;display:inline-block;margin-right:.75em}
 pre.pygments .lineno::before{content:"";margin-right:-.125em}
 .quoteblock{margin:0 1em 1.25em 1.5em;display:table}
-.quoteblock>.title{margin-left:-1.5em;margin-bottom:.75em}
+.quoteblock:not(.excerpt)>.title{margin-left:-1.5em;margin-bottom:.75em}
 .quoteblock blockquote,.quoteblock p{color:rgba(0,0,0,.85);font-size:1.15rem;line-height:1.75;word-spacing:.1em;letter-spacing:0;font-style:italic;text-align:justify}
 .quoteblock blockquote{margin:0;padding:0;border:0}
 .quoteblock blockquote::before{content:"\201c";float:left;font-size:2.75em;font-weight:bold;line-height:.6em;margin-left:-.6em;color:#7a2518;text-shadow:0 1px 2px rgba(0,0,0,.1)}
@@ -257,7 +257,8 @@ pre.pygments .lineno::before{content:"";margin-right:-.125em}
 .quoteblock.abstract blockquote,.quoteblock.abstract p,.quoteblock.excerpt blockquote,.quoteblock.excerpt p,.quoteblock .quoteblock blockquote,.quoteblock .quoteblock p{line-height:1.6;word-spacing:0}
 .quoteblock.abstract{margin:0 1em 1.25em;display:block}
 .quoteblock.abstract>.title{margin:0 0 .375em;font-size:1.15em;text-align:center}
-.quoteblock.excerpt,.quoteblock .quoteblock{margin:0 0 1.25em;padding:0 0 .25em 1em;border-left:.25em solid #dddddf}
+.quoteblock.excerpt>blockquote,.quoteblock .quoteblock{padding:0 0 .25em 1em;border-left:.25em solid #dddddf}
+.quoteblock.excerpt,.quoteblock .quoteblock{margin-left:0}
 .quoteblock.excerpt blockquote,.quoteblock.excerpt p,.quoteblock .quoteblock blockquote,.quoteblock .quoteblock p{color:inherit;font-size:1.0625rem}
 .quoteblock.excerpt .attribution,.quoteblock .quoteblock .attribution{color:inherit;text-align:left;margin-right:0}
 table.tableblock{max-width:100%;border-collapse:separate}
@@ -464,8 +465,8 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 <div class="listingblock">
 <div class="content">
-<pre>$ cargo new --bin roguelike
-$ cd roguelike/</pre>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-cp">$</span><span class="tok-w"> </span><span class="tok-n">cargo</span><span class="tok-w"> </span><span class="tok-n">new</span><span class="tok-w"> </span><span class="tok-o">--</span><span class="tok-n">bin</span><span class="tok-w"> </span><span class="tok-n">roguelike</span><span class="tok-w"></span>
+<span class="tok-cp">$</span><span class="tok-w"> </span><span class="tok-n">cd</span><span class="tok-w"> </span><span class="tok-n">roguelike</span><span class="tok-o">/</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -577,7 +578,7 @@ Rust, you need to have it in <code>Cargo.toml</code> under <code>[dependencies]<
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="toml"><span></span><span class="tok-p">[</span><span class="tok-n">dependencies</span><span class="tok-p">]</span>
-<span class="tok-n">tcod</span> <span class="tok-o">=</span> <span class="tok-s">&quot;0.13&quot;</span></code></pre>
+<span class="tok-n">tcod</span> <span class="tok-o">=</span> <span class="tok-s">&quot;0.15&quot;</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -608,10 +609,11 @@ source code with a bunch of opaque numbers:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">const</span><span class="tok-w"> </span><span class="tok-n">SCREEN_WIDTH</span>: <span class="tok-kt">i32</span> <span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-mi">80</span><span class="tok-p">;</span><span class="tok-w"></span>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-c1">// actual size of the window</span>
+<span class="tok-k">const</span><span class="tok-w"> </span><span class="tok-n">SCREEN_WIDTH</span>: <span class="tok-kt">i32</span> <span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-mi">80</span><span class="tok-p">;</span><span class="tok-w"></span>
 <span class="tok-k">const</span><span class="tok-w"> </span><span class="tok-n">SCREEN_HEIGHT</span>: <span class="tok-kt">i32</span> <span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-mi">50</span><span class="tok-p">;</span><span class="tok-w"></span>
 
-<span class="tok-k">const</span><span class="tok-w"> </span><span class="tok-n">LIMIT_FPS</span>: <span class="tok-kt">i32</span> <span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-mi">20</span><span class="tok-p">;</span><span class="tok-w"></span></code></pre>
+<span class="tok-k">const</span><span class="tok-w"> </span><span class="tok-n">LIMIT_FPS</span>: <span class="tok-kt">i32</span> <span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-mi">20</span><span class="tok-p">;</span><span class="tok-w"> </span><span class="tok-c1">// 20 frames-per-second maximum</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -626,6 +628,23 @@ types, but they do need to be explicitly mentioned in function
 definitions and constants.</p>
 </div>
 <div class="paragraph">
+<p>We will also encapsulate all of our libtcod-related values into a single Rust <code>struct</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">struct</span> <span class="tok-nc">Tcod</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">root</span>: <span class="tok-nc">Root</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-p">}</span><span class="tok-w"></span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It only has a single value right now, but we&#8217;ll add more later on.
+Having all the tcod stuff in one place makes it easier to pass it
+around to functions. And doing it now will save us from gnarly
+refactors later. The Rust compiler would help us there, but it&#8217;s still
+an annoying chore we can avoid.</p>
+</div>
+<div class="paragraph">
 <p>And now we can dive into the body of the <code>main</code> function and replace
 the <code>println!</code> macro with code that sets up the libtcod window and
 renders a character on it.</p>
@@ -637,12 +656,14 @@ any option that&#8217;s not specified.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">root</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">Root</span>::<span class="tok-n">initializer</span><span class="tok-p">()</span><span class="tok-w"></span>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">root</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">Root</span>::<span class="tok-n">initializer</span><span class="tok-p">()</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">.</span><span class="tok-n">font</span><span class="tok-p">(</span><span class="tok-s">&quot;arial10x10.png&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">FontLayout</span>::<span class="tok-n">Tcod</span><span class="tok-p">)</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">.</span><span class="tok-n">font_type</span><span class="tok-p">(</span><span class="tok-n">FontType</span>::<span class="tok-n">Greyscale</span><span class="tok-p">)</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">.</span><span class="tok-n">size</span><span class="tok-p">(</span><span class="tok-n">SCREEN_WIDTH</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">SCREEN_HEIGHT</span><span class="tok-p">)</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">.</span><span class="tok-n">title</span><span class="tok-p">(</span><span class="tok-s">&quot;Rust/libtcod tutorial&quot;</span><span class="tok-p">)</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-p">.</span><span class="tok-n">init</span><span class="tok-p">();</span><span class="tok-w"></span></code></pre>
+<span class="tok-w">    </span><span class="tok-p">.</span><span class="tok-n">init</span><span class="tok-p">();</span><span class="tok-w"></span>
+
+<span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">Tcod</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"> </span><span class="tok-n">root</span><span class="tok-w"> </span><span class="tok-p">};</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -656,14 +677,14 @@ change the root console (e.g. by writing characters to it). To do
 that, we need the <code>mut</code> keyword.</p>
 </div>
 <div class="paragraph">
-<p>So <code>let mut root = &lt;value&gt;</code> means "create a variable called <code>root</code> that we
+<p>So <code>let mut tcod = &lt;value&gt;</code> means "create a variable called <code>tcod</code> that we
 can change later". As you can see, we don&#8217;t have to specify the type
 of the variable&#8201;&#8212;&#8201;Rust will figure it out. If we wanted, we could
 type it explicitly, though:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">root</span>: <span class="tok-nc">Root</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">Root</span>::<span class="tok-n">initializer</span><span class="tok-p">().</span><span class="tok-w"> </span><span class="tok-p">...</span><span class="tok-w"> </span><span class="tok-p">.</span><span class="tok-n">init</span><span class="tok-p">();</span><span class="tok-w"></span></code></pre>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">root</span>: <span class="tok-nc">Root</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">Root</span>::<span class="tok-n">initializer</span><span class="tok-p">().</span><span class="tok-w"> </span><span class="tok-p">...</span><span class="tok-w"> </span><span class="tok-p">.</span><span class="tok-n">init</span><span class="tok-p">();</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -705,12 +726,12 @@ white <code>@</code> on the screen until the libtcod window gets closed:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">while</span><span class="tok-w"> </span><span class="tok-o">!</span><span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">window_closed</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">set_default_foreground</span><span class="tok-p">(</span><span class="tok-n">WHITE</span><span class="tok-p">);</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">clear</span><span class="tok-p">();</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">put_char</span><span class="tok-p">(</span><span class="tok-mi">1</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-sc">&#39;@&#39;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">BackgroundFlag</span>::<span class="tok-nb">None</span><span class="tok-p">);</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">flush</span><span class="tok-p">();</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">wait_for_keypress</span><span class="tok-p">(</span><span class="tok-kc">true</span><span class="tok-p">);</span><span class="tok-w"></span>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">while</span><span class="tok-w"> </span><span class="tok-o">!</span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">window_closed</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">set_default_foreground</span><span class="tok-p">(</span><span class="tok-n">WHITE</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">clear</span><span class="tok-p">();</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">put_char</span><span class="tok-p">(</span><span class="tok-mi">1</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-sc">&#39;@&#39;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">BackgroundFlag</span>::<span class="tok-nb">None</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">flush</span><span class="tok-p">();</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">wait_for_keypress</span><span class="tok-p">(</span><span class="tok-kc">true</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-p">}</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
@@ -763,7 +784,7 @@ creation. It&#8217;s almost a game now!</p>
 <p>We will look at input next.</p>
 </div>
 <div class="paragraph">
-<p>Here&#8217;s <a href="part-1a-render.rs.txt">the complete code so far</a>.</p>
+<p>Here&#8217;s <a href="part-1a-render.rs">the complete code so far</a>.</p>
 </div>
 </div>
 </div>
@@ -796,10 +817,10 @@ coordinates so we can change them based on the player&#8217;s actions.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span> <span class="tok-nf">handle_keys</span><span class="tok-p">(</span><span class="tok-n">root</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Root</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">player_x</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-kt">i32</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">player_y</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-kt">i32</span><span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-kt">bool</span> <span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">   </span><span class="tok-c1">// todo: handle keys</span>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span> <span class="tok-nf">handle_keys</span><span class="tok-p">(</span><span class="tok-n">tcod</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Tcod</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">player_x</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-kt">i32</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">player_y</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-kt">i32</span><span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-kt">bool</span> <span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-c1">// todo: handle keys</span>
 
-<span class="tok-w">   </span><span class="tok-kc">false</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-kc">false</span><span class="tok-w"></span>
 <span class="tok-p">}</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
@@ -845,7 +866,7 @@ the player&#8217;s position if it&#8217;s one of the arrow keys:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">key</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">wait_for_keypress</span><span class="tok-p">(</span><span class="tok-kc">true</span><span class="tok-p">);</span><span class="tok-w"></span>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">key</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">wait_for_keypress</span><span class="tok-p">(</span><span class="tok-kc">true</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-n">key</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-c1">// movement keys</span>
 <span class="tok-w">    </span><span class="tok-n">Key</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"> </span><span class="tok-n">code</span>: <span class="tok-nc">Up</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-p">..</span><span class="tok-w"> </span><span class="tok-p">}</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-o">*</span><span class="tok-n">player_y</span><span class="tok-w"> </span><span class="tok-o">-=</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">,</span><span class="tok-w"></span>
@@ -853,7 +874,7 @@ the player&#8217;s position if it&#8217;s one of the arrow keys:</p>
 <span class="tok-w">    </span><span class="tok-n">Key</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"> </span><span class="tok-n">code</span>: <span class="tok-nc">Left</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-p">..</span><span class="tok-w"> </span><span class="tok-p">}</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-o">*</span><span class="tok-n">player_x</span><span class="tok-w"> </span><span class="tok-o">-=</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">Key</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"> </span><span class="tok-n">code</span>: <span class="tok-nc">Right</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-p">..</span><span class="tok-w"> </span><span class="tok-p">}</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-o">*</span><span class="tok-n">player_x</span><span class="tok-w"> </span><span class="tok-o">+=</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">,</span><span class="tok-w"></span>
 
-<span class="tok-w">    </span><span class="tok-n">_</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{},</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">_</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{}</span><span class="tok-w"></span>
 <span class="tok-p">}</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
@@ -899,8 +920,8 @@ the game.</p>
 <span class="tok-w">    </span><span class="tok-p">..</span><span class="tok-w"></span>
 <span class="tok-p">}</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-c1">// Alt+Enter: toggle fullscreen</span>
-<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">fullscreen</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">is_fullscreen</span><span class="tok-p">();</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">set_fullscreen</span><span class="tok-p">(</span><span class="tok-o">!</span><span class="tok-n">fullscreen</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">fullscreen</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">is_fullscreen</span><span class="tok-p">();</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">set_fullscreen</span><span class="tok-p">(</span><span class="tok-o">!</span><span class="tok-n">fullscreen</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-n">Key</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"> </span><span class="tok-n">code</span>: <span class="tok-nc">Escape</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-p">..</span><span class="tok-w"> </span><span class="tok-p">}</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-kc">true</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-c1">// exit game</span></code></pre>
 </div>
@@ -930,14 +951,14 @@ end of the <code>while</code> block:</p>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-c1">// handle keys and exit game if needed</span>
-<span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">exit</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">handle_keys</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">root</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">player_x</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">player_y</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">exit</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">handle_keys</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">player_x</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">player_y</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-n">exit</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-k">break</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-k">break</span><span class="tok-p">;</span><span class="tok-w"></span>
 <span class="tok-p">}</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>As you can see, we&#8217;re passing <code>root</code> and the coordinates as mutable
+<p>As you can see, we&#8217;re passing <code>tcod</code> and the coordinates as mutable
 references.</p>
 </div>
 <div class="paragraph">
@@ -945,11 +966,12 @@ references.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">put_char</span><span class="tok-p">(</span><span class="tok-n">player_x</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">player_y</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-sc">&#39;@&#39;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">BackgroundFlag</span>::<span class="tok-nb">None</span><span class="tok-p">);</span><span class="tok-w"></span></code></pre>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">root</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-p">.</span><span class="tok-n">put_char</span><span class="tok-p">(</span><span class="tok-n">player_x</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">player_y</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-sc">&#39;@&#39;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">BackgroundFlag</span>::<span class="tok-nb">None</span><span class="tok-p">);</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Here&#8217;s <a href="part-1b-movement.rs.txt">the complete code so far</a>.</p>
+<p>Here&#8217;s <a href="part-1b-movement.rs">the complete code so far</a>.</p>
 </div>
 <div class="paragraph">
 <p>Continue to <a href="part-2-object-map.html">the next part</a>.</p>
@@ -959,7 +981,7 @@ references.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-05-11 11:17:23 UTC
+Last updated 2019-06-09 21:52:44 UTC
 </div>
 </div>
 <style>

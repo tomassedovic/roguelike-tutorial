@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="generator" content="Asciidoctor 2.0.9">
+<meta name="generator" content="Asciidoctor 2.0.10">
 <title>Spells and ranged combat</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
 <style>
@@ -240,7 +240,7 @@ table.linenotable td.linenos{border-right:1px solid currentColor;opacity:.35;pad
 pre.pygments .lineno{border-right:1px solid currentColor;opacity:.35;display:inline-block;margin-right:.75em}
 pre.pygments .lineno::before{content:"";margin-right:-.125em}
 .quoteblock{margin:0 1em 1.25em 1.5em;display:table}
-.quoteblock>.title{margin-left:-1.5em;margin-bottom:.75em}
+.quoteblock:not(.excerpt)>.title{margin-left:-1.5em;margin-bottom:.75em}
 .quoteblock blockquote,.quoteblock p{color:rgba(0,0,0,.85);font-size:1.15rem;line-height:1.75;word-spacing:.1em;letter-spacing:0;font-style:italic;text-align:justify}
 .quoteblock blockquote{margin:0;padding:0;border:0}
 .quoteblock blockquote::before{content:"\201c";float:left;font-size:2.75em;font-weight:bold;line-height:.6em;margin-left:-.6em;color:#7a2518;text-shadow:0 1px 2px rgba(0,0,0,.1)}
@@ -257,7 +257,8 @@ pre.pygments .lineno::before{content:"";margin-right:-.125em}
 .quoteblock.abstract blockquote,.quoteblock.abstract p,.quoteblock.excerpt blockquote,.quoteblock.excerpt p,.quoteblock .quoteblock blockquote,.quoteblock .quoteblock p{line-height:1.6;word-spacing:0}
 .quoteblock.abstract{margin:0 1em 1.25em;display:block}
 .quoteblock.abstract>.title{margin:0 0 .375em;font-size:1.15em;text-align:center}
-.quoteblock.excerpt,.quoteblock .quoteblock{margin:0 0 1.25em;padding:0 0 .25em 1em;border-left:.25em solid #dddddf}
+.quoteblock.excerpt>blockquote,.quoteblock .quoteblock{padding:0 0 .25em 1em;border-left:.25em solid #dddddf}
+.quoteblock.excerpt,.quoteblock .quoteblock{margin-left:0}
 .quoteblock.excerpt blockquote,.quoteblock.excerpt p,.quoteblock .quoteblock blockquote,.quoteblock .quoteblock p{color:inherit;font-size:1.0625rem}
 .quoteblock.excerpt .attribution,.quoteblock .quoteblock .attribution{color:inherit;text-align:left;margin-right:0}
 table.tableblock{max-width:100%;border-collapse:separate}
@@ -458,180 +459,6 @@ sure you can then create tons of variants from these little examples.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_compression_interlude">Compression Interlude</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Before we begin, however, we&#8217;ll do something that will make our lives
-a little easier: we pull all the libtcod bits (the root, con and panel
-consoles, the field-of-view map and the mouse position) into a single
-struct that we can pass around at once.</p>
-</div>
-<div class="paragraph">
-<p>As you&#8217;ve noticed before, some of our function arguments are getting a
-bit tedious as we pass in 9 different things and the same would be
-true for our item cast functions. One spell will want to select a
-monster in the FOV, another needs mouse targeting, etc.</p>
-</div>
-<div class="paragraph">
-<p>So let&#8217;s put it all into a <code>Tcod</code> struct we can pass around:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">struct</span> <span class="tok-nc">Tcod</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">root</span>: <span class="tok-nc">Root</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">con</span>: <span class="tok-nc">Offscreen</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">panel</span>: <span class="tok-nc">Offscreen</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">fov</span>: <span class="tok-nc">FovMap</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">mouse</span>: <span class="tok-nc">Mouse</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-p">}</span><span class="tok-w"></span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Next, we&#8217;ll initialise it in our <code>main</code> function. Right after the
-<code>set_fps</code> call, replace:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">con</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">Offscreen</span>::<span class="tok-n">new</span><span class="tok-p">(</span><span class="tok-n">MAP_WIDTH</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">MAP_HEIGHT</span><span class="tok-p">);</span><span class="tok-w"></span>
-<span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">panel</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">Offscreen</span>::<span class="tok-n">new</span><span class="tok-p">(</span><span class="tok-n">SCREEN_WIDTH</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">PANEL_HEIGHT</span><span class="tok-p">);</span><span class="tok-w"></span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>With:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">Tcod</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">root</span>: <span class="tok-nc">root</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">con</span>: <span class="tok-nc">Offscreen</span>::<span class="tok-n">new</span><span class="tok-p">(</span><span class="tok-n">MAP_WIDTH</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">MAP_HEIGHT</span><span class="tok-p">),</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">panel</span>: <span class="tok-nc">Offscreen</span>::<span class="tok-n">new</span><span class="tok-p">(</span><span class="tok-n">SCREEN_WIDTH</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">PANEL_HEIGHT</span><span class="tok-p">),</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">fov</span>: <span class="tok-nc">FovMap</span>::<span class="tok-n">new</span><span class="tok-p">(</span><span class="tok-n">MAP_WIDTH</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">MAP_HEIGHT</span><span class="tok-p">),</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">mouse</span>: <span class="tok-nb">Default</span>::<span class="tok-n">default</span><span class="tok-p">(),</span><span class="tok-w"></span>
-<span class="tok-p">};</span><span class="tok-w"></span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>(and remove the <code>fov_map</code> and <code>mouse</code> initialisation code, too, since
-it&#8217;s in here)</p>
-</div>
-<div class="paragraph">
-<p>And next, let the compiler guide us.</p>
-</div>
-<div class="paragraph">
-<p>We have to replace a bunch of stuff in the main function: <code>mouse</code> with
-<code>tcod.mouse</code>, <code>root</code> with <code>tcod.root</code>, <code>fov_map</code> with <code>tcod.fov</code>, etc.</p>
-</div>
-<div class="paragraph">
-<p>That gets us to a compiling state, but it doesn&#8217;t seem like much of a
-win yet. Let&#8217;s make proper use of it, then!</p>
-</div>
-<div class="paragraph">
-<p>First, calling <code>render_all</code> from <code>main</code> can now be just:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-n">render_all</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-n">objects</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">map</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-n">messages</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">fov_recompute</span><span class="tok-p">);</span><span class="tok-w"></span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>The new <code>render_all</code> function header is:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span> <span class="tok-nf">render_all</span><span class="tok-p">(</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">tcod</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Tcod</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">objects</span>: <span class="tok-kp">&amp;</span><span class="tok-p">[</span><span class="tok-n">Object</span><span class="tok-p">],</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">map</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Map</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">messages</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">Messages</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">fov_recompute</span>: <span class="tok-kt">bool</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-c1">// ...</span>
-<span class="tok-p">}</span><span class="tok-w"></span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>And we do the same set of transformations inside.</p>
-</div>
-<div class="paragraph">
-<p>Next, we&#8217;ll do the same to <code>handle_keys</code>. That one only takes <code>root</code>
-now, but it calls the <code>use_item</code> and we&#8217;ll want to pass the whole
-shebang there, soon.</p>
-</div>
-<div class="paragraph">
-<p>Main loop:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">player_action</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">handle_keys</span><span class="tok-p">(</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">key</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">map</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">inventory</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">messages</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-p">);</span><span class="tok-w"></span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Function definition:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span> <span class="tok-nf">handle_keys</span><span class="tok-p">(</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">key</span>: <span class="tok-nc">Key</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">tcod</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Tcod</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">map</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Map</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">objects</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-nb">Vec</span><span class="tok-o">&lt;</span><span class="tok-n">Object</span><span class="tok-o">&gt;</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">inventory</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-nb">Vec</span><span class="tok-o">&lt;</span><span class="tok-n">Object</span><span class="tok-o">&gt;</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">messages</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Messages</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-nc">PlayerAction</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-c1">// ...</span>
-<span class="tok-p">}</span><span class="tok-w"></span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>And finally, pass <code>&amp;mut Tcod</code> to <code>use_item</code> and <code>cast_heal</code> even
-though it&#8217;s of little use there yet.</p>
-</div>
-<div class="paragraph">
-<p>Make sure that it compiles and we can move on adding more spells!</p>
-</div>
-<div class="admonitionblock tip">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-tip" title="Tip"></i>
-</td>
-<td class="content">
-There&#8217;s much more we can do here, such as moving the <code>menu</code>,
-<code>inventory_menu</code>, <code>render_bar</code>, etc. as methods of <code>Tcod</code> or passing
-<code>Tcod</code> everywhere we&#8217;ve been passing <strong>any</strong> of it&#8217;s members now. That
-largely depends on your style and how tightly you want things to be
-coupled. In general, there&#8217;s a ton of code that just need one or two
-bits of <code>Tcod</code> but some code that basically wants all of it. The good
-thing is that this struct lets us support both cases and anything in
-between.
-</td>
-</tr>
-</table>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-Later on, we&#8217;ll do a similar packing of the game-related stuff
-such as the message log, the level map, the inventory, etc. But this
-has been enough refactoring for one section!
-</td>
-</tr>
-</table>
-</div>
-</div>
-</div>
-<div class="sect1">
 <h2 id="_magic_scrolls_the_lightning_bolt">Magic scrolls: the Lightning Bolt</h2>
 <div class="sectionbody">
 <div class="paragraph">
@@ -650,7 +477,7 @@ it&#8217;s done with monsters:</p>
 <span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">dice</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">rand</span>::<span class="tok-n">random</span>::<span class="tok-o">&lt;</span><span class="tok-kt">f32</span><span class="tok-o">&gt;</span><span class="tok-p">();</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">item</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-n">dice</span><span class="tok-w"> </span><span class="tok-o">&lt;</span><span class="tok-w"> </span><span class="tok-mf">0.7</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-c1">// create a healing potion (70% chance)</span>
-<span class="tok-w">        </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">object</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">Object</span>::<span class="tok-n">new</span><span class="tok-p">(</span><span class="tok-n">x</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">y</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-sc">&#39;!&#39;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-s">&quot;healing potion&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">colors</span>::<span class="tok-n">VIOLET</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-kc">false</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">object</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">Object</span>::<span class="tok-n">new</span><span class="tok-p">(</span><span class="tok-n">x</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">y</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-sc">&#39;!&#39;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-s">&quot;healing potion&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">VIOLET</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-kc">false</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-n">object</span><span class="tok-p">.</span><span class="tok-n">item</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">Item</span>::<span class="tok-n">Heal</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-n">object</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"> </span><span class="tok-k">else</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
@@ -660,7 +487,7 @@ it&#8217;s done with monsters:</p>
 <span class="tok-w">            </span><span class="tok-n">y</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">            </span><span class="tok-sc">&#39;#&#39;</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">            </span><span class="tok-s">&quot;scroll of lightning bolt&quot;</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-n">colors</span>::<span class="tok-n">LIGHT_YELLOW</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">            </span><span class="tok-n">LIGHT_YELLOW</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">            </span><span class="tok-kc">false</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-n">object</span><span class="tok-p">.</span><span class="tok-n">item</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">Item</span>::<span class="tok-n">Lightning</span><span class="tok-p">);</span><span class="tok-w"></span>
@@ -690,29 +517,28 @@ it&#8217;s done with monsters:</p>
 <div class="content">
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span> <span class="tok-nf">cast_lightning</span><span class="tok-p">(</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">_inventory_id</span>: <span class="tok-kt">usize</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">objects</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-p">[</span><span class="tok-n">Object</span><span class="tok-p">],</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">messages</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Messages</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">_map</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Map</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">tcod</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Tcod</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">game</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Game</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">objects</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-p">[</span><span class="tok-n">Object</span><span class="tok-p">],</span><span class="tok-w"></span>
 <span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-nc">UseResult</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-c1">// find closest enemy (inside a maximum range and damage it)</span>
-<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">monster_id</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">closest_monster</span><span class="tok-p">(</span><span class="tok-n">LIGHTNING_RANGE</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">monster_id</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">closest_monster</span><span class="tok-p">(</span><span class="tok-n">tcod</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">LIGHTNING_RANGE</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">monster_id</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">monster_id</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-c1">// zap it!</span>
-<span class="tok-w">        </span><span class="tok-n">message</span><span class="tok-p">(</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-n">messages</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">messages</span><span class="tok-p">.</span><span class="tok-n">add</span><span class="tok-p">(</span><span class="tok-w"></span>
 <span class="tok-w">            </span><span class="tok-n">format</span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-w"></span>
 <span class="tok-w">                </span><span class="tok-s">&quot;A lightning bolt strikes the {} with a loud thunder! \</span>
 <span class="tok-s">                 The damage is {} hit points.&quot;</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">                </span><span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-n">monster_id</span><span class="tok-p">].</span><span class="tok-n">name</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">LIGHTNING_DAMAGE</span><span class="tok-w"></span>
 <span class="tok-w">            </span><span class="tok-p">),</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-n">colors</span>::<span class="tok-n">LIGHT_BLUE</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">            </span><span class="tok-n">LIGHT_BLUE</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-p">);</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-n">monster_id</span><span class="tok-p">].</span><span class="tok-n">take_damage</span><span class="tok-p">(</span><span class="tok-n">LIGHTNING_DAMAGE</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">messages</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-n">monster_id</span><span class="tok-p">].</span><span class="tok-n">take_damage</span><span class="tok-p">(</span><span class="tok-n">LIGHTNING_DAMAGE</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-n">UseResult</span>::<span class="tok-n">UsedUp</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"> </span><span class="tok-k">else</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-c1">// no enemy found within maximum range</span>
-<span class="tok-w">        </span><span class="tok-n">message</span><span class="tok-p">(</span><span class="tok-n">messages</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-s">&quot;No enemy is close enough to strike.&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">colors</span>::<span class="tok-n">RED</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">messages</span><span class="tok-w"></span>
+<span class="tok-w">            </span><span class="tok-p">.</span><span class="tok-n">add</span><span class="tok-p">(</span><span class="tok-s">&quot;No enemy is close enough to strike.&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">RED</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-n">UseResult</span>::<span class="tok-n">Cancelled</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-p">}</span><span class="tok-w"></span></code></pre>
@@ -722,8 +548,13 @@ it&#8217;s done with monsters:</p>
 <p>It&#8217;s a plain spell but an imaginative message can always give it some
 flavor! It returns uses the <code>UseResult::Cancelled</code> if cancelled to prevent the item
 from being destroyed in that case, like the healing potion. There are
-also a couple of new constants that have to be defined:
-<code>LIGHTNING_DAMAGE = 20</code> and <code>LIGHTNING_RANGE = 5</code>.</p>
+also a couple of new constants that have to be defined:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">const</span><span class="tok-w"> </span><span class="tok-n">LIGHTNING_DAMAGE</span>: <span class="tok-kt">i32</span> <span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-mi">40</span><span class="tok-p">;</span><span class="tok-w"></span>
+<span class="tok-k">const</span><span class="tok-w"> </span><span class="tok-n">LIGHTNING_RANGE</span>: <span class="tok-kt">i32</span> <span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-mi">5</span><span class="tok-p">;</span><span class="tok-w"></span></code></pre>
+</div>
 </div>
 <div class="paragraph">
 <p>Now let&#8217;s write <code>closest_monster</code>:</p>
@@ -731,7 +562,7 @@ also a couple of new constants that have to be defined:
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-sd">/// find closest enemy, up to a maximum range, and in the player&#39;s FOV</span>
-<span class="tok-k">fn</span> <span class="tok-nf">closest_monster</span><span class="tok-p">(</span><span class="tok-n">max_range</span>: <span class="tok-kt">i32</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-p">[</span><span class="tok-n">Object</span><span class="tok-p">],</span><span class="tok-w"> </span><span class="tok-n">tcod</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">Tcod</span><span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-nb">Option</span><span class="tok-o">&lt;</span><span class="tok-kt">usize</span><span class="tok-o">&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-k">fn</span> <span class="tok-nf">closest_monster</span><span class="tok-p">(</span><span class="tok-n">tcod</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">Tcod</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span>: <span class="tok-kp">&amp;</span><span class="tok-p">[</span><span class="tok-n">Object</span><span class="tok-p">],</span><span class="tok-w"> </span><span class="tok-n">max_range</span>: <span class="tok-kt">i32</span><span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-nb">Option</span><span class="tok-o">&lt;</span><span class="tok-kt">usize</span><span class="tok-o">&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">closest_enemy</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nb">None</span><span class="tok-p">;</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">closest_dist</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">max_range</span><span class="tok-w"> </span><span class="tok-o">+</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-k">as</span><span class="tok-w"> </span><span class="tok-kt">f32</span><span class="tok-p">;</span><span class="tok-w"> </span><span class="tok-c1">// start with (slightly more than) maximum range</span>
 
@@ -786,7 +617,8 @@ empty <code>Ai</code> struct into an enum with two variants:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">enum</span> <span class="tok-nc">Ai</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-cp">#[derive(Clone, Debug, PartialEq)]</span><span class="tok-w"></span>
+<span class="tok-k">enum</span> <span class="tok-nc">Ai</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">Basic</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">Confused</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-n">previous_ai</span>: <span class="tok-nb">Box</span><span class="tok-o">&lt;</span><span class="tok-n">Ai</span><span class="tok-o">&gt;</span><span class="tok-p">,</span><span class="tok-w"></span>
@@ -822,48 +654,36 @@ can hold data, too!</p>
 </div>
 </div>
 <div class="paragraph">
-<p>Next, let&#8217;s move the code from <code>ai_take_turn</code> its own function:</p>
+<p>Next, let&#8217;s move the code from <code>ai_take_turn</code> to its own function:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span> <span class="tok-nf">ai_take_turn</span><span class="tok-p">(</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">monster_id</span>: <span class="tok-kt">usize</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">map</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">Map</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">objects</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-p">[</span><span class="tok-n">Object</span><span class="tok-p">],</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">fov_map</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">FovMap</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">messages</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Messages</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span> <span class="tok-nf">ai_take_turn</span><span class="tok-p">(</span><span class="tok-n">monster_id</span>: <span class="tok-kt">usize</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">tcod</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">Tcod</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">game</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-p">[</span><span class="tok-n">Object</span><span class="tok-p">])</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">Ai</span>::<span class="tok-o">*</span><span class="tok-p">;</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">ai</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-n">monster_id</span><span class="tok-p">].</span><span class="tok-n">ai</span><span class="tok-p">.</span><span class="tok-n">take</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">new_ai</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-n">ai</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-n">Basic</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">ai_basic</span><span class="tok-p">(</span><span class="tok-n">monster_id</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">map</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">fov_map</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">messages</span><span class="tok-p">),</span><span class="tok-w"></span>
+<span class="tok-w">            </span><span class="tok-n">Basic</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">ai_basic</span><span class="tok-p">(</span><span class="tok-n">monster_id</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">),</span><span class="tok-w"></span>
 <span class="tok-w">            </span><span class="tok-n">Confused</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">                </span><span class="tok-n">previous_ai</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">                </span><span class="tok-n">num_turns</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-p">}</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">ai_confused</span><span class="tok-p">(</span><span class="tok-n">monster_id</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">map</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">messages</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">previous_ai</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">num_turns</span><span class="tok-p">),</span><span class="tok-w"></span>
+<span class="tok-w">            </span><span class="tok-p">}</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">ai_confused</span><span class="tok-p">(</span><span class="tok-n">monster_id</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">previous_ai</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">num_turns</span><span class="tok-p">),</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-p">};</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-n">monster_id</span><span class="tok-p">].</span><span class="tok-n">ai</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">new_ai</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-p">}</span><span class="tok-w"></span>
 
-<span class="tok-k">fn</span> <span class="tok-nf">ai_basic</span><span class="tok-p">(</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">monster_id</span>: <span class="tok-kt">usize</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">map</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">Map</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">objects</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-p">[</span><span class="tok-n">Object</span><span class="tok-p">],</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">fov_map</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">FovMap</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">messages</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Messages</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-nc">Ai</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-k">fn</span> <span class="tok-nf">ai_basic</span><span class="tok-p">(</span><span class="tok-n">monster_id</span>: <span class="tok-kt">usize</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">tcod</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">Tcod</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">game</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-p">[</span><span class="tok-n">Object</span><span class="tok-p">])</span><span class="tok-w"> </span>-&gt; <span class="tok-nc">Ai</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-c1">// a basic monster takes its turn. If you can see it, it can see you</span>
 <span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">monster_x</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">monster_y</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-n">monster_id</span><span class="tok-p">].</span><span class="tok-n">pos</span><span class="tok-p">();</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-n">fov_map</span><span class="tok-p">.</span><span class="tok-n">is_in_fov</span><span class="tok-p">(</span><span class="tok-n">monster_x</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">monster_y</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">fov</span><span class="tok-p">.</span><span class="tok-n">is_in_fov</span><span class="tok-p">(</span><span class="tok-n">monster_x</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">monster_y</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-n">monster_id</span><span class="tok-p">].</span><span class="tok-n">distance_to</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-n">PLAYER</span><span class="tok-p">])</span><span class="tok-w"> </span><span class="tok-o">&gt;=</span><span class="tok-w"> </span><span class="tok-mf">2.0</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">            </span><span class="tok-c1">// move towards player if far away</span>
 <span class="tok-w">            </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">player_x</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">player_y</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-n">PLAYER</span><span class="tok-p">].</span><span class="tok-n">pos</span><span class="tok-p">();</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-n">move_towards</span><span class="tok-p">(</span><span class="tok-n">monster_id</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">player_x</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">player_y</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">map</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">            </span><span class="tok-n">move_towards</span><span class="tok-p">(</span><span class="tok-n">monster_id</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">player_x</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">player_y</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">map</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-p">}</span><span class="tok-w"> </span><span class="tok-k">else</span><span class="tok-w"> </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-n">PLAYER</span><span class="tok-p">].</span><span class="tok-n">fighter</span><span class="tok-p">.</span><span class="tok-n">map_or</span><span class="tok-p">(</span><span class="tok-kc">false</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">|</span><span class="tok-n">f</span><span class="tok-o">|</span><span class="tok-w"> </span><span class="tok-n">f</span><span class="tok-p">.</span><span class="tok-n">hp</span><span class="tok-w"> </span><span class="tok-o">&gt;</span><span class="tok-w"> </span><span class="tok-mi">0</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">            </span><span class="tok-c1">// close enough, attack! (if the player is still alive.)</span>
 <span class="tok-w">            </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">monster</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">player</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">mut_two</span><span class="tok-p">(</span><span class="tok-n">monster_id</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">PLAYER</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">);</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-n">monster</span><span class="tok-p">.</span><span class="tok-n">attack</span><span class="tok-p">(</span><span class="tok-n">player</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">messages</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">            </span><span class="tok-n">monster</span><span class="tok-p">.</span><span class="tok-n">attack</span><span class="tok-p">(</span><span class="tok-n">player</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">Ai</span>::<span class="tok-n">Basic</span><span class="tok-w"></span>
@@ -913,9 +733,9 @@ reference and think through the compile errors Rust will give you.</p>
 <div class="content">
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span> <span class="tok-nf">ai_confused</span><span class="tok-p">(</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">monster_id</span>: <span class="tok-kt">usize</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">map</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">Map</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">_tcod</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">Tcod</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">game</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Game</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">objects</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-p">[</span><span class="tok-n">Object</span><span class="tok-p">],</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">messages</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Messages</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">previous_ai</span>: <span class="tok-nb">Box</span><span class="tok-o">&lt;</span><span class="tok-n">Ai</span><span class="tok-o">&gt;</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">num_turns</span>: <span class="tok-kt">i32</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-nc">Ai</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
@@ -926,7 +746,7 @@ reference and think through the compile errors Rust will give you.</p>
 <span class="tok-w">            </span><span class="tok-n">monster_id</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">            </span><span class="tok-n">rand</span>::<span class="tok-n">thread_rng</span><span class="tok-p">().</span><span class="tok-n">gen_range</span><span class="tok-p">(</span><span class="tok-o">-</span><span class="tok-mi">1</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-mi">2</span><span class="tok-p">),</span><span class="tok-w"></span>
 <span class="tok-w">            </span><span class="tok-n">rand</span>::<span class="tok-n">thread_rng</span><span class="tok-p">().</span><span class="tok-n">gen_range</span><span class="tok-p">(</span><span class="tok-o">-</span><span class="tok-mi">1</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-mi">2</span><span class="tok-p">),</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-n">map</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">            </span><span class="tok-o">&amp;</span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">map</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">            </span><span class="tok-n">objects</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-n">Ai</span>::<span class="tok-n">Confused</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
@@ -935,10 +755,9 @@ reference and think through the compile errors Rust will give you.</p>
 <span class="tok-w">        </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"> </span><span class="tok-k">else</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-c1">// restore the previous AI (this one will be deleted)</span>
-<span class="tok-w">        </span><span class="tok-n">message</span><span class="tok-p">(</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-n">messages</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">messages</span><span class="tok-p">.</span><span class="tok-n">add</span><span class="tok-p">(</span><span class="tok-w"></span>
 <span class="tok-w">            </span><span class="tok-n">format</span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-s">&quot;The {} is no longer confused!&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-n">monster_id</span><span class="tok-p">].</span><span class="tok-n">name</span><span class="tok-p">),</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-n">colors</span>::<span class="tok-n">RED</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">            </span><span class="tok-n">RED</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-o">*</span><span class="tok-n">previous_ai</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"></span>
@@ -971,28 +790,15 @@ getting a lightning bolt scroll must change:</p>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-p">...</span><span class="tok-w"></span>
-<span class="tok-p">}</span><span class="tok-w"> </span><span class="tok-k">else</span><span class="tok-w"> </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-n">dice</span><span class="tok-w"> </span><span class="tok-o">&lt;</span><span class="tok-w"> </span><span class="tok-mf">0.7</span><span class="tok-w"> </span><span class="tok-o">+</span><span class="tok-w"> </span><span class="tok-mf">0.15</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-p">}</span><span class="tok-w"> </span><span class="tok-k">else</span><span class="tok-w"> </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-n">dice</span><span class="tok-w"> </span><span class="tok-o">&lt;</span><span class="tok-w"> </span><span class="tok-mf">0.7</span><span class="tok-w"> </span><span class="tok-o">+</span><span class="tok-w"> </span><span class="tok-mf">0.1</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-c1">// create a lightning bolt scroll (10% chance)</span>
-<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">object</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">Object</span>::<span class="tok-n">new</span><span class="tok-p">(</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-n">x</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-n">y</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-sc">&#39;#&#39;</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-s">&quot;scroll of lightning bolt&quot;</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-n">colors</span>::<span class="tok-n">LIGHT_YELLOW</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-kc">false</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">object</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-n">Object</span>::<span class="tok-n">new</span><span class="tok-p">(</span><span class="tok-n">x</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">y</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-sc">&#39;#&#39;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-s">&quot;scroll of lightning bolt&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">LIGHT_YELLOW</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-kc">false</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">object</span><span class="tok-p">.</span><span class="tok-n">item</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">Item</span>::<span class="tok-n">Lightning</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">object</span><span class="tok-w"></span>
-<span class="tok-p">}</span><span class="tok-k">else</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-p">}</span><span class="tok-w"> </span><span class="tok-k">else</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-c1">// create a confuse scroll (10% chance)</span>
-<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">object</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">Object</span>::<span class="tok-n">new</span><span class="tok-p">(</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-n">x</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-n">y</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-sc">&#39;#&#39;</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-s">&quot;scroll of confusion&quot;</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-n">colors</span>::<span class="tok-n">LIGHT_YELLOW</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-kc">false</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">object</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">Object</span>::<span class="tok-n">new</span><span class="tok-p">(</span><span class="tok-n">x</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">y</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-sc">&#39;#&#39;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-s">&quot;scroll of confusion&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">LIGHT_YELLOW</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-kc">false</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">object</span><span class="tok-p">.</span><span class="tok-n">item</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">Item</span>::<span class="tok-n">Confuse</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">object</span><span class="tok-w"></span>
 <span class="tok-p">};</span><span class="tok-w"></span></code></pre>
@@ -1004,17 +810,29 @@ to you. The <code>cast_confuse</code> function can now be defined. It hits the
 closest monster for now, like the lightning bolt; later we&#8217;ll allow
 targeting.</p>
 </div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+The percentages in the comments aren&#8217;t quite correct right now, but they will be
+once we&#8217;ve added all the items here.
+</td>
+</tr>
+</table>
+</div>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span> <span class="tok-nf">cast_confuse</span><span class="tok-p">(</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">_inventory_id</span>: <span class="tok-kt">usize</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">objects</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-p">[</span><span class="tok-n">Object</span><span class="tok-p">],</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">messages</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Messages</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">map</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Map</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">tcod</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Tcod</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">game</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Game</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">objects</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-p">[</span><span class="tok-n">Object</span><span class="tok-p">],</span><span class="tok-w"></span>
 <span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-nc">UseResult</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-c1">// ask the player for a target to confuse</span>
-<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">monster_id</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">target_monster</span><span class="tok-p">(</span><span class="tok-n">tcod</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">map</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">messages</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">CONFUSE_RANGE</span><span class="tok-w"> </span><span class="tok-k">as</span><span class="tok-w"> </span><span class="tok-kt">f32</span><span class="tok-p">));</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-c1">// find closest enemy in-range and confuse it</span>
+<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">monster_id</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">target_monster</span><span class="tok-p">(</span><span class="tok-n">CONFUSE_RANGE</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">monster_id</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">monster_id</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">old_ai</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-n">monster_id</span><span class="tok-p">].</span><span class="tok-n">ai</span><span class="tok-p">.</span><span class="tok-n">take</span><span class="tok-p">().</span><span class="tok-n">unwrap_or</span><span class="tok-p">(</span><span class="tok-n">Ai</span>::<span class="tok-n">Basic</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-c1">// replace the monster&#39;s AI with a &quot;confused&quot; one; after</span>
@@ -1023,18 +841,18 @@ targeting.</p>
 <span class="tok-w">            </span><span class="tok-n">previous_ai</span>: <span class="tok-nb">Box</span>::<span class="tok-n">new</span><span class="tok-p">(</span><span class="tok-n">old_ai</span><span class="tok-p">),</span><span class="tok-w"></span>
 <span class="tok-w">            </span><span class="tok-n">num_turns</span>: <span class="tok-nc">CONFUSE_NUM_TURNS</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-p">});</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-n">message</span><span class="tok-p">(</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-n">messages</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">messages</span><span class="tok-p">.</span><span class="tok-n">add</span><span class="tok-p">(</span><span class="tok-w"></span>
 <span class="tok-w">            </span><span class="tok-n">format</span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-w"></span>
 <span class="tok-w">                </span><span class="tok-s">&quot;The eyes of {} look vacant, as he starts to stumble around!&quot;</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">                </span><span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-n">monster_id</span><span class="tok-p">].</span><span class="tok-n">name</span><span class="tok-w"></span>
 <span class="tok-w">            </span><span class="tok-p">),</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-n">colors</span>::<span class="tok-n">LIGHT_GREEN</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">            </span><span class="tok-n">LIGHT_GREEN</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-n">UseResult</span>::<span class="tok-n">UsedUp</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"> </span><span class="tok-k">else</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-c1">// no enemy fonud within maximum range</span>
-<span class="tok-w">        </span><span class="tok-n">message</span><span class="tok-p">(</span><span class="tok-n">messages</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-s">&quot;No enemy is close enough to strike.&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">colors</span>::<span class="tok-n">RED</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">messages</span><span class="tok-w"></span>
+<span class="tok-w">            </span><span class="tok-p">.</span><span class="tok-n">add</span><span class="tok-p">(</span><span class="tok-s">&quot;No enemy is close enough to strike.&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">RED</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-n">UseResult</span>::<span class="tok-n">Cancelled</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-p">}</span><span class="tok-w"></span></code></pre>
@@ -1060,8 +878,13 @@ early and hunt it down) or log the error and keep going or even allow
 monsters without AI and just handle that case properly!</p>
 </div>
 <div class="paragraph">
-<p>We&#8217;ve also introduced two new constants: <code>CONFUSE_RANGE = 8</code> and
-<code>CONFUSE_NUM_TURNS = 10</code>.</p>
+<p>We&#8217;ve also introduced two new constants:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">const</span><span class="tok-w"> </span><span class="tok-n">CONFUSE_RANGE</span>: <span class="tok-kt">i32</span> <span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-mi">8</span><span class="tok-p">;</span><span class="tok-w"></span>
+<span class="tok-k">const</span><span class="tok-w"> </span><span class="tok-n">CONFUSE_NUM_TURNS</span>: <span class="tok-kt">i32</span> <span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-mi">10</span><span class="tok-p">;</span><span class="tok-w"></span></code></pre>
+</div>
 </div>
 <div class="paragraph">
 <p>Finally, to tie it all together, we need to add a new item type:
@@ -1069,7 +892,8 @@ monsters without AI and just handle that case properly!</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">enum</span> <span class="tok-nc">Item</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-cp">#[derive(Clone, Copy, Debug, PartialEq)]</span><span class="tok-w"></span>
+<span class="tok-k">enum</span> <span class="tok-nc">Item</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">Heal</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">Lightning</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">Confuse</span><span class="tok-p">,</span><span class="tok-w"></span>
@@ -1122,9 +946,8 @@ would still be visible).</p>
 <span class="tok-sd">/// range), or (None,None) if right-clicked.</span>
 <span class="tok-k">fn</span> <span class="tok-nf">target_tile</span><span class="tok-p">(</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">tcod</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Tcod</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">game</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Game</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">objects</span>: <span class="tok-kp">&amp;</span><span class="tok-p">[</span><span class="tok-n">Object</span><span class="tok-p">],</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">map</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Map</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">messages</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">Messages</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">max_range</span>: <span class="tok-nb">Option</span><span class="tok-o">&lt;</span><span class="tok-kt">f32</span><span class="tok-o">&gt;</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-nb">Option</span><span class="tok-o">&lt;</span><span class="tok-p">(</span><span class="tok-kt">i32</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-kt">i32</span><span class="tok-p">)</span><span class="tok-o">&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">tcod</span>::<span class="tok-n">input</span>::<span class="tok-n">KeyCode</span>::<span class="tok-n">Escape</span><span class="tok-p">;</span><span class="tok-w"></span>
@@ -1133,13 +956,12 @@ would still be visible).</p>
 <span class="tok-w">        </span><span class="tok-c1">// objects under the mouse.</span>
 <span class="tok-w">        </span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">flush</span><span class="tok-p">();</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">event</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">input</span>::<span class="tok-n">check_for_event</span><span class="tok-p">(</span><span class="tok-n">input</span>::<span class="tok-n">KEY_PRESS</span><span class="tok-w"> </span><span class="tok-o">|</span><span class="tok-w"> </span><span class="tok-n">input</span>::<span class="tok-n">MOUSE</span><span class="tok-p">).</span><span class="tok-n">map</span><span class="tok-p">(</span><span class="tok-o">|</span><span class="tok-n">e</span><span class="tok-o">|</span><span class="tok-w"> </span><span class="tok-n">e</span><span class="tok-p">.</span><span class="tok-mi">1</span><span class="tok-p">);</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">key</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nb">None</span><span class="tok-p">;</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-n">event</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">            </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">Event</span>::<span class="tok-n">Mouse</span><span class="tok-p">(</span><span class="tok-n">m</span><span class="tok-p">))</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">mouse</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">m</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">Event</span>::<span class="tok-n">Key</span><span class="tok-p">(</span><span class="tok-n">k</span><span class="tok-p">))</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">key</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">k</span><span class="tok-p">),</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-nb">None</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{}</span><span class="tok-w"></span>
+<span class="tok-w">            </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">Event</span>::<span class="tok-n">Key</span><span class="tok-p">(</span><span class="tok-n">k</span><span class="tok-p">))</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">key</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">k</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">            </span><span class="tok-nb">None</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">key</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nb">Default</span>::<span class="tok-n">default</span><span class="tok-p">(),</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-p">}</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-n">render_all</span><span class="tok-p">(</span><span class="tok-n">tcod</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">map</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">messages</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-kc">false</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-n">render_all</span><span class="tok-p">(</span><span class="tok-n">tcod</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-kc">false</span><span class="tok-p">);</span><span class="tok-w"></span>
 
 <span class="tok-w">        </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">x</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">y</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">mouse</span><span class="tok-p">.</span><span class="tok-n">cx</span><span class="tok-w"> </span><span class="tok-k">as</span><span class="tok-w"> </span><span class="tok-kt">i32</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">mouse</span><span class="tok-p">.</span><span class="tok-n">cy</span><span class="tok-w"> </span><span class="tok-k">as</span><span class="tok-w"> </span><span class="tok-kt">i32</span><span class="tok-p">);</span><span class="tok-w"></span>
 
@@ -1156,13 +978,13 @@ would still be visible).</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-w">    </span><span class="tok-c1">// accept the target if the player clicked in FOV, and in case a range</span>
-<span class="tok-w">    </span><span class="tok-c1">// is specified, if it&#39;s in that range</span>
-<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">in_fov</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">x</span><span class="tok-w"> </span><span class="tok-o">&lt;</span><span class="tok-w"> </span><span class="tok-n">MAP_WIDTH</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">&amp;&amp;</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">y</span><span class="tok-w"> </span><span class="tok-o">&lt;</span><span class="tok-w"> </span><span class="tok-n">MAP_HEIGHT</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">&amp;&amp;</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">fov</span><span class="tok-p">.</span><span class="tok-n">is_in_fov</span><span class="tok-p">(</span><span class="tok-n">x</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">y</span><span class="tok-p">);</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">in_range</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">max_range</span><span class="tok-p">.</span><span class="tok-n">map_or</span><span class="tok-p">(</span><span class="tok-kc">true</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">|</span><span class="tok-n">range</span><span class="tok-o">|</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-n">PLAYER</span><span class="tok-p">].</span><span class="tok-n">distance</span><span class="tok-p">(</span><span class="tok-n">x</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">y</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">&lt;=</span><span class="tok-w"> </span><span class="tok-n">range</span><span class="tok-p">);</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">mouse</span><span class="tok-p">.</span><span class="tok-n">lbutton_pressed</span><span class="tok-w"> </span><span class="tok-o">&amp;&amp;</span><span class="tok-w"> </span><span class="tok-n">in_fov</span><span class="tok-w"> </span><span class="tok-o">&amp;&amp;</span><span class="tok-w"> </span><span class="tok-n">in_range</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-nb">Some</span><span class="tok-p">((</span><span class="tok-n">x</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">y</span><span class="tok-p">))</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"></span></code></pre>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-c1">// accept the target if the player clicked in FOV, and in case a range</span>
+<span class="tok-c1">// is specified, if it&#39;s in that range</span>
+<span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">in_fov</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">x</span><span class="tok-w"> </span><span class="tok-o">&lt;</span><span class="tok-w"> </span><span class="tok-n">MAP_WIDTH</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">&amp;&amp;</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">y</span><span class="tok-w"> </span><span class="tok-o">&lt;</span><span class="tok-w"> </span><span class="tok-n">MAP_HEIGHT</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">&amp;&amp;</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">fov</span><span class="tok-p">.</span><span class="tok-n">is_in_fov</span><span class="tok-p">(</span><span class="tok-n">x</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">y</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">in_range</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">max_range</span><span class="tok-p">.</span><span class="tok-n">map_or</span><span class="tok-p">(</span><span class="tok-kc">true</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">|</span><span class="tok-n">range</span><span class="tok-o">|</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-n">PLAYER</span><span class="tok-p">].</span><span class="tok-n">distance</span><span class="tok-p">(</span><span class="tok-n">x</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">y</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">&lt;=</span><span class="tok-w"> </span><span class="tok-n">range</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">mouse</span><span class="tok-p">.</span><span class="tok-n">lbutton_pressed</span><span class="tok-w"> </span><span class="tok-o">&amp;&amp;</span><span class="tok-w"> </span><span class="tok-n">in_fov</span><span class="tok-w"> </span><span class="tok-o">&amp;&amp;</span><span class="tok-w"> </span><span class="tok-n">in_range</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-nb">Some</span><span class="tok-p">((</span><span class="tok-n">x</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">y</span><span class="tok-p">));</span><span class="tok-w"></span>
+<span class="tok-p">}</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1183,10 +1005,9 @@ through walls.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">escape</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">key</span><span class="tok-p">.</span><span class="tok-n">map_or</span><span class="tok-p">(</span><span class="tok-kc">false</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">|</span><span class="tok-n">k</span><span class="tok-o">|</span><span class="tok-w"> </span><span class="tok-n">k</span><span class="tok-p">.</span><span class="tok-n">code</span><span class="tok-w"> </span><span class="tok-o">==</span><span class="tok-w"> </span><span class="tok-n">Escape</span><span class="tok-p">);</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">mouse</span><span class="tok-p">.</span><span class="tok-n">rbutton_pressed</span><span class="tok-w"> </span><span class="tok-o">||</span><span class="tok-w"> </span><span class="tok-n">escape</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-nb">None</span><span class="tok-w">  </span><span class="tok-c1">// cancel if the player right-clicked or pressed Escape</span>
-<span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"></span></code></pre>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">mouse</span><span class="tok-p">.</span><span class="tok-n">rbutton_pressed</span><span class="tok-w"> </span><span class="tok-o">||</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">key</span><span class="tok-p">.</span><span class="tok-n">code</span><span class="tok-w"> </span><span class="tok-o">==</span><span class="tok-w"> </span><span class="tok-n">Escape</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-nb">None</span><span class="tok-p">;</span><span class="tok-w"> </span><span class="tok-c1">// cancel if the player right-clicked or pressed Escape</span>
+<span class="tok-p">}</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1214,41 +1035,37 @@ spell:</p>
 <div class="content">
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span> <span class="tok-nf">cast_fireball</span><span class="tok-p">(</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">_inventory_id</span>: <span class="tok-kt">usize</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">objects</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-p">[</span><span class="tok-n">Object</span><span class="tok-p">],</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">messages</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Messages</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">map</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Map</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">tcod</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Tcod</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">game</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Game</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">objects</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-p">[</span><span class="tok-n">Object</span><span class="tok-p">],</span><span class="tok-w"></span>
 <span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-nc">UseResult</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-c1">// ask the player for a target tile to throw a fireball at</span>
-<span class="tok-w">    </span><span class="tok-n">message</span><span class="tok-p">(</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-n">messages</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">messages</span><span class="tok-p">.</span><span class="tok-n">add</span><span class="tok-p">(</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-s">&quot;Left-click a target tile for the fireball, or right-click to cancel.&quot;</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-n">colors</span>::<span class="tok-n">LIGHT_CYAN</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-n">LIGHT_CYAN</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">);</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">x</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">y</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-n">target_tile</span><span class="tok-p">(</span><span class="tok-n">tcod</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">map</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">messages</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-nb">None</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">x</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">y</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-n">target_tile</span><span class="tok-p">(</span><span class="tok-n">tcod</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-nb">None</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">tile_pos</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">tile_pos</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-nb">None</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-n">UseResult</span>::<span class="tok-n">Cancelled</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">};</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">message</span><span class="tok-p">(</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-n">messages</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">messages</span><span class="tok-p">.</span><span class="tok-n">add</span><span class="tok-p">(</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-n">format</span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-w"></span>
 <span class="tok-w">            </span><span class="tok-s">&quot;The fireball explodes, burning everything within {} tiles!&quot;</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">            </span><span class="tok-n">FIREBALL_RADIUS</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-p">),</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-n">colors</span>::<span class="tok-n">ORANGE</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-n">ORANGE</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">);</span><span class="tok-w"></span>
 
 <span class="tok-w">    </span><span class="tok-k">for</span><span class="tok-w"> </span><span class="tok-n">obj</span><span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-n">obj</span><span class="tok-p">.</span><span class="tok-n">distance</span><span class="tok-p">(</span><span class="tok-n">x</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">y</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">&lt;=</span><span class="tok-w"> </span><span class="tok-n">FIREBALL_RADIUS</span><span class="tok-w"> </span><span class="tok-k">as</span><span class="tok-w"> </span><span class="tok-kt">f32</span><span class="tok-w"> </span><span class="tok-o">&amp;&amp;</span><span class="tok-w"> </span><span class="tok-n">obj</span><span class="tok-p">.</span><span class="tok-n">fighter</span><span class="tok-p">.</span><span class="tok-n">is_some</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-n">message</span><span class="tok-p">(</span><span class="tok-w"></span>
-<span class="tok-w">                </span><span class="tok-n">messages</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">            </span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">messages</span><span class="tok-p">.</span><span class="tok-n">add</span><span class="tok-p">(</span><span class="tok-w"></span>
 <span class="tok-w">                </span><span class="tok-n">format</span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-w"></span>
 <span class="tok-w">                    </span><span class="tok-s">&quot;The {} gets burned for {} hit points.&quot;</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">                    </span><span class="tok-n">obj</span><span class="tok-p">.</span><span class="tok-n">name</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">FIREBALL_DAMAGE</span><span class="tok-w"></span>
 <span class="tok-w">                </span><span class="tok-p">),</span><span class="tok-w"></span>
-<span class="tok-w">                </span><span class="tok-n">colors</span>::<span class="tok-n">ORANGE</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">                </span><span class="tok-n">ORANGE</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">            </span><span class="tok-p">);</span><span class="tok-w"></span>
-<span class="tok-w">            </span><span class="tok-n">obj</span><span class="tok-p">.</span><span class="tok-n">take_damage</span><span class="tok-p">(</span><span class="tok-n">FIREBALL_DAMAGE</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">messages</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">            </span><span class="tok-n">obj</span><span class="tok-p">.</span><span class="tok-n">take_damage</span><span class="tok-p">(</span><span class="tok-n">FIREBALL_DAMAGE</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"></span>
 
@@ -1257,8 +1074,16 @@ spell:</p>
 </div>
 </div>
 <div class="paragraph">
-<p>With some new constants <code>FIREBALL_RADIUS = 3</code> and <code>FIREBALL_DAMAGE =
-12</code>. This also uses the new distance method. A scroll that casts the
+<p>With some new constants:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">const</span><span class="tok-w"> </span><span class="tok-n">FIREBALL_RADIUS</span>: <span class="tok-kt">i32</span> <span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-mi">3</span><span class="tok-p">;</span><span class="tok-w"></span>
+<span class="tok-k">const</span><span class="tok-w"> </span><span class="tok-n">FIREBALL_DAMAGE</span>: <span class="tok-kt">i32</span> <span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-mi">12</span><span class="tok-p">;</span><span class="tok-w"></span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This also uses the new distance method. A scroll that casts the
 Fireball spell must be added to place_objects, before the Confuse
 scroll:</p>
 </div>
@@ -1266,12 +1091,11 @@ scroll:</p>
 <div class="content">
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-p">}</span><span class="tok-w"> </span><span class="tok-k">else</span><span class="tok-w"> </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-n">dice</span><span class="tok-w"> </span><span class="tok-o">&lt;</span><span class="tok-w"> </span><span class="tok-mf">0.7</span><span class="tok-w"> </span><span class="tok-o">+</span><span class="tok-w"> </span><span class="tok-mf">0.1</span><span class="tok-w"> </span><span class="tok-o">+</span><span class="tok-w"> </span><span class="tok-mf">0.1</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-c1">// create a fireball scroll (10% chance)</span>
-<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">object</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-n">Object</span>::<span class="tok-n">new</span><span class="tok-p">(</span><span class="tok-n">x</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">y</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-sc">&#39;#&#39;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-s">&quot;scroll of fireball&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">colors</span>::<span class="tok-n">LIGHT_YELLOW</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-kc">false</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">object</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">Object</span>::<span class="tok-n">new</span><span class="tok-p">(</span><span class="tok-n">x</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">y</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-sc">&#39;#&#39;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-s">&quot;scroll of fireball&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">LIGHT_YELLOW</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-kc">false</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">object</span><span class="tok-p">.</span><span class="tok-n">item</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">Item</span>::<span class="tok-n">Fireball</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">object</span><span class="tok-w"></span>
 <span class="tok-p">}</span><span class="tok-w">  </span><span class="tok-k">else</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-c1">// create a confuse scroll (15% chance)</span>
+<span class="tok-w">    </span><span class="tok-c1">// create a confuse scroll (10% chance)</span>
 <span class="tok-w">    </span><span class="tok-c1">// ...</span>
 <span class="tok-p">}</span><span class="tok-w"></span></code></pre>
 </div>
@@ -1286,7 +1110,8 @@ scrolls now, each with a 10% of appearing.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">enum</span> <span class="tok-nc">Item</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-cp">#[derive(Clone, Copy, Debug, PartialEq)]</span><span class="tok-w"></span>
+<span class="tok-k">enum</span> <span class="tok-nc">Item</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">Heal</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">Lightning</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">Confuse</span><span class="tok-p">,</span><span class="tok-w"></span>
@@ -1326,7 +1151,7 @@ well as <code>use_item</code>.</p>
 <span class="tok-w">    </span><span class="tok-n">Confuse</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">cast_confuse</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">Fireball</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">cast_fireball</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-p">};</span><span class="tok-w"></span>
-<span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-n">on_use</span><span class="tok-p">(</span><span class="tok-n">inventory_id</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">messages</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">map</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-n">on_use</span><span class="tok-p">(</span><span class="tok-n">inventory_id</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-c1">// ...</span>
 <span class="tok-p">}</span><span class="tok-w"></span></code></pre>
 </div>
@@ -1371,13 +1196,12 @@ only when a monster is selected.</p>
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-sd">/// returns a clicked monster inside FOV up to a range, or None if right-clicked</span>
 <span class="tok-k">fn</span> <span class="tok-nf">target_monster</span><span class="tok-p">(</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">tcod</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Tcod</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">game</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Game</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">objects</span>: <span class="tok-kp">&amp;</span><span class="tok-p">[</span><span class="tok-n">Object</span><span class="tok-p">],</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">map</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Map</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">messages</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">Messages</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">max_range</span>: <span class="tok-nb">Option</span><span class="tok-o">&lt;</span><span class="tok-kt">f32</span><span class="tok-o">&gt;</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-nb">Option</span><span class="tok-o">&lt;</span><span class="tok-kt">usize</span><span class="tok-o">&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-k">loop</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-n">target_tile</span><span class="tok-p">(</span><span class="tok-n">tcod</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">map</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">messages</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">max_range</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-n">target_tile</span><span class="tok-p">(</span><span class="tok-n">tcod</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">max_range</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">            </span><span class="tok-nb">Some</span><span class="tok-p">((</span><span class="tok-n">x</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">y</span><span class="tok-p">))</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">                </span><span class="tok-c1">// return the first clicked monster, otherwise continue looping</span>
 <span class="tok-w">                </span><span class="tok-k">for</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">id</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">obj</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">.</span><span class="tok-n">iter</span><span class="tok-p">().</span><span class="tok-n">enumerate</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
@@ -1402,12 +1226,11 @@ function with:</p>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-c1">// ask the player for a target to confuse</span>
-<span class="tok-n">message</span><span class="tok-p">(</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">messages</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">messages</span><span class="tok-p">.</span><span class="tok-n">add</span><span class="tok-p">(</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-s">&quot;Left-click an enemy to confuse it, or right-click to cancel.&quot;</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">colors</span>::<span class="tok-n">LIGHT_CYAN</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">LIGHT_CYAN</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-p">);</span><span class="tok-w"></span>
-<span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">monster_id</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">target_monster</span><span class="tok-p">(</span><span class="tok-n">tcod</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">map</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">messages</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">CONFUSE_RANGE</span><span class="tok-w"> </span><span class="tok-k">as</span><span class="tok-w"> </span><span class="tok-kt">f32</span><span class="tok-p">));</span><span class="tok-w"></span></code></pre>
+<span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">monster_id</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">target_monster</span><span class="tok-p">(</span><span class="tok-n">tcod</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">CONFUSE_RANGE</span><span class="tok-w"> </span><span class="tok-k">as</span><span class="tok-w"> </span><span class="tok-kt">f32</span><span class="tok-p">));</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
 </div>
@@ -1425,19 +1248,11 @@ player&#8217;s, so it appears below the player:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span> <span class="tok-nf">drop_item</span><span class="tok-p">(</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">inventory_id</span>: <span class="tok-kt">usize</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">inventory</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-nb">Vec</span><span class="tok-o">&lt;</span><span class="tok-n">Object</span><span class="tok-o">&gt;</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">objects</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-nb">Vec</span><span class="tok-o">&lt;</span><span class="tok-n">Object</span><span class="tok-o">&gt;</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">messages</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Messages</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">item</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">inventory</span><span class="tok-p">.</span><span class="tok-n">remove</span><span class="tok-p">(</span><span class="tok-n">inventory_id</span><span class="tok-p">);</span><span class="tok-w"></span>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span> <span class="tok-nf">drop_item</span><span class="tok-p">(</span><span class="tok-n">inventory_id</span>: <span class="tok-kt">usize</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">game</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-nb">Vec</span><span class="tok-o">&lt;</span><span class="tok-n">Object</span><span class="tok-o">&gt;</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">item</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">inventory</span><span class="tok-p">.</span><span class="tok-n">remove</span><span class="tok-p">(</span><span class="tok-n">inventory_id</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">item</span><span class="tok-p">.</span><span class="tok-n">set_pos</span><span class="tok-p">(</span><span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-n">PLAYER</span><span class="tok-p">].</span><span class="tok-n">x</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-n">PLAYER</span><span class="tok-p">].</span><span class="tok-n">y</span><span class="tok-p">);</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-n">message</span><span class="tok-p">(</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-n">messages</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-n">format</span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-s">&quot;You dropped a {}.&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">item</span><span class="tok-p">.</span><span class="tok-n">name</span><span class="tok-p">),</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-n">colors</span>::<span class="tok-n">YELLOW</span><span class="tok-p">,</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">messages</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-p">.</span><span class="tok-n">add</span><span class="tok-p">(</span><span class="tok-n">format</span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-s">&quot;You dropped a {}.&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">item</span><span class="tok-p">.</span><span class="tok-n">name</span><span class="tok-p">),</span><span class="tok-w"> </span><span class="tok-n">YELLOW</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">objects</span><span class="tok-p">.</span><span class="tok-n">push</span><span class="tok-p">(</span><span class="tok-n">item</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-p">}</span><span class="tok-w"></span></code></pre>
 </div>
@@ -1452,12 +1267,12 @@ the chosen item. Add this to <code>handle_keys</code>, after the inventory key:<
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-p">(</span><span class="tok-n">Key</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"> </span><span class="tok-n">printable</span>: <span class="tok-sc">&#39;d&#39;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-p">..</span><span class="tok-w"> </span><span class="tok-p">},</span><span class="tok-w"> </span><span class="tok-kc">true</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-c1">// show the inventory; if an item is selected, drop it</span>
 <span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">inventory_index</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">inventory_menu</span><span class="tok-p">(</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-n">inventory</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-o">&amp;</span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">inventory</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-s">&quot;Press the key next to an item to drop it, or any other to cancel.</span><span class="tok-se">\n</span><span class="tok-s">&#39;&quot;</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">root</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">inventory_index</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">inventory_index</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-n">drop_item</span><span class="tok-p">(</span><span class="tok-n">inventory_index</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">inventory</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">messages</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-n">drop_item</span><span class="tok-p">(</span><span class="tok-n">inventory_index</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">DidntTakeTurn</span><span class="tok-w"></span>
 <span class="tok-p">}</span><span class="tok-w"></span></code></pre>
@@ -1469,7 +1284,7 @@ See how the spells affect your strategy, they&#8217;ll surely make things
 much more interesting!</p>
 </div>
 <div class="paragraph">
-<p>Here&#8217;s <a href="part-9-spells.rs.txt">the complete code so far</a>.</p>
+<p>Here&#8217;s <a href="part-9-spells.rs">the complete code so far</a>.</p>
 </div>
 <div class="paragraph">
 <p>Continue to <a href="part-10-menu-saving.html">the next part</a>.</p>
@@ -1479,7 +1294,7 @@ much more interesting!</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-05-11 11:17:23 UTC
+Last updated 2019-06-09 21:52:44 UTC
 </div>
 </div>
 <style>
