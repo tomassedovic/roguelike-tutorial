@@ -5,6 +5,8 @@ authors = ["Tomas Sedovic <tomas@sedovic.cz>"]
 edition = "2018"
 license = "WTFPL"
 readme = "README.adoc"
+
+[badges]
 maintenance = { status = "as-is" }
 
 
