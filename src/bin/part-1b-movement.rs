@@ -1,3 +1,5 @@
+// This file is generated automatically. Do not edit it directly.
+// See the Contributing section in README on how to make changes to it.
 use tcod::colors::*;
 use tcod::console::*;
 
