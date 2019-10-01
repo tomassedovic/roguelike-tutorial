@@ -11,6 +11,10 @@ docs:
 diff-rust: docs
 	cd target/tutorial/ && for rust in *.rs; do diff -u ../../src/bin/$$rust $$rust; done
 
+update-cargo-bin: docs
+	cp --force target/tutorial/*.rs src/bin/
+.PHONY: update-cargo-bin
+
 publish:
 	@git diff-index --quiet HEAD || { echo "Error: the repository is dirty."; exit 1; }
 	rm -rf .deploy
