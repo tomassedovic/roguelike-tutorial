@@ -4,7 +4,9 @@ version = "0.1.0"
 authors = ["Tomas Sedovic <tomas@sedovic.cz>"]
 edition = "2018"
 license = "WTFPL"
-readme = "README"
+readme = "README.adoc"
+maintenance = { status = "as-is" }
+
 
 [dependencies]
 tcod = { version = "0.15", features = ["serialization"] }

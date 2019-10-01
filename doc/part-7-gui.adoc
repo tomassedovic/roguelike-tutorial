@@ -48,8 +48,8 @@ fn main() {
    ...
 }
 ----
-<1>: New `Tcod` field: `panel`
-<2>: Initialise `panel`
+<1> New `Tcod` field: `panel`
+<2> Initialise `panel`
 
 The constant PANEL_HEIGHT is defined later, along with others. Let's
 jump right to the "status bar" rendering code! This is fully generic
@@ -324,7 +324,7 @@ struct Game {
 }
 end::game_struct[]
 ----
-<1>: Added `messages`
+<1> Added `messages`
 
 And we'll initialise it is `main`:
 
@@ -579,8 +579,8 @@ struct Tcod {
 }
 end::tcod_struct[]
 ----
-<1>: New field: `key`
-<2>: New field: `mouse`
+<1> New field: `key`
+<2> New field: `mouse`
 
 Now in the `main` loop, populate the two new fields where we initialise the `Tcod` struct:
 

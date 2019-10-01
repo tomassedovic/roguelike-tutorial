@@ -1,6 +1,7 @@
 = The Dungeon
 :icons: font
 :source-highlighter: pygments
+:source-language: rust
 ifdef::env-github[:outfilesuffix: .adoc]
 
 <<index#,Back to the index.>>

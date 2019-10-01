@@ -71,7 +71,7 @@ struct Game {
 }
 end::game_struct[]
 ----
-<1>: New field: `inventory`
+<1> New field: `inventory`
 
 And we need to add it to our `main` function where we initialise the `game` variable:
 
@@ -86,7 +86,7 @@ let mut game = Game {
 };
 end::game_init[]
 ----
-<1>: Initialise the new `inventory` field
+<1> Initialise the new `inventory` field
 
 Simple enough: the inventory is a list of items, and it starts empty.
 Now the `Item` component -- it will hold all data that makes an object

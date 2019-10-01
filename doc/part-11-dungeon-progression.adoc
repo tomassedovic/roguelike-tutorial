@@ -139,7 +139,7 @@ struct Game {
 }
 end::game_struct[]
 ----
-<1>: New field: `dungeon_level`
+<1> New field: `dungeon_level`
 
 in `new_game`:
 
@@ -155,7 +155,7 @@ let mut game = Game {
 };
 end::game_init[]
 ----
-<1>: Set `dungeon_level` to `1`
+<1> Set `dungeon_level` to `1`
 
 and in `next_level` before calling `make_map`:
 
@@ -263,7 +263,7 @@ item.always_visible = true;
 end::item_always_visible[]
 objects.push(item);
 ----
-<1>: Item must be `mut` now
+<1> Item must be `mut` now
 
 
 == Character progression
@@ -285,7 +285,7 @@ struct Fighter {
 }
 end::fighter_struct_definition[]
 ----
-<1>: Added the `xp` field
+<1> Added the `xp` field
 
 When setting the orc and trolls' `Fighter` component in
 `place_objects`, we'll add 35 and 100 `xp` respectively. Feel free to
@@ -324,8 +324,8 @@ let mut monster = if rand::random::<f32>() < 0.8 {
 };
 end::generate_monster_cb[]
 ----
-<1>: Defeating an orc gives you `35` XP
-<2>: Defeating a troll gives you `100` XP
+<1> Defeating an orc gives you `35` XP
+<2> Defeating a troll gives you `100` XP
 
 
 We'll have to set player's XP in `new_game` to something as well.
@@ -344,7 +344,7 @@ player.fighter = Some(Fighter {
 });
 end::player_fighter_cb[]
 ----
-<1>: Added `xp`
+<1> Added `xp`
 
 
 Now update `take_damage` to return the experience points when a

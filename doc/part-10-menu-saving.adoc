@@ -400,7 +400,7 @@ end::use_serde[]
 
 Unfortunately, the compilation will fail:
 
-----
+....
    Compiling roguelike-tutorial v0.1.0 (file:///home/thomas/personal/code/roguelike-tutorial)
 error[E0277]: the trait bound `Game: serde::Serialize` is not satisfied
     --> src/bin/part-10-menu-saving.rs:1140:28
@@ -411,7 +411,7 @@ error[E0277]: the trait bound `Game: serde::Serialize` is not satisfied
      = note: required because of the requirements on the impl of `serde::Serialize` for `&Game`
      = note: required because of the requirements on the impl of `serde::Serialize` for `(&[Object], &Game)`
      = note: required by `serde_json::to_string`
-----
+....
 
 :serialize: https://docs.serde.rs/serde/trait.Serialize.html
 
@@ -426,7 +426,7 @@ for us!
 #[derive(Serialize)]  // <1>
 struct Game {
     map: Map,
-    log: Messages,
+    messages: Messages,
     inventory: Vec<Object>,
 }
 ----
@@ -629,13 +629,13 @@ their results?
 
 If you tried to compile the game, you've seen this warning:
 
-----
+....
 cargo build
    Compiling roguelike-tutorial v0.1.0 (file:///home/thomas/code/roguelike-tutorial)
 src/bin/part-10-menu-saving.rs:1123:13: 1123:38 warning: unused result which must be used, #[warn(unused_must_use)] on by default
 src/bin/part-10-menu-saving.rs:1123             save_game(objects, game);
                                                 ^~~~~~~~~~~~~~~~~~~~~~~~~
-----
+....
 
 It did not cause an error but Rust is being passive-aggressive about
 how we're calling a function that can fail and then ignoring it.

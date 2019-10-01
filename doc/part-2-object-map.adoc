@@ -1,6 +1,7 @@
 = The object and the map
 :icons: font
 :source-highlighter: pygments
+:source-language: rust
 ifdef::env-github[:outfilesuffix: .adoc]
 
 <<index#,Back to the index.>>
@@ -46,11 +47,10 @@ And of course we will need to add the `con` field to the `Tcod` struct definitio
 tag::tcod_struct[]
 struct Tcod {
     root: Root,
-    con: Offscreen,  // <1>
+    con: Offscreen,
 }
 end::tcod_struct[]
 ----
-<1> Added `con`
 
 Now call the `set_default_foreground`, `clear` and `put_char` methods
 on `con` instead of `root`:

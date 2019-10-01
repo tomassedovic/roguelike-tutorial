@@ -1,6 +1,7 @@
 = Field-of-view and exploration
 :icons: font
 :source-highlighter: pygments
+:source-language: rust
 ifdef::env-github[:outfilesuffix: .adoc]
 
 :fov-study: http://www.roguebasin.com/index.php?title=Comparative_study_of_field_of_view_algorithms_for_2D_grid_based_worlds
@@ -81,8 +82,8 @@ struct Tcod {
 }
 end::tcod_struct[]
 ----
-<1>: Bring the `tcod::map::Map` type in and alias it to `FovMap`
-<2>: Add `FovMap` to the `Tcod` struct
+<1> Bring the `tcod::map::Map` type in and alias it to `FovMap`
+<2> Add `FovMap` to the `Tcod` struct
 
 We need to create the FOV map and ad it to our `tcod` variable in `main`.
 While we're at it, we'll initialise the `Offscreen` console directly too:

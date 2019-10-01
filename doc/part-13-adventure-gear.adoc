@@ -641,8 +641,8 @@ troll.fighter = Some(Fighter {
     on_death: DeathCallback::Monster,
 });
 ----
-<1>: `power` -> `base_power`
-<2>: `power` -> `base_power`
+<1> `power` -> `base_power`
+<2> `power` -> `base_power`
 
 
 We want to show the full power in the character screen, so
@@ -931,12 +931,12 @@ match choice.unwrap() {
 }
 end::level_up_fn_fighter[]
 ----
-<1>: `max_hp` -> `base_max_hp`
-<2>: `power` -> `base_power`
-<3>: `defense` -> `base_defense`
-<4>: `max_hp` -> `base_max_hp`
-<5>: `power` -> `base_power`
-<6>: `defense` -> `base_defense`
+<1> `max_hp` -> `base_max_hp`
+<2> `power` -> `base_power`
+<3> `defense` -> `base_defense`
+<4> `max_hp` -> `base_max_hp`
+<5> `power` -> `base_power`
+<6> `defense` -> `base_defense`
 
 
 And finally, the orc and troll monsters need to use `base_max_hp` now:

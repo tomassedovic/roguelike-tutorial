@@ -429,7 +429,7 @@ let mut game = Game {
 };
 end::game_init[]
 ----
-<1>: Pass `1` (the first level) to `make_map`
+<1> Pass `1` (the first level) to `make_map`
 
 NOTE: We're now using the number `1` for the same thing in two different places:
 `map` and `dungeon_level`.
@@ -464,8 +464,8 @@ const FIREBALL_RADIUS: i32 = 3;
 const FIREBALL_DAMAGE: i32 = 25;  // <2>
 end::fireball_consts[]
 ----
-<1>: Changed from `4` to `40`
-<2>: Changed from `12` to `25`
+<1> Changed from `4` to `40`
+<2> Changed from `12` to `25`
 
 And finally, let's update the stats of our monsters and player to reflect the new reality:
 
@@ -514,17 +514,17 @@ player.fighter = Some(Fighter {
 });
 end::player_fighter[]
 ----
-<1>: Change orc's `max_hp` from 10 to 20
-<2>: Change orc's `hp` from 10 to 20
-<3>: Change orc's `power` from 3 to 4
-<4>: Change troll's `max_hp` from 16 to 30
-<5>: Change troll's `hp` from 16 to 30
-<6>: Change troll's `defense` from 1 to 2
-<7>: Change troll's `power` from 4 to 8
-<8>: Change player's `max_hp` from 30 to 100
-<9>: Change player's `hp` from 30 to 100
-<10>: Change player's `defense` from 2 to 1
-<11>: Change player's `power` from 5 to 4
+<1> Change orc's `max_hp` from 10 to 20
+<2> Change orc's `hp` from 10 to 20
+<3> Change orc's `power` from 3 to 4
+<4> Change troll's `max_hp` from 16 to 30
+<5> Change troll's `hp` from 16 to 30
+<6> Change troll's `defense` from 1 to 2
+<7> Change troll's `power` from 4 to 8
+<8> Change player's `max_hp` from 30 to 100
+<9> Change player's `hp` from 30 to 100
+<10> Change player's `defense` from 2 to 1
+<11> Change player's `power` from 5 to 4
 
 And that's it. Try playing it for a bit. It will be challenging and
 you can't just bash your way through. Try to reach the level 10 or so.

@@ -1,6 +1,7 @@
 = Graphics
 :icons: font
 :source-highlighter: pygments
+:source-language: rust
 ifdef::env-github[:outfilesuffix: .adoc]
 
 :rust: https://www.rust-lang.org/
@@ -106,7 +107,7 @@ Rust, you need to have it in `Cargo.toml` under `[dependencies]`:
 [source,toml]
 ----
 [dependencies]
-tcod = "0.13"
+tcod = "0.15"
 ----
 
 Rust libraries are called _crates_. Next, add some imports via the `use`
