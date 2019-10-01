@@ -248,14 +248,17 @@ include::../part-8-items.adoc[tag=choose_item_random_pos,indent=8]
 
 include::../part-8-items.adoc[tag=item_pos_not_blocked,indent=8]
 include::../part-12-monster-item-progression.adoc[tag=place_items_table,indent=12]
+            };
 include::../part-11-dungeon-progression.adoc[tag=item_always_visible,indent=12]
 include::../part-9-spells.adoc[tag=objects_push_item,indent=12]
         }
     }
 }
 
-include::../part-11-dungeon-progression.adoc[tag=next_level_fn_header]
 include::../part-11-dungeon-progression.adoc[tag=next_level_fn_beginning]
+include::../part-11-dungeon-progression.adoc[tag=next_level_fn_heal,indent=4]
+
+include::../part-11-dungeon-progression.adoc[tag=next_level_fn_descend,indent=4]
 include::../part-12-monster-item-progression.adoc[tag=next_level_fn_build_level]
 
 include::../part-7-gui.adoc[tag=render_bar_header]
@@ -343,6 +346,7 @@ include::../part-11-dungeon-progression.adoc[tag=handle_stairs_key,indent=8]
 
 include::../part-11-dungeon-progression.adoc[tag=handle_character_key_header,indent=8]
 include::../part-11-dungeon-progression.adoc[tag=handle_character_key_unindented_text]
+include::../part-11-dungeon-progression.adoc[tag=handle_character_key_values,indent=20]
 include::../part-11-dungeon-progression.adoc[tag=handle_character_key_footer,indent=8]
 
 include::../part-5-combat.adoc[tag=match_key_footer,indent=8]

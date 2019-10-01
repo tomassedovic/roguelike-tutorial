@@ -186,8 +186,8 @@ let mut item = match item_choice.ind_sample(&mut rand::thread_rng()) {
         object.item = Some(Item::Confuse);
         object
     }
-};
 end::place_items_table[]
+};
 ----
 
 As you can see, we don't have to add a catch-all branch for items, because we
@@ -327,6 +327,7 @@ Now for items a little lower down:
 [source]
 ----
 tag::item_tables[]
+tag::item_tables_max_items[]
 // maximum number of items per room
 let max_items = from_dungeon_level(
     &[
@@ -335,7 +336,9 @@ let max_items = from_dungeon_level(
     ],
     level,
 );
+end::item_tables_max_items[]
 
+tag::item_tables_spells[]
 // item random table
 let item_chances = &mut [
     // healing potion always shows up, even if all other items have 0 chance
@@ -373,8 +376,11 @@ let item_chances = &mut [
         ),
         item: Item::Confuse,
     },
+end::item_tables_spells[]
+tag::item_tables_end[]
 ];
 let item_choice = WeightedChoice::new(item_chances);
+end::item_tables_end[]
 end::item_tables[]
 
 ...
@@ -433,7 +439,7 @@ And second, when we generate a new map after descending deeper into the dungeon:
 
 [source]
 ----
-include::part-11-dungeon-progression.adoc[tag=next_level_fn_header]
+include::part-11-dungeon-progression.adoc[tag=next_level_fn_beginning]
     ...
 tag::next_level_fn_build_level[]
     game.dungeon_level += 1;

@@ -189,13 +189,15 @@ We have to create the `toggle_equipment` function:
 
 [source]
 ----
-tag::toggle_equipment_fn[]
+tag::toggle_equipment_fn_header[]
 fn toggle_equipment(
     inventory_id: usize,
     _tcod: &mut Tcod,
     game: &mut Game,
     _objects: &mut [Object],
 ) -> UseResult {
+end::toggle_equipment_fn_header[]
+tag::toggle_equipment_fn_if_branch[]
     let equipment = match game.inventory[inventory_id].equipment {
         Some(equipment) => equipment,
         None => return UseResult::Cancelled,
@@ -203,11 +205,13 @@ fn toggle_equipment(
     if equipment.equipped {
         game.inventory[inventory_id].dequip(&mut game.messages);
     } else {
+end::toggle_equipment_fn_if_branch[]
+tag::toggle_equipment_fn_else_branch[]
         game.inventory[inventory_id].equip(&mut game.messages);
     }
     UseResult::UsedAndKept
 }
-end::toggle_equipment_fn[]
+end::toggle_equipment_fn_else_branch[]
 ----
 
 We're returning a new `UseResult` value here: one that says we have
@@ -273,7 +277,7 @@ And then this sword later on where we generate the items:
 ----
 Item::Equipment => {
     // create a sword
-    let mut object = Object::new(x, y, '/', "sword", colors::SKY, false);
+    let mut object = Object::new(x, y, '/', "sword", SKY, false);
     object.item = Some(Item::Equipment);
     object.equipment = Some(Equipment{equipped: false, slot: Slot::RightHand});
     object
@@ -319,10 +323,12 @@ yet: dequip the old item to make room for the new one. In
 
 [source]
 ----
+tag::toggle_equipment_fn_dequip[]
 // if the slot is already being used, dequip whatever is there first
-if let Some(old_equipment) = get_equipped_in_slot(equipment.slot, &game.inventory) {
-    game.inventory[old_equipment].dequip(&mut game.messages);
+if let Some(current) = get_equipped_in_slot(equipment.slot, &game.inventory) {
+    game.inventory[current].dequip(&mut game.messages);
 }
+end::toggle_equipment_fn_dequip[]
 ----
 
 Another nice behavior is to automatically equip picked up items, if
@@ -359,9 +365,11 @@ right after the `game.inventory.remove` line:
 
 [source]
 ----
+tag::drop_item_dequip[]
 if item.equipment.is_some() {
     item.dequip(&mut game.messages);
 }
+end::drop_item_dequip[]
 ----
 
 It would also be nice if we could show which items are equipped in the
@@ -370,6 +378,7 @@ inventory screen. Replace the `inventory.iter().map(...)` line in
 
 [source]
 ----
+tag::inventory_menu_fn_show_equipment[]
 inventory
     .iter()
     .map(|item| {
@@ -382,6 +391,7 @@ inventory
         }
     })
     .collect()
+end::inventory_menu_fn_show_equipment[]
 ----
 
 We just replace the closure passed to `map` to report the equipped
@@ -600,22 +610,14 @@ When we try to compile this, we'll see all the uses of `Fighter.power`
 in our code! We can then go one by one and decide whether we need the
 full or base power there.
 
-First, we'll update the damage calculation in our `attack` method.
-This:
-
-[source]
-----
-let damage = self.fighter.map_or(0, |f| f.power) - target.fighter.map_or(0, |f| f.defense);
-----
-
-becomes:
+First, we'll update the damage calculation in our `attack` method:
 
 [source]
 ----
 let damage = self.power(game) - target.fighter.map_or(0, |f| f.defense);
 ----
 
-Next, we have to change `power` to `base_power` in `place_objects`. From:
+Next, we have to change `power` to `base_power` in `place_objects`:
 
 [source]
 ----
@@ -623,27 +625,25 @@ orc.fighter = Some(Fighter {
     max_hp: 20,
     hp: 20,
     defense: 0,
-    base_power: 4,
+    base_power: 4,  // <1>
     xp: 35,
     on_death: DeathCallback::Monster,
 });
-----
 
-to:
+...
 
-[source]
-----
 troll.fighter = Some(Fighter {
     max_hp: 30,
     hp: 30,
     defense: 2,
-    base_power: 8,
+    base_power: 8,  // <2>
     xp: 100,
     on_death: DeathCallback::Monster,
 });
 ----
+<1>: `power` -> `base_power`
+<2>: `power` -> `base_power`
 
-And similarly for `troll`.
 
 We want to show the full power in the character screen, so
 `handle_keys` match arm for `c` will become:
@@ -664,7 +664,7 @@ Defense: {}",
     level_up_xp,
     fighter.max_hp,
     player.power(game), // <1>
-    fighter.defense
+    fighter.defense,
 );
 ----
 <1> `fighter.power` -> `player.power(game)`
@@ -823,23 +823,28 @@ And we need to fix `cast_heal` as well:
 
 [source]
 ----
-fn cast_heal(_inventory_id: usize, _tcod: &mut Tcod, game: &mut Game, objects: &mut [Object])
-             -> UseResult
-{
+tag::cast_heal_fn[]
+fn cast_heal(
+    _inventory_id: usize,
+    _tcod: &mut Tcod,
+    game: &mut Game,
+    objects: &mut [Object],
+) -> UseResult {
     // heal the player
     let player = &mut objects[PLAYER];
     if let Some(fighter) = player.fighter {
         if fighter.hp == player.max_hp(game) {  // <1>
-            game.messages.add("You are already at full health.", colors::RED);
+            game.messages.add("You are already at full health.", RED);
             return UseResult::Cancelled;
         }
         game.messages
-            .add("Your wounds start to feel better!", colors::LIGHT_VIOLET);
+            .add("Your wounds start to feel better!", LIGHT_VIOLET);
         player.heal(HEAL_AMOUNT, game);  // <2>
         return UseResult::UsedUp;
     }
     UseResult::Cancelled
 }
+end::cast_heal_fn[]
 ----
 <1> check HP against the `max_hp` method
 <2> `heal` requires `&Game` now
@@ -848,12 +853,128 @@ And the healing at the beginning of `next_level` is now:
 
 [source]
 ----
+tag::next_level_fn_heal[]
 let heal_hp = objects[PLAYER].max_hp(game) / 2;
 objects[PLAYER].heal(heal_hp, game);
+end::next_level_fn_heal[]
 ----
 
-And that's it. The game should now compile, but we're not actually
-using any bonuses! So let's fix that.
+The player's stats should use the `defense` and `max_hp` methods too:
+
+
+[source]
+----
+let msg = format!("Character information
+
+Level: {}
+Experience: {}
+Experience to level up: {}
+
+Maximum HP: {}
+Attack: {}
+Defense: {}",
+tag::handle_character_key_values[]
+    level,
+    fighter.xp,
+    level_up_xp,
+    player.max_hp(game),
+    player.power(game),
+    player.defense(game)
+end::handle_character_key_values[]
+);
+----
+
+When we render the HP bar `render_all`, we also need to update the hit point calculation:
+
+[source]
+----
+tag::calculate_hp[]
+// show the player's stats
+let hp = objects[PLAYER].fighter.map_or(0, |f| f.hp);
+let max_hp = objects[PLAYER].max_hp(game);
+end::calculate_hp[]
+----
+
+And same in `level_up`:
+
+[source]
+----
+tag::level_up_fn_fighter[]
+let fighter = player.fighter.as_mut().unwrap();
+let mut choice = None;
+while choice.is_none() {
+    // keep asking until a choice is made
+    choice = menu(
+        "Level up! Choose a stat to raise:\n",
+        &[
+            format!("Constitution (+20 HP, from {})", fighter.base_max_hp),  // <1>
+            format!("Strength (+1 attack, from {})", fighter.base_power),  // <2>
+            format!("Agility (+1 defense, from {})", fighter.base_defense),  // <3>
+        ],
+        LEVEL_SCREEN_WIDTH,
+        &mut tcod.root,
+    );
+}
+fighter.xp -= level_up_xp;
+match choice.unwrap() {
+    0 => {
+        fighter.base_max_hp += 20;  // <4>
+        fighter.hp += 20;
+    }
+    1 => {
+        fighter.base_power += 1;  // <5>
+    }
+    2 => {
+        fighter.base_defense += 1;  // <6>
+    }
+    _ => unreachable!(),
+}
+end::level_up_fn_fighter[]
+----
+<1>: `max_hp` -> `base_max_hp`
+<2>: `power` -> `base_power`
+<3>: `defense` -> `base_defense`
+<4>: `max_hp` -> `base_max_hp`
+<5>: `power` -> `base_power`
+<6>: `defense` -> `base_defense`
+
+
+And finally, the orc and troll monsters need to use `base_max_hp` now:
+
+[source]
+----
+// create an orc
+tag::generate_orc[]
+let mut orc = Object::new(x, y, 'o', "orc", DESATURATED_GREEN, true);
+orc.fighter = Some(Fighter {
+    base_max_hp: 20,
+    hp: 20,
+    base_defense: 0,
+    base_power: 4,
+    xp: 35,
+    on_death: DeathCallback::Monster,
+});
+orc.ai = Some(Ai::Basic);
+orc
+end::generate_orc[]
+
+...
+
+// create a troll
+tag::generate_troll[]
+let mut troll = Object::new(x, y, 'T', "troll", DARKER_GREEN, true);
+troll.fighter = Some(Fighter {
+    base_max_hp: 30,
+    hp: 30,
+    base_defense: 2,
+    base_power: 8,
+    xp: 100,
+    on_death: DeathCallback::Monster,
+});
+troll.ai = Some(Ai::Basic);
+troll
+end::generate_troll[]
+----
 
 The values here are basically tuning the gameplay. Feel free to set them
 to whatever you wish.
@@ -905,57 +1026,25 @@ And assign them chances in `place_objects`. We'll use our
 [source]
 ----
 // item random table
-    let item_chances = &mut [
-        // healing potion always shows up, even if all other items have 0 chance
-        Weighted {
-            weight: 35,
-            item: Item::Heal,
-        },
-        Weighted {
-            weight: from_dungeon_level(
-                &[Transition {
-                    level: 4,
-                    value: 25,
-                }],
-                level,
-            ),
-            item: Item::Lightning,
-        },
-        Weighted {
-            weight: from_dungeon_level(
-                &[Transition {
-                    level: 6,
-                    value: 25,
-                }],
-                level,
-            ),
-            item: Item::Fireball,
-        },
-        Weighted {
-            weight: from_dungeon_level(
-                &[Transition {
-                    level: 2,
-                    value: 10,
-                }],
-                level,
-            ),
-            item: Item::Confuse,
-        },
-        Weighted {
-            weight: from_dungeon_level(&[Transition { level: 4, value: 5 }], level),
-            item: Item::Sword, // <1>
-        },
-        Weighted {
-            weight: from_dungeon_level(
-                &[Transition {
-                    level: 8,
-                    value: 15,
-                }],
-                level,
-            ),
-            item: Item::Shield, // <2>
-        },
-    ];
+let item_chances = &mut [
+    ...
+tag::item_tables_equipment[]
+    Weighted {
+        weight: from_dungeon_level(&[Transition { level: 4, value: 5 }], level),
+        item: Item::Sword, // <1>
+    },
+    Weighted {
+        weight: from_dungeon_level(
+            &[Transition {
+                level: 8,
+                value: 15,
+            }],
+            level,
+        ),
+        item: Item::Shield, // <2>
+    },
+end::item_tables_equipment[]
+];
 ----
 <1> This replaces `Item::Equipment`
 <2> This is new
@@ -965,9 +1054,10 @@ shield:
 
 [source]
 ----
+tag::create_shield[]
 Item::Shield => {
     // create a shield
-    let mut object = Object::new(x, y, '[', "shield", colors::DARKER_ORANGE, false);
+    let mut object = Object::new(x, y, '[', "shield", DARKER_ORANGE, false);
     object.item = Some(Item::Shield);
     object.equipment = Some(Equipment {
         equipped: false,
@@ -978,6 +1068,28 @@ Item::Shield => {
     });
     object
 }
+end::create_shield[]
+----
+
+And we need to update our sword creation code too:
+
+[source]
+----
+tag::create_sword[]
+Item::Sword => {
+    // create a sword
+    let mut object = Object::new(x, y, '/', "sword", SKY, false);
+    object.item = Some(Item::Sword);
+    object.equipment = Some(Equipment {
+        equipped: false,
+        slot: Slot::RightHand,
+        max_hp_bonus: 0,
+        defense_bonus: 0,
+        power_bonus: 3,
+    });
+    object
+}
+end::create_sword[]
 ----
 
 And finally, let's give our player something to start with. They can't

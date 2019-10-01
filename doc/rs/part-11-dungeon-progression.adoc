@@ -334,6 +334,7 @@ include::../part-11-dungeon-progression.adoc[tag=handle_stairs_key,indent=8]
 
 include::../part-11-dungeon-progression.adoc[tag=handle_character_key_header,indent=8]
 include::../part-11-dungeon-progression.adoc[tag=handle_character_key_unindented_text]
+include::../part-11-dungeon-progression.adoc[tag=handle_character_key_values,indent=20]
 include::../part-11-dungeon-progression.adoc[tag=handle_character_key_footer,indent=8]
 
 include::../part-5-combat.adoc[tag=match_key_footer,indent=8]

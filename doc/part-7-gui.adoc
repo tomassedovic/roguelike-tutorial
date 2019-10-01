@@ -153,9 +153,12 @@ tcod.panel.clear();
 end::prepare_gui_render[]
 
 tag::show_player_stats[]
+tag::calculate_hp[]
 // show the player's stats
 let hp = objects[PLAYER].fighter.map_or(0, |f| f.hp);
 let max_hp = objects[PLAYER].fighter.map_or(0, |f| f.max_hp);
+end::calculate_hp[]
+tag::render_hp_bar[]
 render_bar(
     &mut tcod.panel,
     1,
@@ -167,6 +170,7 @@ render_bar(
     LIGHT_RED,
     DARKER_RED,
 );
+end::render_hp_bar[]
 end::show_player_stats[]
 
 tag::blit_panel[]

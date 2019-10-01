@@ -420,12 +420,15 @@ a list of the items' names, and call the `menu` function:
 [source]
 ----
 tag::inventory_menu_fn[]
+tag::inventory_menu_fn_one[]
 fn inventory_menu(inventory: &[Object], header: &str, root: &mut Root) -> Option<usize> {
     // how a menu with each item of the inventory as an option
     let options = if inventory.len() == 0 {
         vec!["Inventory is empty.".into()]
     } else {
+end::inventory_menu_fn_one[]
         inventory.iter().map(|item| item.name.clone()).collect()
+tag::inventory_menu_fn_two[]
     };
 
     let inventory_index = menu(header, &options, INVENTORY_WIDTH, root);
@@ -437,6 +440,7 @@ fn inventory_menu(inventory: &[Object], header: &str, root: &mut Root) -> Option
         None
     }
 }
+end::inventory_menu_fn_two[]
 end::inventory_menu_fn[]
 ----
 

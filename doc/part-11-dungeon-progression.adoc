@@ -56,24 +56,26 @@ onto it. We'll also heal the player because we're feeling generous!
 [source]
 ----
 tag::next_level_fn[]
-tag::next_level_fn_header[]
+tag::next_level_fn_beginning[]
 /// Advance to the next level
 fn next_level(tcod: &mut Tcod, game: &mut Game, objects: &mut Vec<Object>) {
-end::next_level_fn_header[]
-tag::next_level_fn_beginning[]
     game.messages.add(
         "You take a moment to rest, and recover your strength.",
         VIOLET,
     );
+end::next_level_fn_beginning[]
+tag::next_level_fn_heal[]
     let heal_hp = objects[PLAYER].fighter.map_or(0, |f| f.max_hp / 2);
     objects[PLAYER].heal(heal_hp);
+end::next_level_fn_heal[]
 
+tag::next_level_fn_descend[]
     game.messages.add(
         "After a rare moment of peace, you descend deeper into \
          the heart of the dungeon...",
         RED,
     );
-end::next_level_fn_beginning[]
+end::next_level_fn_descend[]
 tag::next_level_fn_build_level[]
     game.dungeon_level += 1;
     game.map = make_map(objects);
@@ -604,8 +606,10 @@ Maximum HP: {}
 Attack: {}
 Defense: {}",
 end::handle_character_key_unindented_text[]
-tag::handle_character_key_footer[]
+tag::handle_character_key_values[]
             level, fighter.xp, level_up_xp, fighter.max_hp, fighter.power, fighter.defense
+end::handle_character_key_values[]
+tag::handle_character_key_footer[]
         );
         msgbox(&msg, CHARACTER_SCREEN_WIDTH, &mut tcod.root);
     }

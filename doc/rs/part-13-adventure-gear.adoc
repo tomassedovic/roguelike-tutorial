@@ -172,7 +172,9 @@ include::../part-8-items.adoc[tag=use_item_process_result_cancelled,indent=12]
 include::../part-8-items.adoc[tag=use_item_else]
 }
 
-include::../part-9-spells.adoc[tag=drop_item_fn]
+include::../part-9-spells.adoc[tag=drop_item_fn_one]
+include::../part-13-adventure-gear.adoc[tag=drop_item_dequip,indent=4]
+include::../part-9-spells.adoc[tag=drop_item_fn_two]
 
 include::../part-9-spells.adoc[tag=target_tile_header]
 include::../part-9-spells.adoc[tag=target_tile_loop_flush_and_process_events]
@@ -187,7 +189,7 @@ include::../part-9-spells.adoc[tag=target_monster_fn]
 
 include::../part-9-spells.adoc[tag=closest_monster_fn]
 
-include::../part-8-items.adoc[tag=cast_heal_fn]
+include::../part-13-adventure-gear.adoc[tag=cast_heal_fn]
 
 include::../part-9-spells.adoc[tag=cast_lightning_fn_beginning]
 include::../part-11-dungeon-progression.adoc[tag=cast_lightning_fn_damage_xp,indent=8]
@@ -202,7 +204,10 @@ include::../part-9-spells.adoc[tag=cast_fireball_fn_beginning]
 include::../part-11-dungeon-progression.adoc[tag=cast_fireball_fn_damage_xp,indent=4]
 include::../part-9-spells.adoc[tag=cast_fireball_fn_ending]
 
-include::../part-13-adventure-gear.adoc[tag=toggle_equipment_fn]
+include::../part-13-adventure-gear.adoc[tag=toggle_equipment_fn_header]
+include::../part-13-adventure-gear.adoc[tag=toggle_equipment_fn_if_branch]
+include::../part-13-adventure-gear.adoc[tag=toggle_equipment_fn_dequip,indent=8]
+include::../part-13-adventure-gear.adoc[tag=toggle_equipment_fn_else_branch]
 
 include::../part-13-adventure-gear.adoc[tag=equipment_struct]
 
@@ -258,16 +263,20 @@ include::../part-12-monster-item-progression.adoc[tag=use_rand_types,indent=4]
 
 include::../part-12-monster-item-progression.adoc[tag=monster_tables,indent=4]
 
-include::../part-12-monster-item-progression.adoc[tag=item_tables,indent=4]
+include::../part-12-monster-item-progression.adoc[tag=item_tables_max_items,indent=4]
+
+include::../part-12-monster-item-progression.adoc[tag=item_tables_spells,indent=4]
+include::../part-13-adventure-gear.adoc[tag=item_tables_equipment,indent=8]
+include::../part-12-monster-item-progression.adoc[tag=item_tables_end,indent=4]
 
 include::../part-5-combat.adoc[tag=place_objects_for_loop,indent=4]
 include::../part-5-combat.adoc[tag=place_objects_rand_pos,indent=8]
 
 include::../part-5-combat.adoc[tag=is_blocked_check,indent=8]
 include::../part-12-monster-item-progression.adoc[tag=generate_monster_orc_branch,indent=12]
-include::../part-12-monster-item-progression.adoc[tag=generate_orc,indent=20]
+include::../part-13-adventure-gear.adoc[tag=generate_orc,indent=20]
 include::../part-12-monster-item-progression.adoc[tag=generate_monster_troll_branch,indent=16]
-include::../part-12-monster-item-progression.adoc[tag=generate_troll,indent=20]
+include::../part-13-adventure-gear.adoc[tag=generate_troll,indent=20]
 include::../part-12-monster-item-progression.adoc[tag=generate_monster_else_branch,indent=12]
 include::../part-5-combat.adoc[tag=push_monster,indent=12]
         }
@@ -280,14 +289,19 @@ include::../part-8-items.adoc[tag=choose_item_random_pos,indent=8]
 
 include::../part-8-items.adoc[tag=item_pos_not_blocked,indent=8]
 include::../part-12-monster-item-progression.adoc[tag=place_items_table,indent=12]
+include::../part-13-adventure-gear.adoc[tag=create_sword,indent=16]
+include::../part-13-adventure-gear.adoc[tag=create_shield,indent=16]
+            };
 include::../part-11-dungeon-progression.adoc[tag=item_always_visible,indent=12]
 include::../part-9-spells.adoc[tag=objects_push_item,indent=12]
         }
     }
 }
 
-include::../part-11-dungeon-progression.adoc[tag=next_level_fn_header]
 include::../part-11-dungeon-progression.adoc[tag=next_level_fn_beginning]
+include::../part-13-adventure-gear.adoc[tag=next_level_fn_heal,indent=4]
+
+include::../part-11-dungeon-progression.adoc[tag=next_level_fn_descend,indent=4]
 include::../part-12-monster-item-progression.adoc[tag=next_level_fn_build_level]
 
 include::../part-7-gui.adoc[tag=render_bar_header]
@@ -316,7 +330,8 @@ include::../part-7-gui.adoc[tag=prepare_gui_render,indent=4]
 
 include::../part-7-gui.adoc[tag=render_messages,indent=4]
 
-include::../part-7-gui.adoc[tag=show_player_stats,indent=4]
+include::../part-13-adventure-gear.adoc[tag=calculate_hp,indent=4]
+include::../part-7-gui.adoc[tag=render_hp_bar,indent=4]
 
 include::../part-11-dungeon-progression.adoc[tag=show_dungeon_level,indent=4]
 
@@ -352,7 +367,9 @@ include::../part-8-items.adoc[tag=menu_flush_root_wait_for_keypress,indent=4]
 include::../part-8-items.adoc[tag=menu_convert_key_to_index,indent=4]
 }
 
-include::../part-8-items.adoc[tag=inventory_menu_fn]
+include::../part-8-items.adoc[tag=inventory_menu_fn_one]
+include::../part-13-adventure-gear.adoc[tag=inventory_menu_fn_show_equipment,indent=8]
+include::../part-8-items.adoc[tag=inventory_menu_fn_two]
 
 include::../part-10-menu-saving.adoc[tag=msgbox_fn]
 
@@ -375,6 +392,7 @@ include::../part-11-dungeon-progression.adoc[tag=handle_stairs_key,indent=8]
 
 include::../part-11-dungeon-progression.adoc[tag=handle_character_key_header,indent=8]
 include::../part-11-dungeon-progression.adoc[tag=handle_character_key_unindented_text]
+include::../part-13-adventure-gear.adoc[tag=handle_character_key_values,indent=20]
 include::../part-11-dungeon-progression.adoc[tag=handle_character_key_footer,indent=8]
 
 include::../part-5-combat.adoc[tag=match_key_footer,indent=8]
@@ -382,7 +400,7 @@ include::../part-5-combat.adoc[tag=match_key_footer,indent=8]
 }
 
 include::../part-11-dungeon-progression.adoc[tag=level_up_fn_header]
-include::../part-11-dungeon-progression.adoc[tag=level_up_fn_fighter,indent=8]
+include::../part-13-adventure-gear.adoc[tag=level_up_fn_fighter,indent=8]
     }
 }
 

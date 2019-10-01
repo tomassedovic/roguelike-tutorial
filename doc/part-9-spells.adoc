@@ -801,13 +801,17 @@ player's, so it appears below the player:
 [source]
 ----
 tag::drop_item_fn[]
+tag::drop_item_fn_one[]
 fn drop_item(inventory_id: usize, game: &mut Game, objects: &mut Vec<Object>) {
     let mut item = game.inventory.remove(inventory_id);
+end::drop_item_fn_one[]
+tag::drop_item_fn_two[]
     item.set_pos(objects[PLAYER].x, objects[PLAYER].y);
     game.messages
         .add(format!("You dropped a {}.", item.name), YELLOW);
     objects.push(item);
 }
+end::drop_item_fn_two[]
 end::drop_item_fn[]
 ----
 
