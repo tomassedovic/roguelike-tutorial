@@ -15,6 +15,12 @@ update-cargo-bin: docs
 	cp --force target/tutorial/*.rs src/bin/
 .PHONY: update-cargo-bin
 
+build-crate: docs
+	@mkdir -p target/crate/src/bin/
+	cp --force target/tutorial/*.rs target/crate/src/bin
+	cp --force Cargo.* target/crate
+.PHONY: build-crate
+
 publish:
 	@git diff-index --quiet HEAD || { echo "Error: the repository is dirty."; exit 1; }
 	rm -rf .deploy
@@ -33,7 +39,7 @@ preview: docs
 	firefox --private-window file://$(shell readlink -f target/tutorial/index.html) 2>/dev/null
 
 clean:
-	rm -rf target/tutorial
+	rm -rf target/tutorial target/crate
 
 list-contributor-names:
 	git shortlog --summary | awk '{$$1=""}1' | sort
