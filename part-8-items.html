@@ -700,7 +700,7 @@ arrow-handling and the final <code>return DidntTakeTurn</code> line:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-p">(</span><span class="tok-n">Key</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"> </span><span class="tok-n">printable</span>: <span class="tok-sc">&#39;g&#39;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-p">..</span><span class="tok-w"> </span><span class="tok-p">},</span><span class="tok-w"> </span><span class="tok-kc">true</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-p">(</span><span class="tok-n">Key</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"> </span><span class="tok-n">code</span>: <span class="tok-nc">Text</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-p">..</span><span class="tok-w"> </span><span class="tok-p">},</span><span class="tok-w"> </span><span class="tok-s">&quot;g&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-kc">true</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-c1">// pick up an item</span>
 <span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">item_id</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-p">.</span><span class="tok-n">iter</span><span class="tok-p">()</span><span class="tok-w"></span>
@@ -939,7 +939,7 @@ the options.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-p">(</span><span class="tok-n">Key</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"> </span><span class="tok-n">printable</span>: <span class="tok-sc">&#39;i&#39;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-p">..</span><span class="tok-w"> </span><span class="tok-p">},</span><span class="tok-w"> </span><span class="tok-kc">true</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-p">(</span><span class="tok-n">Key</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"> </span><span class="tok-n">code</span>: <span class="tok-nc">Text</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-p">..</span><span class="tok-w"> </span><span class="tok-p">},</span><span class="tok-w"> </span><span class="tok-s">&quot;i&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-kc">true</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-c1">// show the inventory</span>
 <span class="tok-w">    </span><span class="tok-n">inventory_menu</span><span class="tok-p">(</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-n">inventory</span><span class="tok-p">,</span><span class="tok-w"></span>
@@ -1083,7 +1083,7 @@ item:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-p">(</span><span class="tok-n">Key</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"> </span><span class="tok-n">printable</span>: <span class="tok-sc">&#39;i&#39;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-p">..</span><span class="tok-w"> </span><span class="tok-p">},</span><span class="tok-w"> </span><span class="tok-kc">true</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-p">(</span><span class="tok-n">Key</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"> </span><span class="tok-n">code</span>: <span class="tok-nc">Text</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-p">..</span><span class="tok-w"> </span><span class="tok-p">},</span><span class="tok-w"> </span><span class="tok-s">&quot;i&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-kc">true</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-c1">// show the inventory: if an item is selected, use it</span>
 <span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">inventory_index</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">inventory_menu</span><span class="tok-p">(</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-o">&amp;</span><span class="tok-n">game</span><span class="tok-p">.</span><span class="tok-n">inventory</span><span class="tok-p">,</span><span class="tok-w"></span>
@@ -1114,7 +1114,7 @@ will really make the most of this inventory system.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-10-01 21:23:57 UTC
+Last updated 2019-10-01 22:22:14 UTC
 </div>
 </div>
 <style>

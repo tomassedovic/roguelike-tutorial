@@ -1090,21 +1090,30 @@ allow things like full screen, exiting the game or even a read-only
 view into the inventory.</p>
 </div>
 <div class="paragraph">
-<p>Let&#8217;s update our match to include the <code>game_state</code>, too:</p>
+<p>Let&#8217;s update our match to include the <code>player_alive</code>, too:</p>
 </div>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">key</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">wait_for_keypress</span><span class="tok-p">(</span><span class="tok-kc">true</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">player_alive</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-n">PLAYER</span><span class="tok-p">].</span><span class="tok-n">alive</span><span class="tok-p">;</span><span class="tok-w"></span>
-<span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">key</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">player_alive</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">key</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">key</span><span class="tok-p">.</span><span class="tok-n">text</span><span class="tok-p">(),</span><span class="tok-w"> </span><span class="tok-n">player_alive</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-c1">// key handling</span>
 <span class="tok-p">}</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Now instead of just matching on keys, we have to take the game state
-into consideration as well. Fullscreen and exit on Escape should work
-whether the player is alive or dead, so change them to:</p>
+<p>We have also added <code>key.text()</code>.
+It&#8217;s a method that lets us read a textual representation of the pressed key.
+This will be helpful on when we want to handle letters or keys such as <code>&gt;</code>.
+The position of these depends on the keyboard layout our player has set up.
+We can&#8217;t just check for <code>Shift</code> + <code>,</code> because many non-English keyboards have the greater-than key in a completely different place!</p>
+</div>
+<div class="paragraph">
+<p>So we&#8217;ll pass the <code>text</code> in alongside the key and the <code>player_alive</code> and just ignore it for now.</p>
+</div>
+<div class="paragraph">
+<p>Now instead of just matching on the key alone, we have to take these two values into consideration as well.
+Fullscreen and exit on Escape should work whether the player is alive or dead, so change them to:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -1115,18 +1124,18 @@ whether the player is alive or dead, so change them to:</p>
 <span class="tok-w">        </span><span class="tok-p">..</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">},</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">_</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">_</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-c1">// Alt+Enter: toggle fullscreen</span>
 <span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">fullscreen</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">is_fullscreen</span><span class="tok-p">();</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">root</span><span class="tok-p">.</span><span class="tok-n">set_fullscreen</span><span class="tok-p">(</span><span class="tok-o">!</span><span class="tok-n">fullscreen</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">DidntTakeTurn</span><span class="tok-w"></span>
 <span class="tok-p">}</span><span class="tok-w"></span>
-<span class="tok-p">(</span><span class="tok-n">Key</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"> </span><span class="tok-n">code</span>: <span class="tok-nc">Escape</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-p">..</span><span class="tok-w"> </span><span class="tok-p">},</span><span class="tok-w"> </span><span class="tok-n">_</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">Exit</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-c1">// exit game</span></code></pre>
+<span class="tok-p">(</span><span class="tok-n">Key</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"> </span><span class="tok-n">code</span>: <span class="tok-nc">Escape</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-p">..</span><span class="tok-w"> </span><span class="tok-p">},</span><span class="tok-w"> </span><span class="tok-n">_</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">_</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">Exit</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-c1">// exit game</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>We&#8217;re taking two values in a tuple <code>(key, player_alive)</code> now and
-ignoring the latter.</p>
+<p>We&#8217;re taking three values in a tuple <code>(key, text, player_alive)</code> now and ignoring the latter two.</p>
 </div>
 <div class="paragraph">
 <p>For movement, we only want it to work when the player is alive so:</p>
@@ -1134,19 +1143,19 @@ ignoring the latter.</p>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-c1">// movement keys</span>
-<span class="tok-p">(</span><span class="tok-n">Key</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"> </span><span class="tok-n">code</span>: <span class="tok-nc">Up</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-p">..</span><span class="tok-w"> </span><span class="tok-p">},</span><span class="tok-w"> </span><span class="tok-kc">true</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-p">(</span><span class="tok-n">Key</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"> </span><span class="tok-n">code</span>: <span class="tok-nc">Up</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-p">..</span><span class="tok-w"> </span><span class="tok-p">},</span><span class="tok-w"> </span><span class="tok-n">_</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-kc">true</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">player_move_or_attack</span><span class="tok-p">(</span><span class="tok-mi">0</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">-</span><span class="tok-mi">1</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">TookTurn</span><span class="tok-w"></span>
 <span class="tok-p">}</span><span class="tok-w"></span>
-<span class="tok-p">(</span><span class="tok-n">Key</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"> </span><span class="tok-n">code</span>: <span class="tok-nc">Down</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-p">..</span><span class="tok-w"> </span><span class="tok-p">},</span><span class="tok-w"> </span><span class="tok-kc">true</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-p">(</span><span class="tok-n">Key</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"> </span><span class="tok-n">code</span>: <span class="tok-nc">Down</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-p">..</span><span class="tok-w"> </span><span class="tok-p">},</span><span class="tok-w"> </span><span class="tok-n">_</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-kc">true</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">player_move_or_attack</span><span class="tok-p">(</span><span class="tok-mi">0</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">TookTurn</span><span class="tok-w"></span>
 <span class="tok-p">}</span><span class="tok-w"></span>
-<span class="tok-p">(</span><span class="tok-n">Key</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"> </span><span class="tok-n">code</span>: <span class="tok-nc">Left</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-p">..</span><span class="tok-w"> </span><span class="tok-p">},</span><span class="tok-w"> </span><span class="tok-kc">true</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-p">(</span><span class="tok-n">Key</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"> </span><span class="tok-n">code</span>: <span class="tok-nc">Left</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-p">..</span><span class="tok-w"> </span><span class="tok-p">},</span><span class="tok-w"> </span><span class="tok-n">_</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-kc">true</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">player_move_or_attack</span><span class="tok-p">(</span><span class="tok-o">-</span><span class="tok-mi">1</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-mi">0</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">TookTurn</span><span class="tok-w"></span>
 <span class="tok-p">}</span><span class="tok-w"></span>
-<span class="tok-p">(</span><span class="tok-n">Key</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"> </span><span class="tok-n">code</span>: <span class="tok-nc">Right</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-p">..</span><span class="tok-w"> </span><span class="tok-p">},</span><span class="tok-w"> </span><span class="tok-kc">true</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-p">(</span><span class="tok-n">Key</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"> </span><span class="tok-n">code</span>: <span class="tok-nc">Right</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-p">..</span><span class="tok-w"> </span><span class="tok-p">},</span><span class="tok-w"> </span><span class="tok-n">_</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-kc">true</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">player_move_or_attack</span><span class="tok-p">(</span><span class="tok-mi">1</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-mi">0</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">TookTurn</span><span class="tok-w"></span>
 <span class="tok-p">}</span><span class="tok-w"></span></code></pre>
@@ -1301,7 +1310,7 @@ see the monsters taking their turns after you.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-10-01 21:23:57 UTC
+Last updated 2019-10-01 22:22:14 UTC
 </div>
 </div>
 <style>

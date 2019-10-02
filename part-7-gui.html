@@ -1133,7 +1133,7 @@ a new keypress otherwise. We don&#8217;t have to clear the mouse, because
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span> <span class="tok-nf">handle_keys</span><span class="tok-p">(</span><span class="tok-n">tcod</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Tcod</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">game</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Game</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">objects</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-nb">Vec</span><span class="tok-o">&lt;</span><span class="tok-n">Object</span><span class="tok-o">&gt;</span><span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-nc">PlayerAction</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w">  </span><i class="conum" data-value="1"></i><b>(1)</b>
 <span class="tok-w">    </span><span class="tok-p">...</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">player_alive</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">objects</span><span class="tok-p">[</span><span class="tok-n">PLAYER</span><span class="tok-p">].</span><span class="tok-n">alive</span><span class="tok-p">;</span><span class="tok-w">  </span><i class="conum" data-value="2"></i><b>(2)</b>
-<span class="tok-w">    </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">key</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">player_alive</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">key</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">tcod</span><span class="tok-p">.</span><span class="tok-n">key</span><span class="tok-p">.</span><span class="tok-n">text</span><span class="tok-p">(),</span><span class="tok-w"> </span><span class="tok-n">player_alive</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-p">...</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-p">}</span><span class="tok-w"></span></code></pre>
@@ -1230,7 +1230,7 @@ the player moves to make their move. Makes sense!</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-10-01 21:23:57 UTC
+Last updated 2019-10-01 22:22:14 UTC
 </div>
 </div>
 <style>

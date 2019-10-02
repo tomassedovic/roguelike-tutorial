@@ -527,7 +527,7 @@ fn handle_keys(tcod: &mut Tcod, game: &Game, objects: &mut Vec<Object>) -> Playe
 
     let key = tcod.root.wait_for_keypress(true);
     let player_alive = objects[PLAYER].alive;
-    match (key, player_alive) {
+    match (key, key.text(), player_alive) {
         (
             Key {
                 code: Enter,
@@ -535,28 +535,29 @@ fn handle_keys(tcod: &mut Tcod, game: &Game, objects: &mut Vec<Object>) -> Playe
                 ..
             },
             _,
+            _,
         ) => {
             // Alt+Enter: toggle fullscreen
             let fullscreen = tcod.root.is_fullscreen();
             tcod.root.set_fullscreen(!fullscreen);
             DidntTakeTurn
         }
-        (Key { code: Escape, .. }, _) => Exit, // exit game
+        (Key { code: Escape, .. }, _, _) => Exit, // exit game
 
         // movement keys
-        (Key { code: Up, .. }, true) => {
+        (Key { code: Up, .. }, _, true) => {
             player_move_or_attack(0, -1, game, objects);
             TookTurn
         }
-        (Key { code: Down, .. }, true) => {
+        (Key { code: Down, .. }, _, true) => {
             player_move_or_attack(0, 1, game, objects);
             TookTurn
         }
-        (Key { code: Left, .. }, true) => {
+        (Key { code: Left, .. }, _, true) => {
             player_move_or_attack(-1, 0, game, objects);
             TookTurn
         }
-        (Key { code: Right, .. }, true) => {
+        (Key { code: Right, .. }, _, true) => {
             player_move_or_attack(1, 0, game, objects);
             TookTurn
         }
