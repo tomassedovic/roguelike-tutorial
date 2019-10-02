@@ -36,7 +36,7 @@ easy to add this check at the end of `handle_keys`:
 [source]
 ----
 tag::handle_stairs_key[]
-(Key { printable: '<', .. }, true) => {
+(Key { code: Text, .. }, "<", true) => {
     // go down stairs, if the player is on them
     let player_on_stairs = objects
         .iter()
@@ -587,7 +587,7 @@ current stats somewhere. Let's display a little message box when the
 [source]
 ----
 tag::handle_character_key_header[]
-(Key { printable: 'c', .. }, true) => {
+(Key { code: Text, .. }, "c", true) => {
     // show character information
     let player = &objects[PLAYER];
     let level = player.level;
@@ -661,39 +661,39 @@ The key codes for the numpad keys are `NumPad0` to `NumPad9`. So in
 ----
 tag::movement_keys[]
 // movement keys
-(Key { code: Up, .. }, true) | (Key { code: NumPad8, .. }, true) => {
+(Key { code: Up, .. }, _, true) | (Key { code: NumPad8, .. }, _, true) => {
     player_move_or_attack(0, -1, game, objects);
     TookTurn
 }
-(Key { code: Down, .. }, true) | (Key { code: NumPad2, .. }, true) => {
+(Key { code: Down, .. }, _, true) | (Key { code: NumPad2, .. }, _, true) => {
     player_move_or_attack(0, 1, game, objects);
     TookTurn
 }
-(Key { code: Left, .. }, true) | (Key { code: NumPad4, .. }, true) => {
+(Key { code: Left, .. }, _, true) | (Key { code: NumPad4, .. }, _, true) => {
     player_move_or_attack(-1, 0, game, objects);
     TookTurn
 }
-(Key { code: Right, .. }, true) | (Key { code: NumPad6, .. }, true) => {
+(Key { code: Right, .. }, _, true) | (Key { code: NumPad6, .. }, _, true) => {
     player_move_or_attack(1, 0, game, objects);
     TookTurn
 }
-(Key { code: Home, .. }, true) | (Key { code: NumPad7, .. }, true) => {
+(Key { code: Home, .. }, _, true) | (Key { code: NumPad7, .. }, _, true) => {
     player_move_or_attack(-1, -1, game, objects);
     TookTurn
 }
-(Key { code: PageUp, .. }, true) | (Key { code: NumPad9, .. }, true) => {
+(Key { code: PageUp, .. }, _, true) | (Key { code: NumPad9, .. }, _, true) => {
     player_move_or_attack(1, -1, game, objects);
     TookTurn
 }
-(Key { code: End, .. }, true) | (Key { code: NumPad1, .. }, true) => {
+(Key { code: End, .. }, _, true) | (Key { code: NumPad1, .. }, _, true) => {
     player_move_or_attack(-1, 1, game, objects);
     TookTurn
 }
-(Key { code: PageDown, .. }, true) | (Key { code: NumPad3, .. }, true) => {
+(Key { code: PageDown, .. }, _, true) | (Key { code: NumPad3, .. }, _, true) => {
     player_move_or_attack(1, 1, game, objects);
     TookTurn
 }
-(Key { code: NumPad5, .. }, true) => {
+(Key { code: NumPad5, .. }, _, true) => {
     TookTurn // do nothing, i.e. wait for the monster to come to you
 }
 end::movement_keys[]

@@ -637,7 +637,7 @@ end::handle_keys_header[]
     ...
 tag::match_key_header[]
     let player_alive = objects[PLAYER].alive;  // <2>
-    match (tcod.key, player_alive) {
+    match (tcod.key, tcod.key.text(), player_alive) {
 end::match_key_header[]
         ...
     }

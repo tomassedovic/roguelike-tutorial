@@ -1134,7 +1134,7 @@ fn handle_keys(tcod: &mut Tcod, game: &mut Game, objects: &mut Vec<Object>) -> P
     use PlayerAction::*;
 
     let player_alive = objects[PLAYER].alive;
-    match (tcod.key, player_alive) {
+    match (tcod.key, tcod.key.text(), player_alive) {
         (
             Key {
                 code: Enter,
@@ -1142,33 +1142,34 @@ fn handle_keys(tcod: &mut Tcod, game: &mut Game, objects: &mut Vec<Object>) -> P
                 ..
             },
             _,
+            _,
         ) => {
             // Alt+Enter: toggle fullscreen
             let fullscreen = tcod.root.is_fullscreen();
             tcod.root.set_fullscreen(!fullscreen);
             DidntTakeTurn
         }
-        (Key { code: Escape, .. }, _) => Exit, // exit game
+        (Key { code: Escape, .. }, _, _) => Exit, // exit game
 
         // movement keys
-        (Key { code: Up, .. }, true) => {
+        (Key { code: Up, .. }, _, true) => {
             player_move_or_attack(0, -1, game, objects);
             TookTurn
         }
-        (Key { code: Down, .. }, true) => {
+        (Key { code: Down, .. }, _, true) => {
             player_move_or_attack(0, 1, game, objects);
             TookTurn
         }
-        (Key { code: Left, .. }, true) => {
+        (Key { code: Left, .. }, _, true) => {
             player_move_or_attack(-1, 0, game, objects);
             TookTurn
         }
-        (Key { code: Right, .. }, true) => {
+        (Key { code: Right, .. }, _, true) => {
             player_move_or_attack(1, 0, game, objects);
             TookTurn
         }
 
-        (Key { printable: 'g', .. }, true) => {
+        (Key { code: Text, .. }, "g", true) => {
             // pick up an item
             let item_id = objects
                 .iter()
@@ -1179,7 +1180,7 @@ fn handle_keys(tcod: &mut Tcod, game: &mut Game, objects: &mut Vec<Object>) -> P
             DidntTakeTurn
         }
 
-        (Key { printable: 'i', .. }, true) => {
+        (Key { code: Text, .. }, "i", true) => {
             // show the inventory: if an item is selected, use it
             let inventory_index = inventory_menu(
                 &game.inventory,
@@ -1192,7 +1193,7 @@ fn handle_keys(tcod: &mut Tcod, game: &mut Game, objects: &mut Vec<Object>) -> P
             DidntTakeTurn
         }
 
-        (Key { printable: 'd', .. }, true) => {
+        (Key { code: Text, .. }, "d", true) => {
             // show the inventory; if an item is selected, drop it
             let inventory_index = inventory_menu(
                 &game.inventory,

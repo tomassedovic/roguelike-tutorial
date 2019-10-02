@@ -823,7 +823,7 @@ the chosen item. Add this to `handle_keys`, after the inventory key:
 [source]
 ----
 tag::handle_drop_key[]
-(Key { printable: 'd', .. }, true) => {
+(Key { code: Text, .. }, "d", true) => {
     // show the inventory; if an item is selected, drop it
     let inventory_index = inventory_menu(
         &game.inventory,

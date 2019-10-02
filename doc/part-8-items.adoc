@@ -215,7 +215,7 @@ arrow-handling and the final `return DidntTakeTurn` line:
 [source]
 ----
 tag::handle_pick_up_key[]
-(Key { printable: 'g', .. }, true) => {
+(Key { code: Text, .. }, "g", true) => {
     // pick up an item
     let item_id = objects
         .iter()
@@ -465,7 +465,7 @@ the options.
 
 [source]
 ----
-(Key { printable: 'i', .. }, true) => {
+(Key { code: Text, .. }, "i", true) => {
     // show the inventory
     inventory_menu(
         inventory,
@@ -620,7 +620,7 @@ item:
 [source]
 ----
 tag::handle_inventory_key[]
-(Key { printable: 'i', .. }, true) => {
+(Key { code: Text, .. }, "i", true) => {
     // show the inventory: if an item is selected, use it
     let inventory_index = inventory_menu(
         &game.inventory,

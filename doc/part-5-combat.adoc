@@ -576,22 +576,29 @@ death (or maybe you would! There's a game idea.), but you may still
 allow things like full screen, exiting the game or even a read-only
 view into the inventory.
 
-Let's update our match to include the `game_state`, too:
+Let's update our match to include the `player_alive`, too:
 
 [source]
 ----
 tag::match_key_header[]
 let key = tcod.root.wait_for_keypress(true);
 let player_alive = objects[PLAYER].alive;
-match (key, player_alive) {
+match (key, key.text(), player_alive) {
 end::match_key_header[]
     // key handling
 }
 ----
 
-Now instead of just matching on keys, we have to take the game state
-into consideration as well. Fullscreen and exit on Escape should work
-whether the player is alive or dead, so change them to:
+We have also added `key.text()`.
+It's a method that lets us read a textual representation of the pressed key.
+This will be helpful on when we want to handle letters or keys such as `>`.
+The position of these depends on the keyboard layout our player has set up.
+We can't just check for `Shift` + `,` because many non-English keyboards have the greater-than key in a completely different place!
+
+So we'll pass the `text` in alongside the key and the `player_alive` and just ignore it for now.
+
+Now instead of just matching on the key alone, we have to take these two values into consideration as well.
+Fullscreen and exit on Escape should work whether the player is alive or dead, so change them to:
 
 [source]
 ----
@@ -603,18 +610,18 @@ tag::match_special_keys[]
         ..
     },
     _,
+    _,
 ) => {
     // Alt+Enter: toggle fullscreen
     let fullscreen = tcod.root.is_fullscreen();
     tcod.root.set_fullscreen(!fullscreen);
     DidntTakeTurn
 }
-(Key { code: Escape, .. }, _) => Exit, // exit game
+(Key { code: Escape, .. }, _, _) => Exit, // exit game
 end::match_special_keys[]
 ----
 
-We're taking two values in a tuple `(key, player_alive)` now and
-ignoring the latter.
+We're taking three values in a tuple `(key, text, player_alive)` now and ignoring the latter two.
 
 For movement, we only want it to work when the player is alive so:
 
@@ -622,19 +629,19 @@ For movement, we only want it to work when the player is alive so:
 ----
 tag::movement_keys[]
 // movement keys
-(Key { code: Up, .. }, true) => {
+(Key { code: Up, .. }, _, true) => {
     player_move_or_attack(0, -1, game, objects);
     TookTurn
 }
-(Key { code: Down, .. }, true) => {
+(Key { code: Down, .. }, _, true) => {
     player_move_or_attack(0, 1, game, objects);
     TookTurn
 }
-(Key { code: Left, .. }, true) => {
+(Key { code: Left, .. }, _, true) => {
     player_move_or_attack(-1, 0, game, objects);
     TookTurn
 }
-(Key { code: Right, .. }, true) => {
+(Key { code: Right, .. }, _, true) => {
     player_move_or_attack(1, 0, game, objects);
     TookTurn
 }
