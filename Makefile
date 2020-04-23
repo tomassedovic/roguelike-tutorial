@@ -21,7 +21,7 @@ build-crate: docs
 	cp --force Cargo.* target/crate
 .PHONY: build-crate
 
-publish:
+publish: docs
 	@git diff-index --quiet HEAD || { echo "Error: the repository is dirty."; exit 1; }
 	rm -rf .deploy
 	cp -r target/tutorial .deploy
