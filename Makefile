@@ -28,6 +28,7 @@ publish:
 	git checkout gh-pages
 	git pull
 	rm -rf *
+	find .deploy -type f -iname '*.rs' -execdir mv {} {}.txt \;
 	mv .deploy/* .
 	rm -d .deploy
 	git add -A
