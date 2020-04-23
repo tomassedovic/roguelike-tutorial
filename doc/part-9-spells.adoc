@@ -841,6 +841,6 @@ Some new spells, targeting, dropping items -- that's enough for now!
 See how the spells affect your strategy, they'll surely make things
 much more interesting!
 
-Here's link:part-9-spells.rs[the complete code so far].
+Here's link:part-9-spells.rs.txt[the complete code so far].
 
 Continue to <<part-10-menu-saving#,the next part>>.

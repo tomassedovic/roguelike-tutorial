@@ -307,7 +307,7 @@ creation. It's almost a game now!
 
 We will look at input next.
 
-Here's link:part-1a-render.rs[the complete code so far].
+Here's link:part-1a-render.rs.txt[the complete code so far].
 
 == Moving around
 
@@ -496,6 +496,6 @@ tcod.root
 end::player_at_position[]
 ----
 
-Here's link:part-1b-movement.rs[the complete code so far].
+Here's link:part-1b-movement.rs.txt[the complete code so far].
 
 Continue to <<part-2-object-map#,the next part>>.

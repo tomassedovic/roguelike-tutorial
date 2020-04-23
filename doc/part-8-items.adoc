@@ -640,6 +640,6 @@ items. That's fairly easy with the `inventory_menu`, but to keep this
 from getting long we'll leave it to the next part: magic scrolls! That
 will really make the most of this inventory system.
 
-Here's link:part-8-items.rs[the complete code so far].
+Here's link:part-8-items.rs.txt[the complete code so far].
 
 Continue to <<part-9-spells#,the next part>>.
