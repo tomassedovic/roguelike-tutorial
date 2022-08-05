@@ -8,7 +8,7 @@ ifdef::env-github[:outfilesuffix: .adoc]
 :rustlang: https://www.rust-lang.org/
 :libtcod: https://libtcod.github.io/docs/index2.html
 :book: http://doc.rust-lang.org/book/
-:rustbyexample: http://rustbyexample.com/
+:rustbyexample: https://doc.rust-lang.org/stable/rust-by-example/
 
 A port of the {origtutorial}[Complete Roguelike Tutorial, using python+libtcod].
 
