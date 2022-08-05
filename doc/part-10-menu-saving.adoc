@@ -183,7 +183,7 @@ modify the background color of every console cell to match the color
 of a pixel from the image. The downside is that the image will be in a
 very low resolution.
 
-:subcell: http://roguecentral.org/doryen/data/libtcod/doc/1.5.1/html2/image_blit.html?c=true
+:subcell: https://python-tcod.readthedocs.io/en/latest/tcod/image.html#tcod.image.Image.blit
 
 However, libtcod can do a neat trick: by using specialized characters,
 and modifying both foreground and background colors, we can double the
