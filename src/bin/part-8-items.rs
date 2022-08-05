@@ -661,7 +661,7 @@ fn render_all(tcod: &mut Tcod, game: &mut Game, objects: &[Object], fov_recomput
         .iter()
         .filter(|o| tcod.fov.is_in_fov(o.x, o.y))
         .collect();
-    // sort so that non-blocknig objects come first
+    // sort so that non-blocking objects come first
     to_draw.sort_by(|o1, o2| o1.blocks.cmp(&o2.blocks));
     // draw the objects in the list
     for object in &to_draw {
