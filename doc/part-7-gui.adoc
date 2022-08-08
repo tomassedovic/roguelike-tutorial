@@ -24,7 +24,7 @@ will hold the player's health bar and a colored message log.
 It's easier to manage GUI windows and panels with an off-screen
 console for each one, created before the main loop:
 
-Let's add another `Ofscreen` console to our `Tcod` struct:
+Let's add another `Offscreen` console to our `Tcod` struct:
 
 [source]
 ----
