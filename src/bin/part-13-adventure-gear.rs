@@ -1342,7 +1342,7 @@ fn render_all(tcod: &mut Tcod, game: &mut Game, objects: &[Object], fov_recomput
                 || (o.always_visible && game.map[o.x as usize][o.y as usize].explored)
         })
         .collect();
-    // sort so that non-blocknig objects come first
+    // sort so that non-blocking objects come first
     to_draw.sort_by(|o1, o2| o1.blocks.cmp(&o2.blocks));
     // draw the objects in the list
     for object in &to_draw {
