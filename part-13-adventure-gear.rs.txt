@@ -823,7 +823,6 @@ fn cast_fireball(
         ),
         ORANGE,
     );
-
     let mut xp_to_gain = 0;
     for (id, obj) in objects.iter_mut().enumerate() {
         if obj.distance(x, y) <= FIREBALL_RADIUS as f32 && obj.fighter.is_some() {
@@ -843,7 +842,6 @@ fn cast_fireball(
         }
     }
     objects[PLAYER].fighter.as_mut().unwrap().xp += xp_to_gain;
-
     UseResult::UsedUp
 }
 
@@ -1342,7 +1340,7 @@ fn render_all(tcod: &mut Tcod, game: &mut Game, objects: &[Object], fov_recomput
                 || (o.always_visible && game.map[o.x as usize][o.y as usize].explored)
         })
         .collect();
-    // sort so that non-blocknig objects come first
+    // sort so that non-blocking objects come first
     to_draw.sort_by(|o1, o2| o1.blocks.cmp(&o2.blocks));
     // draw the objects in the list
     for object in &to_draw {
@@ -1656,7 +1654,6 @@ fn handle_keys(tcod: &mut Tcod, game: &mut Game, objects: &mut Vec<Object>) -> P
             if let Some(fighter) = player.fighter.as_ref() {
                 let msg = format!(
                     "Character information
-
 Level: {}
 Experience: {}
 Experience to level up: {}
