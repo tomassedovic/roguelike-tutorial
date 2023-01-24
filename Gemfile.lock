@@ -1,7 +1,7 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    asciidoctor (1.5.7)
+    asciidoctor (1.5.8)
     multi_json (1.13.1)
     pygments.rb (1.2.1)
       multi_json (>= 1.0.0)
@@ -10,7 +10,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  asciidoctor (= 1.5.7)
+  asciidoctor (= 1.5.8)
   pygments.rb (~> 1.2.1)
 
 BUNDLED WITH
