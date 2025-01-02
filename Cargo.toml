@@ -11,7 +11,7 @@ maintenance = { status = "as-is" }
 
 
 [dependencies]
-tcod = { version = "0.15", features = ["serialization"] }
+tcod = { git= "https://github.com/tomassedovic/tcod-rs.git", features = ["serialization"]}
 rand = "0.3"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
